@@ -1,0 +1,57 @@
+{
+  "exit_code": 1,
+  "collected": 88,
+  "passed": 82,
+  "failed": 6,
+  "errors": 0,
+  "skipped": 0,
+  "duration_seconds": 35.457,
+  "isolation_violations": [
+    "Connection blocked: only synthetic ephemeral listeners are permitted",
+    "Connection blocked: only synthetic ephemeral listeners are permitted"
+  ],
+  "failures": [
+    {
+      "nodeid": "tests/unit/test_private_reindex_final.py::test_private_reindex_rejects_symlink_outside_conversation[outside]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.03373199999987264,
+      "detail": "tests\\unit\\test_private_reindex_final.py:205: in test_private_reindex_rejects_symlink_outside_conversation\n    stored.symlink_to(destination)\nC:\\Users\\AH015398\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\pathlib.py:1386: in symlink_to\n    os.symlink(target, self, target_is_directory)\nE   OSError: [WinError 1314] El cliente no dispone de un privilegio requerido: 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\focused-1791403344326057000\\\\tmp\\\\test_private_reindex_rejects_s0\\\\outside.md' -> 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\focused-1791403344326057000\\\\tmp\\\\test_private_reindex_rejects_s0\\\\uploads\\\\user-a\\\\chat-a\\\\attachment-internal.md'"
+    },
+    {
+      "nodeid": "tests/unit/test_private_reindex_final.py::test_private_reindex_rejects_symlink_outside_conversation[other-owner]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.034316900000703754,
+      "detail": "tests\\unit\\test_private_reindex_final.py:205: in test_private_reindex_rejects_symlink_outside_conversation\n    stored.symlink_to(destination)\nC:\\Users\\AH015398\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\pathlib.py:1386: in symlink_to\n    os.symlink(target, self, target_is_directory)\nE   OSError: [WinError 1314] El cliente no dispone de un privilegio requerido: 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\focused-1791403344326057000\\\\tmp\\\\test_private_reindex_rejects_s1\\\\uploads\\\\user-b\\\\chat-b\\\\attachment-internal.md' -> 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\focused-1791403344326057000\\\\tmp\\\\test_private_reindex_rejects_s1\\\\uploads\\\\user-a\\\\chat-a\\\\attachment-internal.md'"
+    },
+    {
+      "nodeid": "tests/unit/test_data_alias_ingestion.py::test_symlink_files_and_folders_cannot_escape_to_private_storage",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.010052199999336153,
+      "detail": "tests\\unit\\test_data_alias_ingestion.py:139: in test_symlink_files_and_folders_cannot_escape_to_private_storage\n    (alias / \"enlace.md\").symlink_to(private)\nC:\\Users\\AH015398\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\pathlib.py:1386: in symlink_to\n    os.symlink(target, self, target_is_directory)\nE   OSError: [WinError 1314] El cliente no dispone de un privilegio requerido: 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\focused-1791403344326057000\\\\tmp\\\\test_symlink_files_and_folders0\\\\var\\\\uploads\\\\secret.md' -> 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\focused-1791403344326057000\\\\tmp\\\\test_symlink_files_and_folders0\\\\data\\\\Prestaciones\\\\enlace.md'"
+    },
+    {
+      "nodeid": "tests/unit/test_data_alias_ingestion.py::test_symlink_alias_root_is_rejected",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.009869699999399018,
+      "detail": "tests\\unit\\test_data_alias_ingestion.py:146: in test_symlink_alias_root_is_rejected\n    (project / \"data\" / \"Prestaciones\").symlink_to(target, target_is_directory=True)\nC:\\Users\\AH015398\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\pathlib.py:1386: in symlink_to\n    os.symlink(target, self, target_is_directory)\nE   OSError: [WinError 1314] El cliente no dispone de un privilegio requerido: 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\focused-1791403344326057000\\\\tmp\\\\test_symlink_alias_root_is_rej0\\\\var\\\\uploads' -> 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\focused-1791403344326057000\\\\tmp\\\\test_symlink_alias_root_is_rej0\\\\data\\\\Prestaciones'"
+    },
+    {
+      "nodeid": "tests/unit/test_data_alias_ingestion.py::test_equivalent_alias_folders_are_ambiguous_on_case_sensitive_host",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.050713799999357434,
+      "detail": "tests\\unit\\test_data_alias_ingestion.py:156: in test_equivalent_alias_folders_are_ambiguous_on_case_sensitive_host\n    assert not scan.files\nE   AssertionError: assert not [KnowledgeFile(absolute_path=WindowsPath('C:/wamp64/www/matrix-rh-1.3.0/reports/mejoras-20261007/focused-1791403344326...nes/b.md', category='prestaciones', source_id='data-alias/prestaciones', legacy_relative_paths=('Prestaciones/b.md',))]\nE    +  where [KnowledgeFile(absolute_path=WindowsPath('C:/wamp64/www/matrix-rh-1.3.0/reports/mejoras-20261007/focused-1791403344326...nes/b.md', category='prestaciones', source_id='data-alias/prestaciones', legacy_relative_paths=('Prestaciones/b.md',))] = KnowledgeScan(sources=[KnowledgeSource(source_id='knowledge', root=WindowsPath('C:/wamp64/www/matrix-rh-1.3.0/reports/.../reports/mejoras-20261007/focused-1791403344326057000/tmp/test_equivalent_alias_folders_0/data/synthetic_test_data'),)).files"
+    },
+    {
+      "nodeid": "tests/unit/test_data_alias_ingestion.py::test_direct_ingestion_rejects_symlink_even_when_inventory_is_bypassed",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.009976400000596186,
+      "detail": "tests\\unit\\test_data_alias_ingestion.py:292: in test_direct_ingestion_rejects_symlink_even_when_inventory_is_bypassed\n    link.symlink_to(target)\nC:\\Users\\AH015398\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\pathlib.py:1386: in symlink_to\n    os.symlink(target, self, target_is_directory)\nE   OSError: [WinError 1314] El cliente no dispone de un privilegio requerido: 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\focused-1791403344326057000\\\\tmp\\\\test_direct_ingestion_rejects_0\\\\var\\\\uploads\\\\privado.md' -> 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\focused-1791403344326057000\\\\tmp\\\\test_direct_ingestion_rejects_0\\\\data\\\\enlace.md'"
+    }
+  ]
+}

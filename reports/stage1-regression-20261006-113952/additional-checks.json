@@ -1,0 +1,13 @@
+{
+  "preflight": {
+    "cwd": "backend",
+    "command": "../.venv/Scripts/python.exe -B -S -m scripts.preflight --integrity-only --require-manifest",
+    "exit_code": 0,
+    "output": "integridad_codigo OK; version 1.3.1; PREFLIGHT OK"
+  },
+  "ruff": {
+    "command": "reports/stage1-regression-20261006-113952/test-env/Scripts/ruff.exe check backend/app/agents/prompts.py --no-cache",
+    "exit_code": 0,
+    "output": "All checks passed!"
+  }
+}

@@ -1,0 +1,67 @@
+[
+  {
+    "path": "backend/app/llm/model_policy.py",
+    "sha256": "16e5d010faa429d6985bd5b60c58eaf6a90e54ea92e933e17ab980d2b52d5520",
+    "backup_sha256": "16e5d010faa429d6985bd5b60c58eaf6a90e54ea92e933e17ab980d2b52d5520"
+  },
+  {
+    "path": "backend/app/agents/orchestrator.py",
+    "sha256": "c6f65ee523c15544d5c215521b9344c03e23f311cf3fde93a30cc6076b846661",
+    "backup_sha256": "c6f65ee523c15544d5c215521b9344c03e23f311cf3fde93a30cc6076b846661"
+  },
+  {
+    "path": "backend/app/agents/prompts.py",
+    "sha256": "b5c56aa2eb505b202101c66d420a1d20474090b8a98b411bed5446cd7c13dc8d",
+    "backup_sha256": "b5c56aa2eb505b202101c66d420a1d20474090b8a98b411bed5446cd7c13dc8d"
+  },
+  {
+    "path": "backend/app/agents/knowledge_agent.py",
+    "sha256": "299b35e4bf3a2aa13a20c5b05138a52f2237b6526d131e5ddc94d03cc09dfecb",
+    "backup_sha256": "299b35e4bf3a2aa13a20c5b05138a52f2237b6526d131e5ddc94d03cc09dfecb"
+  },
+  {
+    "path": "backend/app/rag/grounding.py",
+    "sha256": "0dbd73e696e209160af3b259c2ac6047d132297b6489378564c46a537040834b",
+    "backup_sha256": "0dbd73e696e209160af3b259c2ac6047d132297b6489378564c46a537040834b"
+  },
+  {
+    "path": "backend/app/rag/numeric_grounding.py",
+    "sha256": "5f925ae30a4c62262cbc99e76874b3b79ec4ab5d3e019738f0c9e7a6dbfd570b",
+    "backup_sha256": "5f925ae30a4c62262cbc99e76874b3b79ec4ab5d3e019738f0c9e7a6dbfd570b"
+  },
+  {
+    "path": "backend/app/common/answers.py",
+    "sha256": "4b59bed262f96c7fd5b1790d239ba7f18a90a81a3ea1d7c1aff3d3b6686bac2f",
+    "backup_sha256": "4b59bed262f96c7fd5b1790d239ba7f18a90a81a3ea1d7c1aff3d3b6686bac2f"
+  },
+  {
+    "path": "frontend/src/components/MessageList.tsx",
+    "sha256": "3d74ca9382b8cadf0192f98d7aad50290aa6b2b07e76774f5e4c7dedf2b13b17",
+    "backup_sha256": "3d74ca9382b8cadf0192f98d7aad50290aa6b2b07e76774f5e4c7dedf2b13b17"
+  },
+  {
+    "path": "frontend/tests/MessageList.test.tsx",
+    "sha256": "85580666b4f14ac2142346a213509e899d1bf284f08a198d0df7887df16fa63c",
+    "backup_sha256": "85580666b4f14ac2142346a213509e899d1bf284f08a198d0df7887df16fa63c"
+  },
+  {
+    "path": "backend/tests/unit/test_grounding_numeric_rag_hotfix.py",
+    "sha256": "153963a5eaaea547e35c627236f6727a967a01ad1a37aac5d6375d29a70a9d28",
+    "backup_sha256": "153963a5eaaea547e35c627236f6727a967a01ad1a37aac5d6375d29a70a9d28"
+  },
+  {
+    "path": "backend/tests/unit/test_answer_diagnostics.py",
+    "sha256": "7b0d25f5fca9ae52a9f0f2ce0f99ebcc7c3b81befcf7f664d7b325c7c9e2ba55",
+    "backup_sha256": "7b0d25f5fca9ae52a9f0f2ce0f99ebcc7c3b81befcf7f664d7b325c7c9e2ba55"
+  },
+  {
+    "path": "SHA256SUMS.txt",
+    "sha256": "b4662ed8358293df688c1ad6b7c1d87ac4f8bb6eff305c665287ffcbeecf390b",
+    "backup_sha256": "b4662ed8358293df688c1ad6b7c1d87ac4f8bb6eff305c665287ffcbeecf390b"
+  },
+  {
+    "path": "backend/tests/unit/test_conversation_policy_stage1.py",
+    "sha256": "203878e980f1c3f602f97f40ea5edbcb65222822a7f49d4f150193f419846285",
+    "backup_sha256": "203878e980f1c3f602f97f40ea5edbcb65222822a7f49d4f150193f419846285"
+  }
+]

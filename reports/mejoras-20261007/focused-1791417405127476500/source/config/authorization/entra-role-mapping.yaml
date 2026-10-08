@@ -1,0 +1,205 @@
+# Creado por Aldo Garcia.
+# Mapeo de valores de app-role de Microsoft Entra ID a roles internos.
+#
+# Los valores HCM_* reproducen la matriz de perfiles v1.1. Se declaran como
+# app_role porque los object id reales de los grupos AD son datos del tenant y
+# no deben inventarse ni versionarse como si estuvieran validados. Si el tenant
+# entrega `groups`, sustituya cada `external_key` por el object id real y cambie
+# `external_kind` a `group` antes de sincronizar.
+#
+# La ausencia de mapeo efectivo no concede ningun rol (deny-by-default).
+
+version: 1
+
+# Contrato autocontenido para el seed/sincronizador. ``categories`` son
+# concesiones nominales de lectura. ``knowledge.admin`` habilita administracion
+# documental, pero la API debe intersectarla con estas categorias.
+roles:
+  - name: hcm_emp_basico
+    description: Perfil base de todo empleado autenticado.
+    categories: [general]
+    permissions: []
+
+  - name: hcm_adm_admpersonal
+    description: Administrador funcional de Administracion de Personal.
+    categories: [general, administracion_personal]
+    permissions: [knowledge.admin, structured.query]
+  - name: hcm_coord_admpersonal
+    description: Coordinador funcional de Administracion de Personal.
+    categories: [general, administracion_personal]
+    permissions: []
+
+  - name: hcm_adm_nomina_gral
+    description: Administrador funcional de Nomina General.
+    categories: [general, nomina_general, nomina]
+    permissions: [knowledge.admin]
+  - name: hcm_coord_nomina_gral
+    description: Coordinador funcional de Nomina General.
+    categories: [general, nomina_general, nomina]
+    permissions: []
+  - name: hcm_adm_nomina_conf
+    description: Administrador funcional de Nomina Confidencial.
+    categories: [general, nomina_confidencial]
+    permissions: [knowledge.admin]
+  - name: hcm_coord_nomina_conf
+    description: Coordinador funcional de Nomina Confidencial.
+    categories: [general, nomina_confidencial]
+    permissions: []
+
+  - name: hcm_adm_compensaciones
+    description: Administrador funcional de Compensaciones.
+    categories: [general, compensaciones]
+    permissions: [knowledge.admin]
+  - name: hcm_coord_compensaciones
+    description: Coordinador funcional de Compensaciones.
+    categories: [general, compensaciones]
+    permissions: []
+
+  - name: hcm_adm_talento
+    description: Administrador funcional de Talento.
+    categories: [general, talento]
+    permissions: [knowledge.admin]
+  - name: hcm_coord_talento
+    description: Coordinador funcional de Talento.
+    categories: [general, talento]
+    permissions: []
+
+  - name: hcm_adm_reclutamiento
+    description: Administrador funcional de Reclutamiento.
+    categories: [general, reclutamiento]
+    permissions: [knowledge.admin]
+  - name: hcm_coord_reclutamiento
+    description: Coordinador funcional de Reclutamiento.
+    categories: [general, reclutamiento]
+    permissions: []
+
+  - name: hcm_adm_capacitacion
+    description: Administrador funcional de Capacitacion.
+    categories: [general, capacitacion]
+    permissions: [knowledge.admin]
+  - name: hcm_coord_capacitacion
+    description: Coordinador funcional de Capacitacion.
+    categories: [general, capacitacion]
+    permissions: []
+
+  - name: hcm_adm_rellab
+    description: Administrador funcional de Relaciones Laborales.
+    categories: [general, relaciones_laborales]
+    permissions: [knowledge.admin]
+  - name: hcm_coord_rellab
+    description: Coordinador funcional de Relaciones Laborales.
+    categories: [general, relaciones_laborales]
+    permissions: []
+
+  - name: hcm_adm_ia_matrix
+    description: Administrador funcional de Matrix RH e IA.
+    categories: [general, matrix_rh_ia]
+    permissions: [knowledge.admin, users.admin, diagnostics.read, structured.query]
+  - name: hcm_coord_ia_matrix
+    description: Coordinador funcional de Matrix RH e IA.
+    categories: [general, matrix_rh_ia]
+    permissions: [diagnostics.read]
+
+  - name: hcm_adm_docempresarial
+    description: Administrador funcional de Documentacion Empresarial.
+    categories: [general, documentacion_empresarial]
+    permissions: [knowledge.admin]
+  - name: hcm_coord_docempresarial
+    description: Coordinador funcional de Documentacion Empresarial.
+    categories: [general, documentacion_empresarial]
+    permissions: []
+
+mappings:
+  - external_key: HCM_EMP_BASICO_MX
+    external_kind: app_role
+    role: hcm_emp_basico
+    comment: Perfil base; acceso al worker general y documentacion general.
+
+  - external_key: HCM_ADM_ADMPERSONAL_MX
+    external_kind: app_role
+    role: hcm_adm_admpersonal
+    comment: Administra el dominio administracion_personal.
+  - external_key: HCM_COORD_ADMPERSONAL_MX
+    external_kind: app_role
+    role: hcm_coord_admpersonal
+    comment: Consulta el dominio administracion_personal.
+
+  - external_key: HCM_ADM_NOMINA_GRAL_MX
+    external_kind: app_role
+    role: hcm_adm_nomina_gral
+    comment: Administra el dominio nomina_general.
+  - external_key: HCM_COORD_NOMINA_GRAL_MX
+    external_kind: app_role
+    role: hcm_coord_nomina_gral
+    comment: Consulta el dominio nomina_general.
+  - external_key: HCM_ADM_NOMINA_CONF_MX
+    external_kind: app_role
+    role: hcm_adm_nomina_conf
+    comment: Administra el repositorio segregado nomina_confidencial.
+  - external_key: HCM_COORD_NOMINA_CONF_MX
+    external_kind: app_role
+    role: hcm_coord_nomina_conf
+    comment: Consulta el repositorio segregado nomina_confidencial.
+
+  - external_key: HCM_ADM_COMPENSACIONES_MX
+    external_kind: app_role
+    role: hcm_adm_compensaciones
+    comment: Administra el dominio compensaciones.
+  - external_key: HCM_COORD_COMPENSACIONES_MX
+    external_kind: app_role
+    role: hcm_coord_compensaciones
+    comment: Consulta el dominio compensaciones.
+
+  - external_key: HCM_ADM_TALENTO_MX
+    external_kind: app_role
+    role: hcm_adm_talento
+    comment: Administra el dominio talento.
+  - external_key: HCM_COORD_TALENTO_MX
+    external_kind: app_role
+    role: hcm_coord_talento
+    comment: Consulta el dominio talento.
+
+  - external_key: HCM_ADM_RECLUTAMIENTO_MX
+    external_kind: app_role
+    role: hcm_adm_reclutamiento
+    comment: Administra el dominio reclutamiento.
+  - external_key: HCM_COORD_RECLUTAMIENTO_MX
+    external_kind: app_role
+    role: hcm_coord_reclutamiento
+    comment: Consulta el dominio reclutamiento.
+
+  - external_key: HCM_ADM_CAPACITACION_MX
+    external_kind: app_role
+    role: hcm_adm_capacitacion
+    comment: Administra el dominio capacitacion.
+  - external_key: HCM_COORD_CAPACITACION_MX
+    external_kind: app_role
+    role: hcm_coord_capacitacion
+    comment: Consulta el dominio capacitacion.
+
+  - external_key: HCM_ADM_RELLAB_MX
+    external_kind: app_role
+    role: hcm_adm_rellab
+    comment: Administra el dominio relaciones_laborales.
+  - external_key: HCM_COORD_RELLAB_MX
+    external_kind: app_role
+    role: hcm_coord_rellab
+    comment: Consulta el dominio relaciones_laborales.
+
+  - external_key: HCM_ADM_IA_MATRIX_MX
+    external_kind: app_role
+    role: hcm_adm_ia_matrix
+    comment: Administra Matrix RH, su gobierno e ingesta autorizada.
+  - external_key: HCM_COORD_IA_MATRIX_MX
+    external_kind: app_role
+    role: hcm_coord_ia_matrix
+    comment: Consulta gobierno y operacion de Matrix RH.
+
+  - external_key: HCM_ADM_DOCEMPRESARIAL_MX
+    external_kind: app_role
+    role: hcm_adm_docempresarial
+    comment: Administra el dominio documentacion_empresarial.
+  - external_key: HCM_COORD_DOCEMPRESARIAL_MX
+    external_kind: app_role
+    role: hcm_coord_docempresarial
+    comment: Consulta el dominio documentacion_empresarial.

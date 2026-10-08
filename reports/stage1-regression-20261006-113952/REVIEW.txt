@@ -1,0 +1,208 @@
+VALIDACION DE REGRESIONES Y AJUSTE DE PROMPTS DE ETAPA 1
+
+Resultado: las nueve suites solicitadas se ejecutaron antes y despues del
+ajuste. No cambio el resultado de ningun caso: 266 aprobadas, 1 fallida,
+0 omitidas y 0 errores en ambas ejecuciones. Ademas, pytest 9 reporta 40
+subpruebas aprobadas de unittest; no son 40 pruebas adicionales recolectadas.
+La suite NO queda completamente verde. El fallo previo se documenta abajo.
+
+1. Restauracion verificada
+
+Origen utilizado:
+C:\Users\AH015398\Downloads\matrix-rh-1.3.0.zip
+SHA256 del ZIP: 5b8660956631f0b2dd7f1a07137272558eadcf2e569362101fb0f6afeb97fa63
+
+backend/tests/conftest.py
+Miembro: matrix-rh-1.3.0/backend/tests/conftest.py
+Hash esperado = hash de bytes dentro del ZIP = hash restaurado:
+a51835a5d178b83eabc1f991220d8f1459de8b9bcd72a917718c57e335433abc
+
+frontend/playwright.visual.config.ts
+Miembro: matrix-rh-1.3.0/frontend/playwright.visual.config.ts
+Hash esperado = hash de bytes dentro del ZIP = hash restaurado:
+b53a34a84531422eb699836b0b1441a868f8eda7f7ae9c249f0d82c8a73e1c01
+
+No se reconstruyeron fixtures. Las entradas de estos dos archivos en el
+manifiesto no se modificaron. Otro ZIP encontrado en C:\wamp64\www tambien
+contenia bytes compatibles; el ZIP de 22 bytes en Descargas estaba vacio.
+Detalles: archive-verification.json y restored-files.json.
+
+2. Cambios de codigo
+
+backend/app/agents/prompts.py:
+- Centraliza la instruccion de responder primero, explicar brevemente y
+  ampliar solo por solicitud o por condiciones/excepciones pertinentes.
+- Evita presentaciones repetidas y contenido ajeno a lo preguntado.
+- Distingue condicion sindical, contratacion y empresa/division; para
+  "mis prestaciones" solicita el dato minimo faltante y evita confirmar
+  un paquete personal compuesto por beneficios de distintas poblaciones.
+- Exige identificar el anio documentado y separar periodos sin asumir vigencia.
+- Separa datos declarados por el usuario de reglas documentadas.
+- Retira el ejemplo previo con dias de vacaciones escritos a mano.
+- Conserva el contrato de citas. En modo extractivo se seleccionan unidades
+  pertinentes completas; la brevedad no permite truncarlas.
+- Conserva la respuesta de capacidades y los constructores de bloques.
+
+SHA256SUMS.txt:
+Solo cambio la entrada de prompts.py. Hash final:
+b5c56aa2eb505b202101c66d420a1d20474090b8a98b411bed5446cd7c13dc8d
+
+El diff completo de codigo, restauracion de pruebas y manifiesto esta en
+changes.patch. validation-tools.patch contiene los scripts auxiliares nuevos
+de preparacion, ejecucion y comparacion. No se cambiaron aserciones de las
+suites existentes ni los 30 casos de test_conversation_policy_stage1.py.
+
+3. Preparacion y comandos
+
+Directorio de trabajo: C:\wamp64\www\matrix-rh-1.3.0
+Directorio de informe: reports\stage1-regression-20261006-113952
+
+El uv instalado (0.11.33) no pudo iniciarse dentro del aislamiento; se ejecuto
+con autorizacion fuera de el. Se inspeccionaron --version y sync --help.
+La instalacion se hizo con prepare-tests.ps1 (codigo de salida 0):
+
+UV_PROJECT_ENVIRONMENT=<informe>\test-env
+UV_CACHE_DIR=<informe>\uv-cache
+UV_PYTHON_DOWNLOADS=never
+uv sync --project <raiz>\backend --frozen --extra dev --no-install-project
+  --python C:\Users\AH015398\AppData\Local\Programs\Python\Python312\python.exe
+  --no-python-downloads --link-mode copy --no-progress
+
+Se instalaron 96 paquetes del lock, incluido pytest 9.1.1. No se regenero
+uv.lock, no se cambio pyproject.toml ni se instalo nada en el .venv operativo.
+Comando y salida completos: preparation-command.json, preparation.log y
+preparation-result.json. --no-install-project evita generar metadatos de
+instalacion dentro del backend; se importa el codigo real desde backend.
+
+Ejecuciones desde la raiz (se muestran en una sola linea cada una):
+reports\stage1-regression-20261006-113952\test-env\Scripts\python.exe -B reports\stage1-regression-20261006-113952\run-regressions.py before
+reports\stage1-regression-20261006-113952\test-env\Scripts\python.exe -B reports\stage1-regression-20261006-113952\run-regressions.py after
+
+El runner invoca pytest.main con las nueve suites originales, --tb=short,
+-ra, -p no:cacheprovider, -p pytest_asyncio.plugin, --color=no, y rutas de
+--basetemp, --log-file y --junitxml dentro del informe. Cada comando exacto,
+interprete y hash de las suites esta en before/command.json y after/command.json.
+Ambas ejecuciones validas devolvieron codigo 1 debido al mismo fallo.
+
+Solo en el proceso de pruebas, Settings deja de leer el .env operativo;
+APP_ENV, secreto sintetico y rutas SQLite/Qdrant/adjuntos/temporales apuntan
+al informe. Las conexiones socket estan bloqueadas; los archivos .env, data
+y var operativos no pueden abrirse. Las escrituras se limitan al informe.
+Se conservaron los defaults declarados de modelos e inferencia y los dobles
+ya presentes en cada prueba. El runner no sustituye PolicyEngine, Retriever
+ni las fixtures restauradas. Ambas ejecuciones registraron cero violaciones
+de aislamiento. No se iniciaron ni detuvieron servicios.
+
+4. Resultados antes / despues (aprobadas, fallidas, omitidas)
+
+test_conversation_policy_stage1.py   30,0,0 / 30,0,0
+test_model_policy.py                 33,0,0 / 33,0,0
+test_rh_routing.py                   38,1,0 / 38,1,0
+test_routing_timeouts_127.py          52,0,0 / 52,0,0
+test_memory_and_agent.py             18,0,0 / 18,0,0
+test_answer_contract_127.py          21,0,0 / 21,0,0
+test_authorization.py               47,0,0 / 47,0,0
+test_chat_service.py                 8,0,0 / 8,0,0
+test_rag_pipeline_isolated.py        19,0,0 / 19,0,0
+TOTAL                             266,1,0 / 266,1,0
+
+Detalles: before/pytest.log, after/pytest.log, ambos junit.xml,
+test-reports.json y results.json. comparison.json no contiene cambios de
+resultado por nodeid. El primer contador auxiliar incluia subpruebas en las
+aprobadas; before/results.json conserva los contadores brutos y la correccion
+por nodeid, consistente con el resumen original de pytest.
+
+5. Clasificacion de fallos y reproduccion
+
+Preexistente respecto de ESTE ajuste de prompts:
+tests/unit/test_rh_routing.py:113
+test_rh_without_evidence_abstains_before_generation
+Parametro: "¿Cuánto se entrega por el apoyo de casamiento?"
+
+La prueba compara literalmente con INSUFFICIENT_ANSWER. El flujo actual
+devuelve UNKNOWN_BENEFIT_ANSWER, que pide nombre completo o documento.
+La causa esta en ModelPolicy.is_benefit_reference (model_policy.py:342),
+su patron _DEFINITE_BENEFIT_REFERENCE (linea 130), y la seleccion de respuesta
+de Orchestrator._finish_no_evidence (orchestrator.py:638): "el apoyo" coincide.
+Ocurre antes de llamar al modelo y no depende de las instrucciones ajustadas.
+
+La expectativa es posiblemente incompatible con el comportamiento aprobado
+de pedir precision sin fuentes. Tambien requiere revisar si esa peticion
+es adecuada cuando el usuario ya describe el apoyo y pregunta su importe.
+No se declara incorrecta la prueba ni se modifica ninguna de las dos opciones.
+La revision de esa decision esta fuera del alcance autorizado de esta tarea.
+
+Reproduccion aislada, ejecutada (10 aprobadas, 1 fallida, salida 1):
+reports\stage1-regression-20261006-113952\test-env\Scripts\python.exe -B reports\stage1-regression-20261006-113952\run-regressions.py repro tests/unit/test_rh_routing.py::test_rh_without_evidence_abstains_before_generation
+Detalles en repro/. Las repeticiones crean directorios nuevos y conservan logs.
+
+Regresiones introducidas por el cambio de prompts: ninguna observada en las
+nueve suites; el conjunto de resultados antes/despues es identico.
+
+Problemas de preparacion, resueltos antes de establecer la referencia:
+- preparation-attempt-1: salida 1; se bloqueo TemporaryFile fuera del informe.
+  Se dirigieron TMP y TEMP al almacenamiento aislado.
+- preparation-attempt-2: pytest salida 4; al importar SQLAlchemy, platform.py
+  abria el dispositivo NUL. Se permitio ese dispositivo, no archivos externos.
+- preparation-attempt-3: pytest salida 3; el manejador de logging de pytest
+  usaba la ruta absoluta de NUL. Se fijo --log-file dentro del informe.
+En ninguno de estos tres intentos llegaron a ejecutarse casos de prueba.
+
+6. Tipo y limites de la validacion
+
+Flujo: clasificacion, seguimiento contextual, cambio de tema, respuestas
+sin evidencia y publicacion con reautorizacion. Algunas suites ya contienen
+dobles de servicios/modelo; se conservaron sin agregar mocks para aprobarlas.
+
+Autorizacion/recuperacion: test_authorization usa el PolicyEngine real con
+registros sinteticos; test_rag_pipeline_isolated usa Retriever y VectorStore
+reales con Qdrant en memoria y embeddings sinteticos definidos por la suite.
+No se valida relevancia semantica de embeddings reales ni fuentes operativas.
+
+Construccion de prompts: ademas de las suites, inspect-prompts.py compara
+18 variantes de constructores reales contra el respaldo. Conservan exactamente
+los mensajes de usuario/evidencia/memoria e identificadores; el bloque de
+estilo y el de aplicabilidad aparecen una vez. Las capacidades y el resumen
+de dialogo permanecen iguales. Salida 0; detalles en prompt-inspection.json
+y ejemplos sinteticos de mensajes en prompt-snapshots.json.
+
+Comando de esa comprobacion:
+reports\stage1-regression-20261006-113952\test-env\Scripts\python.exe -B reports\stage1-regression-20261006-113952\inspect-prompts.py
+
+Ruff: test-env\Scripts\ruff.exe check backend/app/agents/prompts.py --no-cache
+Resultado: All checks passed! Salida 0.
+
+No se ejecuto Ollama. No se declara validada la calidad, concision o correccion
+semantica de respuestas reales por examinar las instrucciones. La prueba real
+de la pregunta de pensiones sigue pendiente y NO se declara resuelta.
+El modo extractivo sigue exigiendo unidades completas; no se altero grounding
+para aceptar respuestas mas breves. No se ejecutaron pruebas visuales del frontend.
+
+7. Integridad y discrepancias restantes
+
+Desde backend se ejecuto el preflight oficial:
+..\.venv\Scripts\python.exe -B -S -m scripts.preflight --integrity-only --require-manifest
+Salida 0. integridad_codigo OK, version 1.3.1; PREFLIGHT OK.
+
+Persisten, sin cambiar sus bytes ni sus entradas de manifiesto, ocho README:
+.github/README.md
+README.md
+backend/README.md
+data/knowledge/README.md
+data/knowledge/especializadas/README.md
+docs/README.md
+infrastructure/README.md
+var/README.md
+
+El preflight comprueba el subconjunto de codigo operativo; no afirma que esos
+README coincidan con el manifiesto. final-verification.json registra las ocho
+discrepancias restantes y cero discrepancias ajenas nuevas.
+Los 6533 archivos del .venv operativo conservaron sus hashes. Se verificaron
+tambien .env, backend/pyproject.toml, backend/uv.lock y todos los archivos del
+manifiesto ajenos a las tres modificaciones/restauraciones autorizadas.
+model_policy.py, orchestrator.py, retriever.py, knowledge_agent.py, grounding.py
+y numeric_grounding.py permanecen intactos respecto del comienzo de esta tarea.
+
+Respaldo e instrucciones de recuperacion: backup/ y RESTORE.txt.
+No se creo un ZIP ni una copia completa del proyecto. No se avanzo a una
+segunda etapa de recuperacion documental.

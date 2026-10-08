@@ -1,0 +1,34 @@
+{
+  "network": "External Node TCP connections and all UDP sends blocked; Vitest IPC/loopback allowed; component tests mock API",
+  "phase": "baseline",
+  "results": [
+    {
+      "name": "test",
+      "exit_code": 0,
+      "seconds": 132.4084353,
+      "command": "npm.cmd test -- --maxWorkers=2 --no-file-parallelism --reporter=json --outputFile=test-results.json"
+    },
+    {
+      "name": "typecheck",
+      "exit_code": 0,
+      "seconds": 26.2870902,
+      "command": "npm.cmd run typecheck"
+    },
+    {
+      "name": "lint",
+      "exit_code": 0,
+      "seconds": 26.144945,
+      "command": "npm.cmd run lint"
+    },
+    {
+      "name": "build",
+      "exit_code": 0,
+      "seconds": 18.5059138,
+      "command": "npm.cmd run build"
+    }
+  ],
+  "lock_sha256": "2D0201637D190218D52C072CD4DDCFBDDEDAFCAE8DCF2D303299B947F869E862",
+  "source": "C:\\wamp64\\www\\matrix-rh-1.3.0\\reports\\mejoras-20261007\\before\\frontend",
+  "node": "v24.14.0",
+  "run": "C:\\wamp64\\www\\matrix-rh-1.3.0\\reports\\mejoras-20261007\\frontend-baseline-1791403079276"
+}

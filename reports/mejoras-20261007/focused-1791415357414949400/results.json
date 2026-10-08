@@ -1,0 +1,55 @@
+{
+  "exit_code": 1,
+  "collected": 32,
+  "passed": 26,
+  "failed": 6,
+  "errors": 0,
+  "skipped": 0,
+  "duration_seconds": 1.798,
+  "isolation_violations": [],
+  "isolation_violation_events": [],
+  "failures": [
+    {
+      "nodeid": "tests/unit/test_current_validity_contract.py::test_vigente_in_salary_calculation_basis_does_not_assert_policy_is_current[13 d\\xedas de sueldo nominal vigente]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.0002886000002035871,
+      "detail": "tests\\unit\\test_current_validity_contract.py:87: in test_vigente_in_salary_calculation_basis_does_not_assert_policy_is_current\n    assert not unverified_current_claim(statement)\nE   AssertionError: assert not True\nE    +  where True = unverified_current_claim('Respecto al bono de ejemplo, es de 13 d\u00edas de sueldo nominal vigente, se paga a m\u00e1s tardar el 19 de diciembre, y para...no trabajaron el a\u00f1o completo, se paga proporcionalmente el periodo laborado, con una exenci\u00f3n de 28 UMAS de impuesto.')"
+    },
+    {
+      "nodeid": "tests/unit/test_current_validity_contract.py::test_vigente_in_salary_calculation_basis_does_not_assert_policy_is_current[trece d\\xedas de sueldo vigente]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.0002494000000297092,
+      "detail": "tests\\unit\\test_current_validity_contract.py:87: in test_vigente_in_salary_calculation_basis_does_not_assert_policy_is_current\n    assert not unverified_current_claim(statement)\nE   AssertionError: assert not True\nE    +  where True = unverified_current_claim('Respecto al bono de ejemplo, es de trece d\u00edas de sueldo vigente, se paga a m\u00e1s tardar el 19 de diciembre, y para quie...no trabajaron el a\u00f1o completo, se paga proporcionalmente el periodo laborado, con una exenci\u00f3n de 28 UMAS de impuesto.')"
+    },
+    {
+      "nodeid": "tests/unit/test_current_validity_contract.py::test_vigente_in_salary_calculation_basis_does_not_assert_policy_is_current[2 meses de salario base vigente]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.00022480000188807026,
+      "detail": "tests\\unit\\test_current_validity_contract.py:87: in test_vigente_in_salary_calculation_basis_does_not_assert_policy_is_current\n    assert not unverified_current_claim(statement)\nE   AssertionError: assert not True\nE    +  where True = unverified_current_claim('Respecto al bono de ejemplo, es de 2 meses de salario base vigente, se paga a m\u00e1s tardar el 19 de diciembre, y para q...no trabajaron el a\u00f1o completo, se paga proporcionalmente el periodo laborado, con una exenci\u00f3n de 28 UMAS de impuesto.')"
+    },
+    {
+      "nodeid": "tests/unit/test_current_validity_contract.py::test_vigente_in_salary_calculation_basis_does_not_assert_policy_is_current[un mes del salario diario integrado vigente]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.00021750000087195076,
+      "detail": "tests\\unit\\test_current_validity_contract.py:87: in test_vigente_in_salary_calculation_basis_does_not_assert_policy_is_current\n    assert not unverified_current_claim(statement)\nE   AssertionError: assert not True\nE    +  where True = unverified_current_claim('Respecto al bono de ejemplo, es de un mes del salario diario integrado vigente, se paga a m\u00e1s tardar el 19 de diciemb...no trabajaron el a\u00f1o completo, se paga proporcionalmente el periodo laborado, con una exenci\u00f3n de 28 UMAS de impuesto.')"
+    },
+    {
+      "nodeid": "tests/unit/test_current_validity_contract.py::test_vigente_in_salary_calculation_basis_does_not_assert_policy_is_current[13 d\\xedas de su salario m\\xednimo general vigente]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.00021579999884124845,
+      "detail": "tests\\unit\\test_current_validity_contract.py:87: in test_vigente_in_salary_calculation_basis_does_not_assert_policy_is_current\n    assert not unverified_current_claim(statement)\nE   AssertionError: assert not True\nE    +  where True = unverified_current_claim('Respecto al bono de ejemplo, es de 13 d\u00edas de su salario m\u00ednimo general vigente, se paga a m\u00e1s tardar el 19 de diciem...no trabajaron el a\u00f1o completo, se paga proporcionalmente el periodo laborado, con una exenci\u00f3n de 28 UMAS de impuesto.')"
+    },
+    {
+      "nodeid": "tests/unit/test_current_validity_contract.py::test_salary_basis_keeps_numeric_citation_and_personal_eligibility_checks",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.00041030000284081325,
+      "detail": "tests\\unit\\test_current_validity_contract.py:116: in test_salary_basis_keeps_numeric_citation_and_personal_eligibility_checks\n    assert report.reason == \"afirmacion numerica sin respaldo en sus fuentes citadas\"\nE   AssertionError: assert 'vigencia act...no acreditada' == 'afirmacion n...entes citadas'\nE     \nE     - afirmacion numerica sin respaldo en sus fuentes citadas\nE     + vigencia actual no acreditada"
+    }
+  ]
+}

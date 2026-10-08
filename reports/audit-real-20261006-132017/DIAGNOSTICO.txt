@@ -1,0 +1,241 @@
+AUDITORÍA MATRIX RH — 6 de octubre de 2026
+Proyecto: C:\wamp64\www\matrix-rh-1.3.0
+ESTADO: diagnóstico de código/documentos completado; captura real pendiente del
+reinicio por el usuario y creación de conversación. No se ha armado el control.
+Este estado debe actualizarse con las capturas; no acredita ejecución completa.
+
+Conclusión provisional
+
+La evidencia normativa de retiro sí existe en el PDF actual y el extractor real
+la conserva completa. Se demostraron defectos del manejo de antecedentes y del
+contrato de validación numérica mediante llamadas a funciones reales, sin mocks
+ni inferencia. No es posible atribuir todavía el rechazo histórico de pensiones
+a uno de ellos: los logs anteriores carecen de consulta, fragmentos enviados y
+borradores. La primera capa observada que rechaza aquellas solicitudes es la
+validación; eso NO demuestra que sea la primera capa que produjo el error.
+
+La respuesta publicada de prestaciones asocia incorrectamente condiciones de
+vales con un encabezado de bono. La del Plan Libre convierte una denominación
+histórica en «nombre actual». El verificador acepta ambas al reproducirlo con
+sus fuentes citadas extraídas del corpus actual: valida citas y cifras, no esas
+relaciones semánticas ni vigencia. El payload original de esas solicitudes no
+está capturado; atribuir la mezcla exclusivamente al modelo sigue pendiente.
+
+Tabla de hallazgos y propuestas — NO se aplicaron cambios funcionales
+
+| Hallazgo | Evidencia | Causa | Archivo y función | Cambio mínimo propuesto | Validación | Limitaciones |
+| --- | --- | --- | --- | --- | --- | --- |
+| Preguntas autosuficientes heredan antecedentes | policy-probes.json: pensiones con documento/año hereda prestaciones y Plan Libre; repetir la pregunta la duplica; becas hereda pensiones | _uses_previous_topic acepta la referencia definida a beneficio antes de descartar una pregunta independiente | backend/app/llm/model_policy.py: contextual_reference, _uses_previous_topic; backend/app/agents/orchestrator.py: handle_chat | Priorizar una pregunta autosuficiente con documento/fecha/beneficio nuevo; deduplicar el antecedente idéntico; mantener solo el ancla necesaria para elipsis | Documento/año explícitos tras otro beneficio; repetición; «¿Y con ocho años?»; cambio general independiente | Defecto de software demostrado. Su efecto sobre ranking/rechazo real requiere comparar ambas capturas |
+| Regla y tabla presentes y extracción fiel en la página decisiva | extraction-current.json y pension-9.png: regla anterior/después del 1 abril 2016 y siete filas en página 9/chunk 8 | No se observó pérdida en el extractor actual de esta página | backend/app/ingestion/loaders.py: extract_pdf; backend/app/rag/chunking.py: chunk_blocks | Ningún cambio del extractor demostrado como necesario en este caso | Regresión que conserve encabezado, dos reglas y filas en la misma unidad y no mezcle páginas | No implica que ese chunk estuviera indexado/recuperado/enviado en el turno histórico |
+| SQL consistente; contenido efectivo del índice no certificado | documents-current.json: PDF y SQL mismo SHA, indexed, 11 chunks, versión 7, generación activa; sin duplicados por ruta; embedding-metadata-check.json coincide | Sin evidencia actual de ingesta defectuosa; SQL por sí solo no prueba payloads | backend/app/ingestion/service.py: _index_document; reconciler.py; backend/app/rag/index_manifest.py: active_filter, visible_candidates | Primero observar metadata de la misma solicitud usando el backend activo; no reindexar | Comparar document_id/generación/huella/hash por chunk; contar generaciones visibles; confirmar texto de página 9 recuperado contra extracción actual | No se abrió Qdrant embedded ni se inventarió físicamente; duplicados huérfanos y metadata vectorial completa pendientes |
+| Candidatos y descarte interno de ranking no registrados | rag.retrieved guarda fetched/after_dedup/returned/best_score; la traza existente empieza después de la selección final | No hay identificación por etapa; documento/año explícitos se usan solo semánticamente | backend/app/rag/retriever.py: retrieve, deduplicate, maximal_marginal_relevance; vector_store.py: search | Solo si la tabla falta en retrieved: proponer traza acotada de candidatos permitidos y etapa de exclusión, antes de cambiar recuperación | Identificar si se pierde por filtro/umbral/fetch, dedup o MMR; comparar consulta nueva/historial y fuentes | No atribuir el fallo a top-k, umbral, caracteres #U00d3N o MMR sin esos datos |
+| Dedup normal cruza documentos | deduplicate(preserve_sources=False) usa clave vacía para todas las fuentes, aunque docstring habla de mismo documento | Texto idéntico/substring de otro documento puede desplazar procedencia/periodo | backend/app/rag/retriever.py: deduplicate | Si se confirma incidencia, conservar identidad/periodo en clave de deduplicación; no ampliar categorías | Dos documentos/años con texto igual: preservar la fuente solicitada y sus condiciones | Riesgo de software observado; no se demostró pérdida de página 9 por este motivo |
+| Presupuesto o prompt efectivo todavía pendientes en producción | _pack_answer_context elimina memoria primero y luego selecciona unidades completas; no corta el system. build_answer_messages separa memoria/evidencia/pregunta | No hay captura histórica del packing/payload; no se puede culpar al límite | backend/app/agents/knowledge_agent.py: _pack_answer_context, synthesize; prompts.py: build_answer_messages; llm/ollama_client.py: chat | Reutilizar la instrumentación existente; comparar hashes recuperado → empaquetado → payload inicial/reintento | Coincidencia de IDs/texto; tabla completa en ambos payloads; style_present/scope_present y system SHA exactos | Extracto diagnóstico ausente puede ser fallo del parser, no pérdida real |
+| Validador mezcla procedencias de números | numeric-probes.json: 70% válido; año de metadata 2022, antigüedad declarada y 7.5 años rechazados contra texto de página 9 | verify_grounding construye fuentes solo con e.text; numeric_claim_supported no recibe metadata ni datos declarados ni derivaciones | backend/app/rag/grounding.py: verify_grounding, _verify_cited_answer; numeric_grounding.py: numeric_claim_supported | Contrato explícito y acotado de procedencia: norma citada, metadata del mismo documento, supuesto declarado y derivación comprobable; no unir todos los números de la pregunta al allowlist | Año del archivo como fecha documental permitido sin afirmar vigencia; año inventado rechazado; supuesto condicional vs elegibilidad afirmada; cifra inventada incluso con abstención rechazada | Los rechazos se demostraron con funciones reales, pero no se conoce qué afirmación histórica fue rechazada |
+| Un porcentaje de otra fila puede pasar | numeric-probes.json: «tramo 7–7.99 ... 80%» devuelve true, aunque la fila dice 70 | _table_percentages devuelve un conjunto de porcentajes y pierde vínculo intervalo→valor; no realiza cálculo | backend/app/rag/numeric_grounding.py: _table_percentages, numeric_claim_supported | Conservar filas/encabezado/regla y verificar la relación entre intervalo, dato declarado y resultado, de forma genérica; no hardcodear porcentajes corporativos | Tabla sintética: fronteras, fila correcta e incorrecta; fecha de ingreso antes/en/después del corte | El contrato actual declara que no comprueba cálculos ni verdad semántica; no basta relajar el rechazo de 7.5 |
+| Reintento cambia el tipo de fallo, no demuestra corrección | logs 12:24: numérico→orientación general; logs 13:15: orientación general→numérico | _regenerate desactiva orientación solo cuando el primer fallo ya es de procedencia; una corrección numérica todavía permite sección general | backend/app/agents/knowledge_agent.py: _regenerate, _retry_note; backend/app/common/answers.py: split_answer_sections | Dar al reintento el tipo exacto de afirmación/procedencia fallida y conservar norma+tabla; impedir reclasificar una aplicación documental como conocimiento general | Primer borrador con dato declarado, corrección que conserva regla y cita sin mezclar secciones; segunda validación trazable | Sin borradores anteriores no puede afirmarse qué frase se movió de sección; no retirar el validador |
+| Condiciones de vales bajo encabezado de bono | requests-current.json 027ba3a7… cita 2020#10 con encabezado «Bono…»; beneficios-11.png/extracción dicen Vales; 2020#20 corresponde a bono | Asociación semántica incorrecta publicada; verificador solo controla IDs/cifras; la extracción actual conserva títulos separados | backend/app/agents/knowledge_agent.py: synthesize; backend/app/agents/prompts.py: SYNTHESIS_SYSTEM_POLICY; backend/app/rag/grounding.py: _verify_cited_answer | Mantener relación explícita entre beneficio, población, condiciones y cita en cada unidad; añadir comprobación de esa relación con prueba negativa | Dos beneficios sintéticos con cifras coincidentes: intercambiar títulos debe fallar, aun con citas válidas | Payload histórico no disponible: origen preciso generación vs evidencia indexada pendiente; no modificar chunks por suposición |
+| «Nombre actual», repetición y exceso de alcance | requests-current.json d3552d47… repite 2007 y agrega contribuciones; prestaciones.pdf p5 dice renombrado en 2007, sin prueba de vigencia actual | Inferencia temporal sin respaldo y falta de observancia de brevedad; verificador no contrasta actualidad ni pertinencia | backend/app/agents/prompts.py: RESPONSE_STYLE_POLICY, DOCUMENT_SCOPE_POLICY; knowledge_agent.py: synthesize; grounding.py: _verify_cited_answer | Medir observancia del prompt efectivo; reforzar solo la regla general fallida y verificar temporalidad, sin respuestas de beneficios codificadas | Fuente histórica sintética: describir denominación documentada sin «actual/vigente»; definición breve sin repetir ni añadir aportaciones no solicitadas | Las reglas pertinentes ya existen. Su presencia en archivo no prueba su recepción/obediencia histórica |
+| Instrucciones y verificación no tienen el mismo contrato | DOCUMENT_SCOPE_POLICY admite aclaraciones/preguntas sin cita; _verify_cited_answer exige cita a toda cola documental y carece de procedencia para supuesto/metadata | Contrato de aplicación condicional más amplio que el contrato verificado | prompts.py: DOCUMENT_SCOPE_POLICY; grounding.py: _verify_cited_answer | Definir clases acotadas de aclaración no factual y aplicación condicional, manteniendo rechazo de afirmaciones corporativas sin fuente | Pregunta de precisión segura; misma pregunta seguida de cifra inventada debe rechazarse | No admitir cualquier frase que diga «no sé» o cualquier número de la pregunta |
+
+Ejecución observada y límites de captura
+
+Al inicio, puerto 8000 atendido por PID 32116 (padre 42764), Python 3.12,
+proyecto actual. Inicio del proceso 13:10:37; app.starting 13:10:40. Los archivos
+prompts.py (12:08:40) e instrumentación/agente (12:45) preceden ese inicio.
+Versión declarada y verificada: 1.3.1; el directorio se llama matrix-rh-1.3.0.
+El log backend-20261006-131037.log documenta cierre a las 13:24:22. El auditor
+no inició/detuvo servicios. El usuario indicó que reiniciaría Matrix. El orden
+de timestamps no reemplaza verificar las políticas en el payload efectivo.
+
+Configuración declarada (declared-config.json): modo cited; conocimiento general
+permitido; Ollama local, gemma4:latest en ambos perfiles; FAST num_ctx=8192,
+num_predict=1536; temperature inicial 0.1/reintento 0.03; top_p=0.9; top_k no
+fijado; thinking=auto que el adaptador traduce a false; keep_alive=15m; prefijo
+system vacío. Debe distinguirse esto de las opciones efectivamente enviadas.
+No se propone cambiar ninguna de ellas sin evidencia de insuficiencia.
+
+GET /api/tags (solo inventario, ninguna generación) informó:
+gemma4:latest dc35e8d9c6061baa6f0fa870975ab6932e2542b579b13ea0f199fa4bb7300c9c
+embeddinggemma:latest 85462619ee721b466c5927d109d4cb765861907d5417b9109caebc4e614679f1
+La revisión de embeddings observada coincide con el pin. La huella calculada
+por indexing_fingerprint con ese digest es la registrada en SQL:
+803a5a0ba9cfafbbd139c7614967d4e77540fbca2b04bc1da6da3f4c018649e7.
+768 dimensiones declaradas; no se midieron vectores ni configuración de colección.
+
+En cited, answer_system_policy usa SYNTHESIS_SYSTEM_POLICY con brevedad,
+población/fecha y aplicación condicional. La orden de copiar unidades completas
+pertenece a extractive; «cubrir principio a fin» solo al resumen de documento.
+No corresponde imputar esas órdenes a esta ruta documental sin una captura.
+La sección general es opcional; la instrucción final dice que no es necesaria.
+Los reintentos por cobertura exhaustiva se activan solo en extractive/resumen;
+_retry_note conserva además una instrucción de cobertura para otros fallos con
+coverage bajo. En los motivos numérico/procedencia hay ramas anteriores propias.
+El proveedor copia mensajes y antepone prefijo solo si existe. Una regeneración
+por finalización incompleta agrega una instrucción breve sin borrar el system.
+No confundir ese reintento de transporte con la regeneración del agente.
+
+Casos históricos correlacionados (logs + respuesta SQL del mismo request_id)
+
+Usuario activo y conversación propia verificados con PolicyEngine; alcance
+actual coincidente con authorization_scope; SELECT-only guard, sin commits.
+
+* 027ba3a7-00f6-449b-bfd7-89c6968ce14f, 13:11:58: «Explícame mis prestaciones.»
+  Intent documental; respuesta publicada mezcla vales/bono. answer_basis=mixed,
+  grounded público=false por mezclar secciones; audit result_status=ok.
+* d3552d47-aa3c-44d5-aa84-e073f1fd0ca4, 13:13:00: «¿Qué es el Plan Libre?»
+  Intent documental; answer_basis=documented; grounded público=true; audit ok.
+  Ese true acredita el contrato limitado, no vigencia ni exactitud semántica.
+* 61a95692-0e10-4b41-8be2-6a388569333c, 13:14:57, y
+  3df7c529-421d-4733-a077-bede438469c3, 13:15:13: pregunta de pensiones completa.
+  Intent documental. Primer motivo: «orientacion general atribuida a fuentes
+  documentales». agent.answer_validation_failed final: «afirmacion numerica sin
+  respaldo en sus fuentes citadas». Seis evidencias, una cita final, cero citas
+  inválidas; gemma4, sin escalado; respuesta publicada de validación fallida.
+* El orden inverso pertenece a 8f2c5e7e-8d4e-4ac2-8c08-4458fe4862ce y
+  de7c8cf7-6000-4629-869f-9a8b9cf513ae, 12:24, en el log anterior. No fusionar
+  ambos pares como una sola ejecución. Allí el reintento numérico aún permitía
+  sección general. No se conservaron los borradores exactos.
+
+Los registros anteriores NO incluyen consulta de embedding, candidatos/IDs
+seleccionados de respuestas fallidas, packing, payload ni borradores. Hay
+configuración y contadores, pero no se puede reconstruir una traza histórica
+completa. La instrumentación de answer_diagnostics.py se reutilizará en el
+turno enviado por el usuario con scope exacto, pregunta hash, ocho fuentes y
+caducidad. Ninguna respuesta simulada sustituye esa captura.
+
+PDF actual y semántica de la tabla
+
+Archivo: data/prestaciones/PLATICA DE PLAN DE PENSIONES POR JUBILACI#U00d3N DICIEMBRE 2022.pdf
+SHA-256: efb4894c8c3caf3bb42335bb342f2618a19cc6ea086692c69c99c97f9d4368b2.
+11 páginas físicas → 11 chunks. Página 9 → chunk_index=8 → source_id terminado
+en .pdf#8; section y page_or_sheet son «pagina 9», no un título semántico.
+Texto de chunk SHA-256 b3cfcc9e8f4c3ad3edac1a7b26abb64d557db0d65e6abe80c6300d11bee5f6df;
+el saneamiento conserva esa misma huella. Regla, encabezado y tabla no se separan.
+El PDF se extrae con pypdf.extract_text a través del worker de ingesta; este
+análisis llamó ese extractor y chunk_blocks directamente sin ingestar.
+
+La revisión visual muestra: antes del 1 abril 2016, básica al 100% y las dos
+complementarias por tabla; desde esa fecha, las tres por tabla. Filas:
+0–4.99→0; 5–5.99→50; 6–6.99→60; 7–7.99→70; 8–8.99→80;
+9–9.99→90; 10 en adelante→100. Encabezados Antigüedad / %. No se observó nota
+oculta o excepción perdida en esta página. La salida textual conserva filas y
+columnas en líneas, pero no celdas tipadas; el parser numérico sí reconoce el %.
+
+Ejemplo de interpretación documental, NO respuesta comprobada de Ollama ni
+confirmación de elegibilidad/vigencia: 7 años + 6/12 = 7.5 años, dentro de
+7–7.99; el ingreso declarado de mayo de 2016 es posterior al corte. Bajo esas
+premisas, la tabla histórica arroja 70% para las tres aportaciones consultadas.
+Las páginas 5–7 tratan aportaciones periódicas: no sustituir esta tabla de
+portabilidad por porcentajes mensuales. Diciembre de 2022 proviene del nombre
+del archivo; no está en el texto de página 9 ni confirma vigencia actual.
+Página 10 trata transferencia por renuncia voluntaria y condiciones adicionales;
+no atribuirla sin distinguirla de la pregunta específica sobre porcentajes.
+
+Prestaciones y Plan Libre: límites del contraste
+
+PLATICA DE PRESTACIONES JUNIO 2020.pdf, SHA
+2460cfc0113a84cb1eeb1ba76a2c630c86daf1145f1d6a7bdb36034ad833f36c:
+página física 11/chunk10 = Vales de Despensa; página física 21/chunk20 = Bono
+por Desempeño Extraordinario (el pie impreso visible es 2, no 21). Se citan
+páginas físicas, por lo que ese pie no es corrupción del índice. Los encabezados
+se conservan en texto. La portada dice MAYO 2020 aunque el nombre dice JUNIO;
+se debe distinguir metadata de fecha impresa, sin asumir cuál prueba vigencia.
+prestaciones.pdf p5/chunk4 conserva «renombrado ... 2007», no prueba «actual».
+Su metadata dentro del texto es contenido documental no confiable, no autoridad
+superior al system. En p1 agrupa condición sindical/planta/eventual; el prompt
+ordena diferenciarlas. Ese origen puede inducir agrupación, pero no justifica
+atribuir todos los beneficios al usuario ni prueba que causó cada salida.
+
+Permisos y aislamiento
+
+MemoryService.build_context exige dueño, filtra categorías y huella vigente;
+orchestrator.handle_chat revalida categorías después de armar memoria. Solo
+preguntas autorizadas alimentan contextual_reference; las respuestas quedan
+en memoria para diálogo, nunca como fuentes. Retriever forma filtros MUST por
+scope y categorías antes de ranking; privados exigen owner_user_id +
+conversation_id. active_filter añade generación visible antes de query_points;
+visible_candidates coteja generación/huella con SQL después. No ampliar filtros
+para resolver ausencia de evidencia. El diagnóstico SQL también validó usuario
+activo, dueño, categorías y huella; no leyó conversaciones de otros usuarios.
+
+Observabilidad adicional propuesta, aún NO añadida
+
+1. Solo si la página 9 falta en retrieved: reutilizar el control existente y
+   registrar, para sus source_ids permitidos, documento/chunk/generación/huella,
+   página, hash/longitud de texto, score y pertenencia a fetch→dedup→MMR→final.
+   Agregar hash/longitud de format_query(question), filtros efectivos sin datos
+   privados, y motivo de exclusión cuando sea observable. No volcar vectores,
+   corpus ni conversaciones. Si ni siquiera aparece en fetch, comprobar su
+   presencia y score mediante el mismo backend/VectorStore, lectura autorizada;
+   no concluir que fue «MMR» a partir de la ausencia final.
+2. Para confirmar inventario de chunks/generaciones y dimensión, hace falta
+   lectura acotada mediante el servicio existente. Las rutas /admin/diagnostics
+   y /knowledge/summary no exponen payloads. Acceder directamente a embedded
+   requiere primero detener de forma coordinada el servicio; no se hizo ni se
+   aprovechó el reinicio del usuario para abrirlo en competencia.
+3. Si es necesario certificar terminación exacta de Ollama, emitir completed,
+   finish_reason y contadores del objeto CompletionDiagnostics solo para el
+   control activo. Hoy llm.chat exitoso no conserva done_reason; ausencia de
+   error no distingue un «stop» de un campo omitido admitido por el cliente.
+
+Pruebas correctivas propuestas (sintéticas; separadas de evaluación real)
+
+* Nueva pregunta empresarial autosuficiente tras otro beneficio: no heredar el
+  anterior; repetirla no duplicarla; elipsis sí conserva antecedente. Documento
+  y año explícitos se preservan; un tema general cambia de ruta sin memoria RH.
+* Tabla sintética con corte de ingreso y tres aportaciones: antes/en/después del
+  corte; antigüedad 6.999/7/7.001 y 7.99/7.991/8. No rellenar huecos entre 7.99
+  y 8 con un redondeo tácito si la fuente no define esa convención. Validar meses
+  a fracción de año como derivación explícita, no número corporativo adicional.
+* Resultado de fila correcta pasa; porcentaje existente en otra fila falla.
+  Mismos valores con distinta prestación/población/periodo no son intercambiables.
+* Año de metadata permitido solo como fecha/identidad de esa fuente; año inventado
+  rechazado; nombre de archivo no valida «vigente», «actual» o elegibilidad.
+* Dato declarado se usa condicionalmente, jamás se certifica con la cita. No
+  aceptar una cifra inventada porque figura en la pregunta o junto a «no sé».
+* Packing: presupuesto suficiente conserva regla/tabla completas; si no cabe,
+  marca exclusión y no da resultado afirmativo; reintento conserva esa evidencia
+  o declara la limitación. Alias resolubles solo contra lo enviado en esa llamada.
+* Dos beneficios sintéticos con cifras similares: títulos y condiciones no se
+  cruzan; aclaración segura puede pedir el dato faltante sin inventar beneficio.
+* ACL: otro usuario/conversación, categoría revocada y huella cambiada jamás
+  entran en memoria, candidatos, citas ni logs opt-in. Control exacto caduca,
+  se consume una vez y se desactiva al terminar.
+
+Verificación realizada
+
+240 pruebas + 40 subpruebas pasaron; 0 errores, omitidas o violaciones de
+aislamiento. Ocho suites existentes: model_policy, conversation_policy_stage1,
+memory_and_agent, authorization, retrieval_ranking, grounding,
+grounding_numeric_rag_hotfix, answer_diagnostics. Véanse repro/command.json,
+repro/results.json, repro/pytest.log y repro/junit.xml. Se usó el entorno de
+pruebas separado ya existente; no se instalaron dependencias. Red bloqueada,
+SQLite/storage sintéticos dentro de este informe; no migraciones ni corpus real.
+
+Las pruebas no equivalen a evaluar el modelo real: stage1 ejecuta classify_intent,
+contextual_reference, handle_chat y builders reales; su orquestación usa retriever,
+policy_engine, structured y audit simulados, y OfflineLlm. Las pruebas separadas
+de autorización/recuperación comprueban esos componentes con datos sintéticos.
+La prueba de payload diagnóstico ejecuta agente/provider/cliente reales con
+httpx.MockTransport, no Ollama. Los probes añadidos aquí invocan funciones puras
+reales sin reemplazarlas; los replays de B/C usan fuentes extraídas ahora, y se
+rotulan expresamente como replays, no como captura del pasado.
+
+Integridad y archivos
+
+No se modificó código funcional, instrumentación, tests del producto, .env,
+dependencias, PDFs, SQL ni índices. SHA256SUMS.txt idéntico a baseline.json.
+check_integrity(require_manifest=True) pasa: controla la fuente operativa según
+_core_file. Comparación completa del manifiesto preserva las ocho discrepancias
+previas de README (.github, raíz, backend, data/knowledge,
+data/knowledge/especializadas, docs, infrastructure y var); ningún archivo nuevo
+ausente ni discrepancia adicional. No se actualizaron hashes para ocultarlas.
+La opción --skip-preflight observada en el proceso no omite check_integrity:
+bootstrap.main y cmd_serve la ejecutan antes de esa condición. El auditor no
+lanzó ese comando ni otra instancia.
+
+Solo se añadieron archivos bajo este directorio de reports: scripts de lectura,
+probes, preparación/recogida de captura, extracción y render; JSON de evidencia,
+imágenes de páginas verificadas e informes de pruebas. No hay diff del código
+del producto ni nueva instrumentación que entregar. No se generó ZIP.

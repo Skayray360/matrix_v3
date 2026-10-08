@@ -1,0 +1,61 @@
+{
+  "all_captured_logs": {
+    "event_counts": {
+      "rag.retrieved": 22,
+      "llm.chat": 39,
+      "agent.regenerating": 12,
+      "agent.answer_validation_failed": 10,
+      "audit.chat.answer": 27,
+      "audit.chat.insufficient_evidence": 1,
+      "audit.chat.capabilities": 3,
+      "audit.chat.identity": 1
+    },
+    "llm_calls": 39,
+    "llm_ms": {
+      "min": 573,
+      "median": 5969,
+      "p95_nearest_rank": 25823,
+      "max": 26840
+    },
+    "answer_ms": {
+      "count": 27,
+      "median": 10766,
+      "min": 646,
+      "max": 36447
+    },
+    "retry_reasons": {
+      "orientacion general atribuida a fuentes documentales": 5,
+      "citas fuera de la evidencia recuperada": 1,
+      "afirmacion numerica sin respaldo en sus fuentes citadas": 5,
+      "respuesta documental sin fuentes citadas": 1
+    }
+  },
+  "latest_session": {
+    "event_counts": {
+      "rag.retrieved": 2,
+      "llm.chat": 5,
+      "agent.regenerating": 2,
+      "agent.answer_validation_failed": 1,
+      "audit.chat.answer": 3,
+      "audit.chat.identity": 1,
+      "audit.chat.capabilities": 1
+    },
+    "llm_calls": 5,
+    "llm_ms": {
+      "min": 1978,
+      "median": 5826,
+      "p95_nearest_rank": 23395,
+      "max": 23395
+    },
+    "answer_ms": {
+      "count": 3,
+      "median": 14128,
+      "min": 2060,
+      "max": 27298
+    },
+    "retry_reasons": {
+      "afirmacion numerica sin respaldo en sus fuentes citadas": 1,
+      "orientacion general atribuida a fuentes documentales": 1
+    }
+  }
+}

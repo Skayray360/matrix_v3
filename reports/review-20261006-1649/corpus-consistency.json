@@ -1,0 +1,44 @@
+[
+  {
+    "filename": "Gastos medicos 2026.pdf",
+    "status": "indexed",
+    "chunks": 34,
+    "matched_files": 1,
+    "sha256_matches": true
+  },
+  {
+    "filename": "PLATICA DE PLAN DE FALLECIMIENTO E INVALIDEZ RH 2020.pdf",
+    "status": "indexed",
+    "chunks": 18,
+    "matched_files": 1,
+    "sha256_matches": true
+  },
+  {
+    "filename": "PLATICA DE PLAN DE PENSIONES POR JUBILACI#U00d3N DICIEMBRE 2022.pdf",
+    "status": "indexed",
+    "chunks": 11,
+    "matched_files": 1,
+    "sha256_matches": true
+  },
+  {
+    "filename": "PLATICA DE PRESTACIONES JUNIO 2020.pdf",
+    "status": "indexed",
+    "chunks": 22,
+    "matched_files": 1,
+    "sha256_matches": true
+  },
+  {
+    "filename": "Platicas Cartas designacion 2022 BMA.pdf",
+    "status": "indexed",
+    "chunks": 14,
+    "matched_files": 1,
+    "sha256_matches": true
+  },
+  {
+    "filename": "prestaciones.pdf",
+    "status": "indexed",
+    "chunks": 6,
+    "matched_files": 1,
+    "sha256_matches": true
+  }
+]

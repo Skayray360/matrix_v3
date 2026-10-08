@@ -1,0 +1,8 @@
+{
+  "observed_embedding_digest": "85462619ee721b466c5927d109d4cb765861907d5417b9109caebc4e614679f1",
+  "matches_configured_pin": true,
+  "calculated_index_fingerprint": "803a5a0ba9cfafbbd139c7614967d4e77540fbca2b04bc1da6da3f4c018649e7",
+  "registered_fingerprints_match": true,
+  "configured_dimension": 768,
+  "limitation": "No vector collection or chunk payload read. Matching SQL recipe is not proof of current indexed bytes."
+}

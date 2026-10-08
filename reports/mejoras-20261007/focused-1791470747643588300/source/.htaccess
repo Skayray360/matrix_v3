@@ -1,0 +1,10 @@
+# Creado por Aldo Garcia.
+# Matrix RH se sirve por FastAPI en 127.0.0.1:8000. WAMP no debe publicar el
+# arbol fuente, el .env, los adjuntos ni el indice local desde DocumentRoot.
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>

@@ -1,0 +1,13 @@
+{
+  "accepted": true,
+  "source_artifact_sha256": "a27c9d5ecdb8dd23512add983e21752d3480286d504d96ed360f26b80b40234e",
+  "question_sha256": "ddcf05c3900880290eaed799bae222b6fff1ad9c82ce84df57dbdda2ff90f5c5",
+  "inference_used": false,
+  "index_opened": false,
+  "grounded": true,
+  "citations_valid": true,
+  "cited_source_count": 1,
+  "three_expected_percentages": true,
+  "expected_page_present": true,
+  "expected_document_present": true
+}

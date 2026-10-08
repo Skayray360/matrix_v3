@@ -1,0 +1,547 @@
+{
+  "total": 102,
+  "groups": {
+    "tests.unit.test_benchmark_response": {
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0
+    },
+    "tests.unit.test_context_efficiency_20261007": {
+      "passed": 14,
+      "failed": 0,
+      "skipped": 0
+    },
+    "tests.unit.test_documentary_output": {
+      "passed": 21,
+      "failed": 0,
+      "skipped": 0
+    },
+    "tests.unit.test_explicit_document_selection_20261007": {
+      "passed": 15,
+      "failed": 0,
+      "skipped": 0
+    },
+    "tests.unit.test_knowledge_sync_new": {
+      "passed": 35,
+      "failed": 0,
+      "skipped": 0
+    },
+    "tests.unit.test_scoped_reconcile": {
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "cases": [
+    {
+      "classname": "tests.unit.test_benchmark_response",
+      "name": "test_inventory_default_never_generates",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_benchmark_response",
+      "name": "test_cli_rejects_invalid_or_conflicting_bounds[options0]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_benchmark_response",
+      "name": "test_cli_rejects_invalid_or_conflicting_bounds[options1]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_benchmark_response",
+      "name": "test_cli_rejects_invalid_or_conflicting_bounds[options2]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_benchmark_response",
+      "name": "test_cli_rejects_invalid_or_conflicting_bounds[options3]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_benchmark_response",
+      "name": "test_percentiles_preserve_unknown_metrics_and_failed_sample_latency",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_benchmark_response",
+      "name": "test_rejects_cloud_or_excess_concurrency_before_creating_clients",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_benchmark_response",
+      "name": "test_synthetic_generation_checks_answer_and_reports_only_metrics[{\"unidades\":12}-validated]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_benchmark_response",
+      "name": "test_synthetic_generation_checks_answer_and_reports_only_metrics[{\"unidades\":13}-invalid_answer]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_benchmark_response",
+      "name": "test_synthetic_generation_checks_answer_and_reports_only_metrics[{\"unidades\":12,\"secret\":\"private-answer\"}-invalid_answer]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_benchmark_response",
+      "name": "test_synthetic_generation_checks_answer_and_reports_only_metrics[private-answer-invalid_answer]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_benchmark_response",
+      "name": "test_exception_text_and_urls_never_escape",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_context_efficiency_20261007",
+      "name": "test_equal_windows_keep_same_evidence_capacity_on_deep[False-documental]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_context_efficiency_20261007",
+      "name": "test_equal_windows_keep_same_evidence_capacity_on_deep[False-structured]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_context_efficiency_20261007",
+      "name": "test_equal_windows_keep_same_evidence_capacity_on_deep[False-mixed]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_context_efficiency_20261007",
+      "name": "test_equal_windows_keep_same_evidence_capacity_on_deep[True-documental]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_context_efficiency_20261007",
+      "name": "test_equal_windows_keep_same_evidence_capacity_on_deep[True-structured]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_context_efficiency_20261007",
+      "name": "test_equal_windows_keep_same_evidence_capacity_on_deep[True-mixed]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_context_efficiency_20261007",
+      "name": "test_context_changes_and_lower_output_ceilings_remain_explicit[8192-768-768]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_context_efficiency_20261007",
+      "name": "test_context_changes_and_lower_output_ceilings_remain_explicit[8704-3072-2048]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_context_efficiency_20261007",
+      "name": "test_context_changes_and_lower_output_ceilings_remain_explicit[16384-3072-3072]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_context_efficiency_20261007",
+      "name": "test_context_changes_and_lower_output_ceilings_remain_explicit[4096-3072-1536]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_context_efficiency_20261007",
+      "name": "test_extended_summary_and_general_output_preserve_their_configured_ceiling[document_summary]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_context_efficiency_20261007",
+      "name": "test_extended_summary_and_general_output_preserve_their_configured_ceiling[general]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_context_efficiency_20261007",
+      "name": "test_agent_preserves_end_condition_and_citation_in_new_context_margin[fast]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_context_efficiency_20261007",
+      "name": "test_agent_preserves_end_condition_and_citation_in_new_context_margin[deep]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_documentary_output",
+      "name": "test_rendered_claim_is_verified_and_public_citation_is_canonical",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_documentary_output",
+      "name": "test_bad_claim_or_transport_is_never_published[{\"status\": \"answered\", \"claims\": [{\"text\": \"Se permiten 9 prestamos.\", \"citations\": [\"E1\"]}], \"clarification\": \"\"}]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_documentary_output",
+      "name": "test_bad_claim_or_transport_is_never_published[{\"status\": \"answered\", \"claims\": [{\"text\": \"Se permite 1 prestamo por ejercicio.\", \"citations\": [\"E99\"]}], \"clarification\": \"\"}]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_documentary_output",
+      "name": "test_bad_claim_or_transport_is_never_published[{\"status\": \"answered\", \"claims\": [{\"text\": \"### Orientaci\\\\u00f3n general\", \"citations\": [\"E1\"]}], \"clarification\": \"\"}]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_documentary_output",
+      "name": "test_bad_claim_or_transport_is_never_published[{\"status\": \"answered\", \"claims\": [{\"text\": \"Regla.\\\\nSegunda afirmacion\", \"citations\": [\"E1\"]}], \"clarification\": \"\"}]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_documentary_output",
+      "name": "test_bad_claim_or_transport_is_never_published[{\"status\": \"answered\", \"claims\": [{\"text\": \"Regla [[E1]]\", \"citations\": [\"E1\"]}], \"clarification\": \"\"}]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_documentary_output",
+      "name": "test_bad_claim_or_transport_is_never_published[{}]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_documentary_output",
+      "name": "test_bad_claim_or_transport_is_never_published[no es JSON]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_documentary_output",
+      "name": "test_bad_claim_or_transport_is_never_published[```json\\n{}\\n```]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_documentary_output",
+      "name": "test_bad_claim_or_transport_is_never_published[{\"status\":\"insufficient\",\"status\":\"answered\",\"claims\":[],\"clarification\":\"\"}]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_documentary_output",
+      "name": "test_bad_claim_or_transport_is_never_published[{\"status\":\"answered\",\"claims\":[],\"clarification\":\"\"}]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_documentary_output",
+      "name": "test_bad_claim_or_transport_is_never_published[{\"status\":\"insufficient\",\"claims\":[],\"clarification\":\"Se permiten nueve prestamos.\"}]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_documentary_output",
+      "name": "test_bad_claim_or_transport_is_never_published[{\"status\":\"insufficient\",\"claims\":[],\"clarification\":\"\",\"extra\":\"regla\"}]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_documentary_output",
+      "name": "test_invalid_first_output_uses_only_existing_retry",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_documentary_output",
+      "name": "test_provider_schema_failure_is_retried_once",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_documentary_output",
+      "name": "test_transport_timeout_is_not_retried",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_documentary_output",
+      "name": "test_insufficiency_has_no_documentary_facts",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_documentary_output",
+      "name": "test_switch_off_preserves_legacy_transport",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_documentary_output",
+      "name": "test_schema_instructions_are_excluded_from_summary_and_extractive",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_documentary_output",
+      "name": "test_each_claim_keeps_its_citation",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_documentary_output",
+      "name": "test_schema_reserves_context_separately_from_visible_messages",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_explicit_document_selection_20261007",
+      "name": "test_complete_filename_and_title_match_across_accents_and_separators[Segun la Pl\\xe1tica de Pensiones de Diciembre2022.pdf, que condiciones hay?]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_explicit_document_selection_20261007",
+      "name": "test_complete_filename_and_title_match_across_accents_and_separators[Segun la PLATICA DE PENSIONES DE DICIEMBRE 2022, que condiciones hay?]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_explicit_document_selection_20261007",
+      "name": "test_complete_filename_and_title_match_across_accents_and_separators[Explica la pl\\xe1tica pensiones diciembre2022; ingrese en marzo de 2016.]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_explicit_document_selection_20261007",
+      "name": "test_personal_date_and_partial_title_do_not_anchor_an_edition[Ingrese en diciembre2022, que condiciones tienen las pensiones?]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_explicit_document_selection_20261007",
+      "name": "test_personal_date_and_partial_title_do_not_anchor_an_edition[Mi antiguedad es de 2022, que dice la platica?]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_explicit_document_selection_20261007",
+      "name": "test_personal_date_and_partial_title_do_not_anchor_an_edition[Que dice la platica de pensiones?]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_explicit_document_selection_20261007",
+      "name": "test_personal_date_and_partial_title_do_not_anchor_an_edition[Que documentos de 2022 tienen informacion de pensiones?]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_explicit_document_selection_20261007",
+      "name": "test_single_topic_word_or_year_requires_explicit_filename",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_explicit_document_selection_20261007",
+      "name": "test_imported_latin_accent_escape_matches_title_without_changing_source_identity",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_explicit_document_selection_20261007",
+      "name": "test_only_best_chunk_per_document_is_reserved_and_scope_remains_distinct",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_explicit_document_selection_20261007",
+      "name": "test_preferred_input_cannot_add_a_candidate_outside_the_authorized_list",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_explicit_document_selection_20261007",
+      "name": "test_requested_source_survives_where_unanchored_mmr_discards_it",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_explicit_document_selection_20261007",
+      "name": "test_explicit_comparison_keeps_both_named_documents_in_same_category",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_explicit_document_selection_20261007",
+      "name": "test_private_named_source_still_uses_owner_and_conversation_filters",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_explicit_document_selection_20261007",
+      "name": "test_unavailable_named_document_does_not_create_or_fetch_evidence",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_knowledge_sync_new",
+      "name": "test_new_source_is_retrievable_immediately_without_restart_and_idempotent",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_knowledge_sync_new",
+      "name": "test_sync_preserves_existing_modified_missing_and_deleted_documents",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_knowledge_sync_new",
+      "name": "test_sync_retrieval_enforces_category_acl",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_knowledge_sync_new",
+      "name": "test_private_upload_is_never_promoted_or_reindexed_by_fast_sync",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_knowledge_sync_new",
+      "name": "test_recent_copy_is_deferred_without_embeddings_then_indexed",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_knowledge_sync_new",
+      "name": "test_temporary_copy_is_not_a_candidate_until_renamed",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_knowledge_sync_new",
+      "name": "test_change_during_embeddings_never_publishes_partial_source_and_retries",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_knowledge_sync_new",
+      "name": "test_changed_existing_source_during_embedding_preserves_previous_visible_generation",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_knowledge_sync_new",
+      "name": "test_change_during_upsert_compensates_only_candidate_generation_without_orphan_points[False]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_knowledge_sync_new",
+      "name": "test_change_during_upsert_compensates_only_candidate_generation_without_orphan_points[True]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_knowledge_sync_new",
+      "name": "test_failed_compensation_is_durable_and_next_pass_cleans_orphan_before_reindex",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_knowledge_sync_new",
+      "name": "test_generation_cleanup_is_idempotent_bounded_and_preserves_active_generation",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_knowledge_sync_new",
+      "name": "test_generation_cleanup_failure_remains_pending_for_retry",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_knowledge_sync_new",
+      "name": "test_partial_admin_sync_does_not_retry_global_cleanup_jobs",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_knowledge_sync_new",
+      "name": "test_cleanup_persistence_failure_is_explicit_without_sensitive_logs",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_knowledge_sync_new",
+      "name": "test_failed_embeddings_retry_on_next_pass_without_losing_other_new_sources",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_knowledge_sync_new",
+      "name": "test_batch_rotates_past_failed_files_so_later_files_are_not_starved",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_knowledge_sync_new",
+      "name": "test_no_candidates_does_not_initialize_provider_or_vector_store",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_knowledge_sync_new",
+      "name": "test_new_only_rejects_force",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_knowledge_sync_new",
+      "name": "test_sync_admin_scope_does_not_publish_other_categories",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_knowledge_sync_new",
+      "name": "test_lock_rejects_competitor_and_does_not_leave_lock_after_error",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_knowledge_sync_new",
+      "name": "test_two_simultaneous_sessions_cannot_acquire_the_same_lease",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_knowledge_sync_new",
+      "name": "test_stale_owner_cannot_release_replacement_lease_or_publish",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_knowledge_sync_new",
+      "name": "test_lock_exception_rolls_back_pending_document_and_preserves_other_owner",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_knowledge_sync_new",
+      "name": "test_lease_lost_after_upsert_keeps_generation_invisible",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_knowledge_sync_new",
+      "name": "test_scheduler_prioritizes_chat_and_eventually_attempts_one_document",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_knowledge_sync_new",
+      "name": "test_scheduler_reports_pending_failures_and_survives_exception",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_knowledge_sync_new",
+      "name": "test_scheduler_initial_sync_does_not_trigger_full_reindex",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_knowledge_sync_new",
+      "name": "test_sync_routes_require_explicit_permissions[/admin/knowledge/sync-post]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_knowledge_sync_new",
+      "name": "test_sync_routes_require_explicit_permissions[/admin/knowledge/sync/status-get]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_knowledge_sync_new",
+      "name": "test_sync_status_omits_document_paths",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_knowledge_sync_new",
+      "name": "test_sync_route_enforces_csrf_before_starting_work",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_knowledge_sync_new",
+      "name": "test_admin_upload_is_atomic_committed_and_immediately_searchable",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_knowledge_sync_new",
+      "name": "test_admin_upload_during_sync_is_rejected_before_writing_source",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_knowledge_sync_new",
+      "name": "test_cli_new_only_and_force_are_mutually_exclusive",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_scoped_reconcile",
+      "name": "test_scoped_api_reconciles_present_modified_deleted_only_inside_categories",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_scoped_reconcile",
+      "name": "test_empty_category_scope_cannot_open_inventory_or_modify_documents",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_scoped_reconcile",
+      "name": "test_scoped_full_retains_complete_source_inventory_for_unavailable_roots[unavailable_sources]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_scoped_reconcile",
+      "name": "test_scoped_full_retains_complete_source_inventory_for_unavailable_roots[incomplete_sources]",
+      "outcome": "passed"
+    },
+    {
+      "classname": "tests.unit.test_scoped_reconcile",
+      "name": "test_reconcile_route_requires_permission_and_csrf_before_scoped_work",
+      "outcome": "passed"
+    }
+  ]
+}

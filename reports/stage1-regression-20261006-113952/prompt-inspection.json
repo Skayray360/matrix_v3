@@ -1,0 +1,135 @@
+{
+  "exit_code": 0,
+  "builder_cases_passed": 18,
+  "cases": [
+    {
+      "case": "cited-general-False-summary-False-documentary-False",
+      "result": "passed",
+      "non_system_messages_unchanged": true,
+      "system_chars_before": 3636,
+      "system_chars_after": 4958
+    },
+    {
+      "case": "cited-general-False-summary-False-documentary-True",
+      "result": "passed",
+      "non_system_messages_unchanged": true,
+      "system_chars_before": 3636,
+      "system_chars_after": 4958
+    },
+    {
+      "case": "cited-general-False-summary-True-documentary-False",
+      "result": "passed",
+      "non_system_messages_unchanged": true,
+      "system_chars_before": 3636,
+      "system_chars_after": 4958
+    },
+    {
+      "case": "cited-general-False-summary-True-documentary-True",
+      "result": "passed",
+      "non_system_messages_unchanged": true,
+      "system_chars_before": 3636,
+      "system_chars_after": 4958
+    },
+    {
+      "case": "cited-general-True-summary-False-documentary-False",
+      "result": "passed",
+      "non_system_messages_unchanged": true,
+      "system_chars_before": 3776,
+      "system_chars_after": 5125
+    },
+    {
+      "case": "cited-general-True-summary-False-documentary-True",
+      "result": "passed",
+      "non_system_messages_unchanged": true,
+      "system_chars_before": 3636,
+      "system_chars_after": 4958
+    },
+    {
+      "case": "cited-general-True-summary-True-documentary-False",
+      "result": "passed",
+      "non_system_messages_unchanged": true,
+      "system_chars_before": 3776,
+      "system_chars_after": 5125
+    },
+    {
+      "case": "cited-general-True-summary-True-documentary-True",
+      "result": "passed",
+      "non_system_messages_unchanged": true,
+      "system_chars_before": 3636,
+      "system_chars_after": 4958
+    },
+    {
+      "case": "extractive-general-False-summary-False-documentary-False",
+      "result": "passed",
+      "non_system_messages_unchanged": true,
+      "system_chars_before": 4750,
+      "system_chars_after": 5798
+    },
+    {
+      "case": "extractive-general-False-summary-False-documentary-True",
+      "result": "passed",
+      "non_system_messages_unchanged": true,
+      "system_chars_before": 4750,
+      "system_chars_after": 5798
+    },
+    {
+      "case": "extractive-general-False-summary-True-documentary-False",
+      "result": "passed",
+      "non_system_messages_unchanged": true,
+      "system_chars_before": 4750,
+      "system_chars_after": 5798
+    },
+    {
+      "case": "extractive-general-False-summary-True-documentary-True",
+      "result": "passed",
+      "non_system_messages_unchanged": true,
+      "system_chars_before": 4750,
+      "system_chars_after": 5798
+    },
+    {
+      "case": "extractive-general-True-summary-False-documentary-False",
+      "result": "passed",
+      "non_system_messages_unchanged": true,
+      "system_chars_before": 4750,
+      "system_chars_after": 5798
+    },
+    {
+      "case": "extractive-general-True-summary-False-documentary-True",
+      "result": "passed",
+      "non_system_messages_unchanged": true,
+      "system_chars_before": 4750,
+      "system_chars_after": 5798
+    },
+    {
+      "case": "extractive-general-True-summary-True-documentary-False",
+      "result": "passed",
+      "non_system_messages_unchanged": true,
+      "system_chars_before": 4750,
+      "system_chars_after": 5798
+    },
+    {
+      "case": "extractive-general-True-summary-True-documentary-True",
+      "result": "passed",
+      "non_system_messages_unchanged": true,
+      "system_chars_before": 4750,
+      "system_chars_after": 5798
+    },
+    {
+      "case": "general",
+      "result": "passed",
+      "non_system_messages_unchanged": true,
+      "system_chars_before": 1633,
+      "system_chars_after": 2159
+    },
+    {
+      "case": "reduce",
+      "result": "passed",
+      "non_system_messages_unchanged": true,
+      "system_chars_before": 4750,
+      "system_chars_after": 5798
+    }
+  ],
+  "capabilities_unchanged": true,
+  "dialogue_summary_unchanged": true,
+  "limits": "Only real prompt construction and payload preservation are checked. No inference, response quality, or pension answer is evaluated."
+}

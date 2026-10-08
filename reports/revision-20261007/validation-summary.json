@@ -1,0 +1,462 @@
+{
+  "backend": {
+    "baseline": {
+      "artifacts": "baseline-1791395116162394100",
+      "exit_code": 1,
+      "collected": 1854,
+      "passed": 1756,
+      "failed": 52,
+      "errors": 0,
+      "skipped": 46,
+      "duration_seconds": 133.318,
+      "isolation_violations": [
+        "Connection blocked: only synthetic ephemeral listeners are permitted",
+        "Connection blocked: only synthetic ephemeral listeners are permitted",
+        "Connection blocked: only synthetic ephemeral listeners are permitted",
+        "Connection blocked: only synthetic ephemeral listeners are permitted"
+      ],
+      "failure_categories": {
+        "Existing identity authorization contract mismatch": 1,
+        "Windows symbolic-link privilege unavailable": 17,
+        "Case-sensitive filesystem contract on case-insensitive NTFS": 1,
+        "Existing execution-profile fixture/behavior contract mismatch": 3,
+        "Bash WindowsApps executable inaccessible": 3,
+        "Numeric provenance regression reproduced before correction": 6,
+        "Security boundary regression reproduced before correction": 21
+      },
+      "failures": [
+        {
+          "nodeid": "tests/unit/test_backend_consolidation.py::test_identity_remains_visible_without_accessing_sources",
+          "category": "Existing identity authorization contract mismatch"
+        },
+        {
+          "nodeid": "tests/unit/test_configuration_runtime_127.py::test_configuration_upgrade_requires_regular_local_env[symlink]",
+          "category": "Windows symbolic-link privilege unavailable"
+        },
+        {
+          "nodeid": "tests/unit/test_configuration_runtime_127.py::test_shutdown_rejects_symlink_without_deleting_target_or_link",
+          "category": "Windows symbolic-link privilege unavailable"
+        },
+        {
+          "nodeid": "tests/unit/test_content_purge.py::test_symlink_namespace_never_follows_external_target",
+          "category": "Windows symbolic-link privilege unavailable"
+        },
+        {
+          "nodeid": "tests/unit/test_data_alias_ingestion.py::test_symlink_files_and_folders_cannot_escape_to_private_storage",
+          "category": "Windows symbolic-link privilege unavailable"
+        },
+        {
+          "nodeid": "tests/unit/test_data_alias_ingestion.py::test_symlink_alias_root_is_rejected",
+          "category": "Windows symbolic-link privilege unavailable"
+        },
+        {
+          "nodeid": "tests/unit/test_data_alias_ingestion.py::test_equivalent_alias_folders_are_ambiguous_on_case_sensitive_host",
+          "category": "Case-sensitive filesystem contract on case-insensitive NTFS"
+        },
+        {
+          "nodeid": "tests/unit/test_data_alias_ingestion.py::test_direct_ingestion_rejects_symlink_even_when_inventory_is_bypassed",
+          "category": "Windows symbolic-link privilege unavailable"
+        },
+        {
+          "nodeid": "tests/unit/test_execution_profiles.py::test_agent_passes_shared_profile_to_general_and_documental_calls[True-fast]",
+          "category": "Existing execution-profile fixture/behavior contract mismatch"
+        },
+        {
+          "nodeid": "tests/unit/test_execution_profiles.py::test_agent_passes_shared_profile_to_general_and_documental_calls[True-deep]",
+          "category": "Existing execution-profile fixture/behavior contract mismatch"
+        },
+        {
+          "nodeid": "tests/unit/test_execution_profiles.py::test_shared_profile_controls_packing_and_full_evidence_is_never_truncated",
+          "category": "Existing execution-profile fixture/behavior contract mismatch"
+        },
+        {
+          "nodeid": "tests/unit/test_installer_consolidation.py::test_paquete_conserva_readmes_y_excluye_historial_y_datos_runtime",
+          "category": "Windows symbolic-link privilege unavailable"
+        },
+        {
+          "nodeid": "tests/unit/test_linux_validation.py::test_validate_guarda_antes_de_mutar_y_propaga_gate[1-0]",
+          "category": "Bash WindowsApps executable inaccessible"
+        },
+        {
+          "nodeid": "tests/unit/test_linux_validation.py::test_validate_guarda_antes_de_mutar_y_propaga_gate[0-2]",
+          "category": "Bash WindowsApps executable inaccessible"
+        },
+        {
+          "nodeid": "tests/unit/test_linux_validation.py::test_validate_guarda_antes_de_mutar_y_propaga_gate[0-0]",
+          "category": "Bash WindowsApps executable inaccessible"
+        },
+        {
+          "nodeid": "tests/unit/test_numeric_provenance_revision.py::test_longest_subject_does_not_mix_base_with_base_complementaria",
+          "category": "Numeric provenance regression reproduced before correction"
+        },
+        {
+          "nodeid": "tests/unit/test_numeric_provenance_revision.py::test_each_component_keeps_its_own_value_in_same_cited_claim",
+          "category": "Numeric provenance regression reproduced before correction"
+        },
+        {
+          "nodeid": "tests/unit/test_numeric_provenance_revision.py::test_page_must_match_metadata_even_if_wrong_page_number_occurs_in_table",
+          "category": "Numeric provenance regression reproduced before correction"
+        },
+        {
+          "nodeid": "tests/unit/test_numeric_provenance_revision.py::test_document_title_and_page_are_supported_by_same_cited_metadata",
+          "category": "Numeric provenance regression reproduced before correction"
+        },
+        {
+          "nodeid": "tests/unit/test_numeric_provenance_revision.py::test_conflicting_rows_for_same_document_and_case_cannot_be_selected_by_citing_only_one",
+          "category": "Numeric provenance regression reproduced before correction"
+        },
+        {
+          "nodeid": "tests/unit/test_numeric_provenance_revision.py::test_decimal_representations_are_exact_and_keep_units_property",
+          "category": "Numeric provenance regression reproduced before correction"
+        },
+        {
+          "nodeid": "tests/unit/test_private_reindex_final.py::test_private_reindex_rejects_symlink_outside_conversation[outside]",
+          "category": "Windows symbolic-link privilege unavailable"
+        },
+        {
+          "nodeid": "tests/unit/test_private_reindex_final.py::test_private_reindex_rejects_symlink_outside_conversation[other-owner]",
+          "category": "Windows symbolic-link privilege unavailable"
+        },
+        {
+          "nodeid": "tests/unit/test_release_transfer_127.py::test_links_are_rejected_before_any_transfer[previous_root]",
+          "category": "Windows symbolic-link privilege unavailable"
+        },
+        {
+          "nodeid": "tests/unit/test_release_transfer_127.py::test_links_are_rejected_before_any_transfer[current_root]",
+          "category": "Windows symbolic-link privilege unavailable"
+        },
+        {
+          "nodeid": "tests/unit/test_release_transfer_127.py::test_links_are_rejected_before_any_transfer[source_env]",
+          "category": "Windows symbolic-link privilege unavailable"
+        },
+        {
+          "nodeid": "tests/unit/test_release_transfer_127.py::test_links_are_rejected_before_any_transfer[target_env]",
+          "category": "Windows symbolic-link privilege unavailable"
+        },
+        {
+          "nodeid": "tests/unit/test_release_transfer_127.py::test_links_are_rejected_before_any_transfer[old_data_file]",
+          "category": "Windows symbolic-link privilege unavailable"
+        },
+        {
+          "nodeid": "tests/unit/test_release_transfer_127.py::test_links_are_rejected_before_any_transfer[new_var_dir]",
+          "category": "Windows symbolic-link privilege unavailable"
+        },
+        {
+          "nodeid": "tests/unit/test_release_transfer_127.py::test_windows_junction_is_rejected_before_writing_outside_destination",
+          "category": "Windows symbolic-link privilege unavailable"
+        },
+        {
+          "nodeid": "tests/unit/test_security_boundaries_20261007.py::test_untrusted_protocol_markers_are_inert_and_sanitization_is_idempotent[<start_of_turn>]",
+          "category": "Security boundary regression reproduced before correction"
+        },
+        {
+          "nodeid": "tests/unit/test_security_boundaries_20261007.py::test_untrusted_protocol_markers_are_inert_and_sanitization_is_idempotent[<end_of_turn>]",
+          "category": "Security boundary regression reproduced before correction"
+        },
+        {
+          "nodeid": "tests/unit/test_security_boundaries_20261007.py::test_untrusted_protocol_markers_are_inert_and_sanitization_is_idempotent[<|im_start|>]",
+          "category": "Security boundary regression reproduced before correction"
+        },
+        {
+          "nodeid": "tests/unit/test_security_boundaries_20261007.py::test_untrusted_protocol_markers_are_inert_and_sanitization_is_idempotent[<|im_end|>]",
+          "category": "Security boundary regression reproduced before correction"
+        },
+        {
+          "nodeid": "tests/unit/test_security_boundaries_20261007.py::test_untrusted_protocol_markers_are_inert_and_sanitization_is_idempotent[<|start_header_id|>]",
+          "category": "Security boundary regression reproduced before correction"
+        },
+        {
+          "nodeid": "tests/unit/test_security_boundaries_20261007.py::test_untrusted_protocol_markers_are_inert_and_sanitization_is_idempotent[<|end_header_id|>]",
+          "category": "Security boundary regression reproduced before correction"
+        },
+        {
+          "nodeid": "tests/unit/test_security_boundaries_20261007.py::test_untrusted_protocol_markers_are_inert_and_sanitization_is_idempotent[<|eot_id|>]",
+          "category": "Security boundary regression reproduced before correction"
+        },
+        {
+          "nodeid": "tests/unit/test_security_boundaries_20261007.py::test_untrusted_protocol_markers_are_inert_and_sanitization_is_idempotent[[INST]]",
+          "category": "Security boundary regression reproduced before correction"
+        },
+        {
+          "nodeid": "tests/unit/test_security_boundaries_20261007.py::test_untrusted_protocol_markers_are_inert_and_sanitization_is_idempotent[[/INST]]",
+          "category": "Security boundary regression reproduced before correction"
+        },
+        {
+          "nodeid": "tests/unit/test_security_boundaries_20261007.py::test_untrusted_protocol_markers_are_inert_and_sanitization_is_idempotent[<<SYS>>]",
+          "category": "Security boundary regression reproduced before correction"
+        },
+        {
+          "nodeid": "tests/unit/test_security_boundaries_20261007.py::test_untrusted_protocol_markers_are_inert_and_sanitization_is_idempotent[<</SYS>>]",
+          "category": "Security boundary regression reproduced before correction"
+        },
+        {
+          "nodeid": "tests/unit/test_security_boundaries_20261007.py::test_document_metadata_cannot_close_evidence_or_impersonate_system[section]",
+          "category": "Security boundary regression reproduced before correction"
+        },
+        {
+          "nodeid": "tests/unit/test_security_boundaries_20261007.py::test_document_metadata_cannot_close_evidence_or_impersonate_system[page_or_sheet]",
+          "category": "Security boundary regression reproduced before correction"
+        },
+        {
+          "nodeid": "tests/unit/test_security_boundaries_20261007.py::test_document_metadata_cannot_close_evidence_or_impersonate_system[filename]",
+          "category": "Security boundary regression reproduced before correction"
+        },
+        {
+          "nodeid": "tests/unit/test_security_boundaries_20261007.py::test_structured_values_cannot_close_evidence_or_impersonate_system",
+          "category": "Security boundary regression reproduced before correction"
+        },
+        {
+          "nodeid": "tests/unit/test_security_boundaries_20261007.py::test_windows_aliases_and_alternate_streams_are_rejected[prestaciones/doc.txt:oculto]",
+          "category": "Security boundary regression reproduced before correction"
+        },
+        {
+          "nodeid": "tests/unit/test_security_boundaries_20261007.py::test_windows_aliases_and_alternate_streams_are_rejected[prestaciones/C:doc.txt]",
+          "category": "Security boundary regression reproduced before correction"
+        },
+        {
+          "nodeid": "tests/unit/test_security_boundaries_20261007.py::test_windows_aliases_and_alternate_streams_are_rejected[prestaciones/.. /doc.txt]",
+          "category": "Security boundary regression reproduced before correction"
+        },
+        {
+          "nodeid": "tests/unit/test_security_boundaries_20261007.py::test_windows_aliases_and_alternate_streams_are_rejected[prestaciones/NUL.txt]",
+          "category": "Security boundary regression reproduced before correction"
+        },
+        {
+          "nodeid": "tests/unit/test_security_boundaries_20261007.py::test_windows_aliases_and_alternate_streams_are_rejected[prestaciones/con]",
+          "category": "Security boundary regression reproduced before correction"
+        },
+        {
+          "nodeid": "tests/unit/test_security_boundaries_20261007.py::test_windows_aliases_and_alternate_streams_are_rejected[prestaciones/doc.txt\\x00]",
+          "category": "Security boundary regression reproduced before correction"
+        },
+        {
+          "nodeid": "tests/security/test_supply_chain_123.py::test_external_executable_link_is_blocked",
+          "category": "Windows symbolic-link privilege unavailable"
+        }
+      ],
+      "skip_reasons": {
+        "El sistema no permite crear enlaces simbolicos para esta prueba.": 7,
+        "El sistema no permite enlaces simbolicos.": 1,
+        "MySQL/MariaDB no disponible en este entorno": 3,
+        "Contrato Bash ejecutado en Linux; Windows tiene job de PowerShell": 1,
+        "MySQL/MariaDB no disponible": 33,
+        "frontend/node_modules no instalado en este entorno": 1
+      }
+    },
+    "after": {
+      "artifacts": "after-1791395472112281200",
+      "exit_code": 1,
+      "collected": 1886,
+      "passed": 1815,
+      "failed": 25,
+      "errors": 0,
+      "skipped": 46,
+      "duration_seconds": 120.152,
+      "isolation_violations": [
+        "Connection blocked: only synthetic ephemeral listeners are permitted",
+        "Connection blocked: only synthetic ephemeral listeners are permitted",
+        "Connection blocked: only synthetic ephemeral listeners are permitted",
+        "Connection blocked: only synthetic ephemeral listeners are permitted"
+      ],
+      "failure_categories": {
+        "Existing identity authorization contract mismatch": 1,
+        "Windows symbolic-link privilege unavailable": 17,
+        "Case-sensitive filesystem contract on case-insensitive NTFS": 1,
+        "Existing execution-profile fixture/behavior contract mismatch": 3,
+        "Bash WindowsApps executable inaccessible": 3
+      },
+      "failures": [
+        {
+          "nodeid": "tests/unit/test_backend_consolidation.py::test_identity_remains_visible_without_accessing_sources",
+          "category": "Existing identity authorization contract mismatch"
+        },
+        {
+          "nodeid": "tests/unit/test_configuration_runtime_127.py::test_configuration_upgrade_requires_regular_local_env[symlink]",
+          "category": "Windows symbolic-link privilege unavailable"
+        },
+        {
+          "nodeid": "tests/unit/test_configuration_runtime_127.py::test_shutdown_rejects_symlink_without_deleting_target_or_link",
+          "category": "Windows symbolic-link privilege unavailable"
+        },
+        {
+          "nodeid": "tests/unit/test_content_purge.py::test_symlink_namespace_never_follows_external_target",
+          "category": "Windows symbolic-link privilege unavailable"
+        },
+        {
+          "nodeid": "tests/unit/test_data_alias_ingestion.py::test_symlink_files_and_folders_cannot_escape_to_private_storage",
+          "category": "Windows symbolic-link privilege unavailable"
+        },
+        {
+          "nodeid": "tests/unit/test_data_alias_ingestion.py::test_symlink_alias_root_is_rejected",
+          "category": "Windows symbolic-link privilege unavailable"
+        },
+        {
+          "nodeid": "tests/unit/test_data_alias_ingestion.py::test_equivalent_alias_folders_are_ambiguous_on_case_sensitive_host",
+          "category": "Case-sensitive filesystem contract on case-insensitive NTFS"
+        },
+        {
+          "nodeid": "tests/unit/test_data_alias_ingestion.py::test_direct_ingestion_rejects_symlink_even_when_inventory_is_bypassed",
+          "category": "Windows symbolic-link privilege unavailable"
+        },
+        {
+          "nodeid": "tests/unit/test_execution_profiles.py::test_agent_passes_shared_profile_to_general_and_documental_calls[True-fast]",
+          "category": "Existing execution-profile fixture/behavior contract mismatch"
+        },
+        {
+          "nodeid": "tests/unit/test_execution_profiles.py::test_agent_passes_shared_profile_to_general_and_documental_calls[True-deep]",
+          "category": "Existing execution-profile fixture/behavior contract mismatch"
+        },
+        {
+          "nodeid": "tests/unit/test_execution_profiles.py::test_shared_profile_controls_packing_and_full_evidence_is_never_truncated",
+          "category": "Existing execution-profile fixture/behavior contract mismatch"
+        },
+        {
+          "nodeid": "tests/unit/test_installer_consolidation.py::test_paquete_conserva_readmes_y_excluye_historial_y_datos_runtime",
+          "category": "Windows symbolic-link privilege unavailable"
+        },
+        {
+          "nodeid": "tests/unit/test_linux_validation.py::test_validate_guarda_antes_de_mutar_y_propaga_gate[1-0]",
+          "category": "Bash WindowsApps executable inaccessible"
+        },
+        {
+          "nodeid": "tests/unit/test_linux_validation.py::test_validate_guarda_antes_de_mutar_y_propaga_gate[0-2]",
+          "category": "Bash WindowsApps executable inaccessible"
+        },
+        {
+          "nodeid": "tests/unit/test_linux_validation.py::test_validate_guarda_antes_de_mutar_y_propaga_gate[0-0]",
+          "category": "Bash WindowsApps executable inaccessible"
+        },
+        {
+          "nodeid": "tests/unit/test_private_reindex_final.py::test_private_reindex_rejects_symlink_outside_conversation[outside]",
+          "category": "Windows symbolic-link privilege unavailable"
+        },
+        {
+          "nodeid": "tests/unit/test_private_reindex_final.py::test_private_reindex_rejects_symlink_outside_conversation[other-owner]",
+          "category": "Windows symbolic-link privilege unavailable"
+        },
+        {
+          "nodeid": "tests/unit/test_release_transfer_127.py::test_links_are_rejected_before_any_transfer[previous_root]",
+          "category": "Windows symbolic-link privilege unavailable"
+        },
+        {
+          "nodeid": "tests/unit/test_release_transfer_127.py::test_links_are_rejected_before_any_transfer[current_root]",
+          "category": "Windows symbolic-link privilege unavailable"
+        },
+        {
+          "nodeid": "tests/unit/test_release_transfer_127.py::test_links_are_rejected_before_any_transfer[source_env]",
+          "category": "Windows symbolic-link privilege unavailable"
+        },
+        {
+          "nodeid": "tests/unit/test_release_transfer_127.py::test_links_are_rejected_before_any_transfer[target_env]",
+          "category": "Windows symbolic-link privilege unavailable"
+        },
+        {
+          "nodeid": "tests/unit/test_release_transfer_127.py::test_links_are_rejected_before_any_transfer[old_data_file]",
+          "category": "Windows symbolic-link privilege unavailable"
+        },
+        {
+          "nodeid": "tests/unit/test_release_transfer_127.py::test_links_are_rejected_before_any_transfer[new_var_dir]",
+          "category": "Windows symbolic-link privilege unavailable"
+        },
+        {
+          "nodeid": "tests/unit/test_release_transfer_127.py::test_windows_junction_is_rejected_before_writing_outside_destination",
+          "category": "Windows symbolic-link privilege unavailable"
+        },
+        {
+          "nodeid": "tests/security/test_supply_chain_123.py::test_external_executable_link_is_blocked",
+          "category": "Windows symbolic-link privilege unavailable"
+        }
+      ],
+      "skip_reasons": {
+        "El sistema no permite crear enlaces simbolicos para esta prueba.": 7,
+        "El sistema no permite enlaces simbolicos.": 1,
+        "MySQL/MariaDB no disponible en este entorno": 3,
+        "Contrato Bash ejecutado en Linux; Windows tiene job de PowerShell": 1,
+        "MySQL/MariaDB no disponible": 33,
+        "frontend/node_modules no instalado en este entorno": 1
+      }
+    }
+  },
+  "frontend": {
+    "baseline": {
+      "artifacts": "frontend-baseline-1791394854249",
+      "passed": 94,
+      "failed": 0,
+      "pending": 0,
+      "success": true,
+      "commands": [
+        {
+          "seconds": 131.9350905,
+          "command": "npm.cmd test -- --maxWorkers=2 --no-file-parallelism --reporter=json --outputFile=test-results.json",
+          "name": "test",
+          "exit_code": 0
+        },
+        {
+          "seconds": 32.0082734,
+          "command": "npm.cmd run typecheck",
+          "name": "typecheck",
+          "exit_code": 0
+        },
+        {
+          "seconds": 30.7764282,
+          "command": "npm.cmd run lint",
+          "name": "lint",
+          "exit_code": 0
+        },
+        {
+          "seconds": 29.3220718,
+          "command": "npm.cmd run build",
+          "name": "build",
+          "exit_code": 0
+        }
+      ],
+      "node": "v24.14.0",
+      "network": "External Node TCP connections and all UDP sends blocked; Vitest IPC/loopback allowed; component tests mock API"
+    },
+    "after": {
+      "artifacts": "frontend-after-1791395046745",
+      "passed": 94,
+      "failed": 0,
+      "pending": 0,
+      "success": true,
+      "commands": [
+        {
+          "seconds": 130.7922351,
+          "name": "test",
+          "command": "npm.cmd test -- --maxWorkers=2 --no-file-parallelism --reporter=json --outputFile=test-results.json",
+          "exit_code": 0
+        },
+        {
+          "seconds": 16.706532,
+          "name": "typecheck",
+          "command": "npm.cmd run typecheck",
+          "exit_code": 0
+        },
+        {
+          "seconds": 15.728255,
+          "name": "lint",
+          "command": "npm.cmd run lint",
+          "exit_code": 0
+        },
+        {
+          "seconds": 29.5720071,
+          "name": "build",
+          "command": "npm.cmd run build",
+          "exit_code": 0
+        }
+      ],
+      "node": "v24.14.0",
+      "network": "External Node TCP connections and all UDP sends blocked; Vitest IPC/loopback allowed; component tests mock API"
+    }
+  },
+  "preparation_and_superseded_runs": {
+    "baseline-1791394215257589900": "Harness rejected pytest's Windows NUL log target before collection; corrected by redirecting logs to the isolated run.",
+    "baseline-1791394391163862400": "First full run retained: 57 failures, including three UTF-8/DSN harness artifacts and missing generated frontend build; one transient backup rename WinError 5.",
+    "focused-1791394558412231200": "Pytest usage error: requested nonexistent test_grounding_properties.py; no tests collected. Corrected to discovered filenames.",
+    "frontend-baseline-1791394555038": "Node preload path used Windows separators incorrectly; four commands failed before executing checks.",
+    "frontend-baseline-1791394681879": "Interrupted preparation attempt with over-restrictive network guard; guard subsequently allowed Vitest local IPC/loopback only.",
+    "after-1791395060457118300": "Intermediate app snapshot, before final whitespace fix; 26 failures including missing build in isolated source.",
+    "after-1791395257562033600": "Latest code but SHA256 manifest not yet synchronized; 34 failures, including nine integrity preflight failures. Final run follows manifest synchronization.",
+    "offline-dependencies-supply-chain.json": "Historical dependency directory lacked frontend .npmrc; current frontend copy plus same inspected dependency tree passes frontend-after-supply-chain.json."
+  }
+}

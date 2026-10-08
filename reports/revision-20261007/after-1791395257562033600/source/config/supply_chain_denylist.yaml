@@ -1,0 +1,69 @@
+# Creado por Aldo Garcia.
+# ---------------------------------------------------------------------------
+# Lista de bloqueo de cadena de suministro.
+#
+# Paquetes y versiones que NO deben aparecer en el arbol de dependencias, por
+# haber sido comprometidos en un incidente conocido.
+#
+# Este archivo es DATOS: lo consume `python -m scripts.verify_supply_chain`, que
+# falla la instalacion y el quality gate si detecta cualquiera de estas
+# versiones. Actualicelo cuando se publique un incidente nuevo.
+#
+# `versions` acepta:
+#   - una version exacta:      "6.0.0"
+#   - una lista de versiones:  ["6.0.0", "6.0.1"]
+#   - el comodin "*":          cualquier version del paquete
+# ---------------------------------------------------------------------------
+
+version: 1
+
+incidents:
+  - id: NPM-WORM-2026-08
+    description: >
+      Gusano autopropagable en npm. Los paquetes comprometidos ejecutan codigo en
+      el ciclo de vida de instalacion, roban credenciales del entorno
+      (NPM_TOKEN, GITHUB_TOKEN, credenciales cloud) y republican paquetes del
+      mantenedor afectado para propagarse.
+    reported: 2026-08-04
+    reference: aviso interno de seguridad
+    ecosystem: npm
+    packages:
+      - name: keyv
+        versions: ["6.0.0"]
+      - name: flat-cache
+        versions: ["6.1.24"]
+      - name: file-entry-cache
+        versions: ["11.1.6"]
+      - name: ecto
+        versions: ["5.0.1"]
+      - name: cacheable-request
+        versions: ["13.0.20"]
+      - name: cacheable
+        versions: ["2.5.1"]
+      - name: cache-manager
+        versions: ["7.2.10"]
+      - name: "@cacheable/memory"
+        versions: ["2.2.1"]
+      - name: "@cacheable/node-cache"
+        versions: ["3.1.2"]
+      - name: "@cacheable/utils"
+        versions: ["2.5.1"]
+
+# ---------------------------------------------------------------------------
+# Indicadores de compromiso (IOC) que se buscan en el arbol instalado.
+# Son heuristicas: una coincidencia no prueba un compromiso, pero obliga a
+# revisar manualmente antes de continuar.
+# ---------------------------------------------------------------------------
+indicators:
+  filenames:
+    - "shai-hulud*"
+    - "*trufflehog*"
+  content_patterns:
+    # Exfiltracion a destinos usados por gusanos de npm conocidos.
+    - "webhook\\.site"
+    - "npmjs\\.help"
+    # Creacion de repositorios en la cuenta de la victima para propagarse.
+    - "api\\.github\\.com/user/repos"
+    # Lectura de credenciales seguida de una peticion de red.
+    - "process\\.env\\.NPM_TOKEN[\\s\\S]{0,200}?(fetch|https?\\.request|axios)"
+    - "process\\.env\\.GITHUB_TOKEN[\\s\\S]{0,200}?(fetch|https?\\.request|axios)"

@@ -1,0 +1,78 @@
+{
+  "checked_at_utc": "2026-10-07T23:32:00.920558+00:00",
+  "http_path_tested": false,
+  "database_writes_allowed": false,
+  "operational_index_opened": false,
+  "conversation_memory_used": false,
+  "private_attachments_used": false,
+  "question_case": "benefits",
+  "question_sha256": "7738313d9265db122e6c7015afc5c47df4712b24ed0e65c8a6f5f26c1546b6d1",
+  "question_chars": 26,
+  "validation_attempts": [
+    {
+      "retry": false,
+      "grounded": true,
+      "reason": "citas autorizadas y cifras contrastadas; veracidad semantica no evaluada",
+      "detail": "",
+      "claim_index": null,
+      "cited_source_count": 4,
+      "invalid_source_count": 0,
+      "declares_insufficiency": false
+    }
+  ],
+  "signed_context_verified": true,
+  "authorized_category_count": 13,
+  "retrieval": {
+    "fetched": 4,
+    "after_dedup": 4,
+    "returned": 4,
+    "best_score": 0.48869133604810205,
+    "truncated": false,
+    "sources": [
+      {
+        "filename": "PLATICA DE PRESTACIONES JUNIO 2020.pdf",
+        "page": "pagina 3",
+        "category": "prestaciones",
+        "scope": "corporate",
+        "score": 0.48869133604810205
+      },
+      {
+        "filename": "prestaciones.pdf",
+        "page": "pagina 4",
+        "category": "prestaciones",
+        "scope": "corporate",
+        "score": 0.3541358674130997
+      },
+      {
+        "filename": "PLATICA DE PLAN DE FALLECIMIENTO E INVALIDEZ RH 2020.pdf",
+        "page": "pagina 5",
+        "category": "prestaciones",
+        "scope": "corporate",
+        "score": 0.35738243086684796
+      },
+      {
+        "filename": "prestaciones.pdf",
+        "page": "pagina 1",
+        "category": "prestaciones",
+        "scope": "corporate",
+        "score": 0.3699282151480153
+      }
+    ]
+  },
+  "route": {
+    "selected_model": "gemma4:latest",
+    "model_route": "fast",
+    "intent": "documental",
+    "routing_signals": [
+      "fast_path_sufficient"
+    ],
+    "routing_decisive_signals": [],
+    "routing_weak_signals": []
+  },
+  "status": "accepted",
+  "regenerated": false,
+  "model": "gemma4:latest",
+  "grounded": true,
+  "answer_basis": "documented",
+  "latency_ms": 7848
+}

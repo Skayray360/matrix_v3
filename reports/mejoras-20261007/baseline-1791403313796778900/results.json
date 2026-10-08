@@ -1,0 +1,199 @@
+{
+  "exit_code": 1,
+  "collected": 1886,
+  "passed": 1814,
+  "failed": 26,
+  "errors": 0,
+  "skipped": 46,
+  "duration_seconds": 260.504,
+  "isolation_violations": [
+    "Connection blocked: only synthetic ephemeral listeners are permitted",
+    "Connection blocked: only synthetic ephemeral listeners are permitted",
+    "Connection blocked: only synthetic ephemeral listeners are permitted",
+    "Connection blocked: only synthetic ephemeral listeners are permitted"
+  ],
+  "failures": [
+    {
+      "nodeid": "tests/unit/test_backend_consolidation.py::test_identity_remains_visible_without_accessing_sources",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.009057399998710025,
+      "detail": "tests\\unit\\test_backend_consolidation.py:47: in test_identity_remains_visible_without_accessing_sources\n    ).handle_chat(db, ctx=ctx, conversation=conversation, message=\"\u00bfQui\u00e9n eres?\")\n      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\answer_diagnostics.py:52: in wrapped\n    return function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\orchestrator.py:161: in handle_chat\n    authorized_categories = self._policies.effective_categories(ctx)\n                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests\\unit\\test_backend_consolidation.py:38: in __getattr__\n    pytest.fail(f\"La identidad fija no debe consultar {name}\")\nE   Failed: La identidad fija no debe consultar effective_categories"
+    },
+    {
+      "nodeid": "tests/unit/test_configuration_runtime_127.py::test_configuration_upgrade_requires_regular_local_env[symlink]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.008128699999360833,
+      "detail": "tests\\unit\\test_configuration_runtime_127.py:166: in test_configuration_upgrade_requires_regular_local_env\n    target.symlink_to(original)\nC:\\Users\\AH015398\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\pathlib.py:1386: in symlink_to\n    os.symlink(target, self, target_is_directory)\nE   OSError: [WinError 1314] El cliente no dispone de un privilegio requerido: 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\baseline-1791403313796778900\\\\tmp\\\\test_configuration_upgrade_req2\\\\external-config' -> 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\baseline-1791403313796778900\\\\tmp\\\\test_configuration_upgrade_req2\\\\.env'"
+    },
+    {
+      "nodeid": "tests/unit/test_configuration_runtime_127.py::test_shutdown_rejects_symlink_without_deleting_target_or_link",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.008934899997257162,
+      "detail": "tests\\unit\\test_configuration_runtime_127.py:225: in test_shutdown_rejects_symlink_without_deleting_target_or_link\n    request.symlink_to(target)\nC:\\Users\\AH015398\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\pathlib.py:1386: in symlink_to\n    os.symlink(target, self, target_is_directory)\nE   OSError: [WinError 1314] El cliente no dispone de un privilegio requerido: 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\baseline-1791403313796778900\\\\tmp\\\\test_shutdown_rejects_symlink_0\\\\original-stop-request' -> 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\baseline-1791403313796778900\\\\tmp\\\\test_shutdown_rejects_symlink_0\\\\backend.stop'"
+    },
+    {
+      "nodeid": "tests/unit/test_content_purge.py::test_symlink_namespace_never_follows_external_target",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.07333940000171424,
+      "detail": "tests\\unit\\test_content_purge.py:230: in test_symlink_namespace_never_follows_external_target\n    path.parent.symlink_to(outside, target_is_directory=True)\nC:\\Users\\AH015398\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\pathlib.py:1386: in symlink_to\n    os.symlink(target, self, target_is_directory)\nE   OSError: [WinError 1314] El cliente no dispone de un privilegio requerido: 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\baseline-1791403313796778900\\\\tmp\\\\test_symlink_namespace_never_f0\\\\external' -> 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\baseline-1791403313796778900\\\\tmp\\\\test_symlink_namespace_never_f0\\\\uploads\\\\user-a\\\\chat-a'"
+    },
+    {
+      "nodeid": "tests/unit/test_data_alias_ingestion.py::test_symlink_files_and_folders_cannot_escape_to_private_storage",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.01075719999789726,
+      "detail": "tests\\unit\\test_data_alias_ingestion.py:139: in test_symlink_files_and_folders_cannot_escape_to_private_storage\n    (alias / \"enlace.md\").symlink_to(private)\nC:\\Users\\AH015398\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\pathlib.py:1386: in symlink_to\n    os.symlink(target, self, target_is_directory)\nE   OSError: [WinError 1314] El cliente no dispone de un privilegio requerido: 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\baseline-1791403313796778900\\\\tmp\\\\test_symlink_files_and_folders0\\\\var\\\\uploads\\\\secret.md' -> 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\baseline-1791403313796778900\\\\tmp\\\\test_symlink_files_and_folders0\\\\data\\\\Prestaciones\\\\enlace.md'"
+    },
+    {
+      "nodeid": "tests/unit/test_data_alias_ingestion.py::test_symlink_alias_root_is_rejected",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.009238700000423705,
+      "detail": "tests\\unit\\test_data_alias_ingestion.py:146: in test_symlink_alias_root_is_rejected\n    (project / \"data\" / \"Prestaciones\").symlink_to(target, target_is_directory=True)\nC:\\Users\\AH015398\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\pathlib.py:1386: in symlink_to\n    os.symlink(target, self, target_is_directory)\nE   OSError: [WinError 1314] El cliente no dispone de un privilegio requerido: 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\baseline-1791403313796778900\\\\tmp\\\\test_symlink_alias_root_is_rej0\\\\var\\\\uploads' -> 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\baseline-1791403313796778900\\\\tmp\\\\test_symlink_alias_root_is_rej0\\\\data\\\\Prestaciones'"
+    },
+    {
+      "nodeid": "tests/unit/test_data_alias_ingestion.py::test_equivalent_alias_folders_are_ambiguous_on_case_sensitive_host",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.05147670000224025,
+      "detail": "tests\\unit\\test_data_alias_ingestion.py:156: in test_equivalent_alias_folders_are_ambiguous_on_case_sensitive_host\n    assert not scan.files\nE   AssertionError: assert not [KnowledgeFile(absolute_path=WindowsPath('C:/wamp64/www/matrix-rh-1.3.0/reports/mejoras-20261007/baseline-179140331379...nes/b.md', category='prestaciones', source_id='data-alias/prestaciones', legacy_relative_paths=('Prestaciones/b.md',))]\nE    +  where [KnowledgeFile(absolute_path=WindowsPath('C:/wamp64/www/matrix-rh-1.3.0/reports/mejoras-20261007/baseline-179140331379...nes/b.md', category='prestaciones', source_id='data-alias/prestaciones', legacy_relative_paths=('Prestaciones/b.md',))] = KnowledgeScan(sources=[KnowledgeSource(source_id='knowledge', root=WindowsPath('C:/wamp64/www/matrix-rh-1.3.0/reports/...reports/mejoras-20261007/baseline-1791403313796778900/tmp/test_equivalent_alias_folders_0/data/synthetic_test_data'),)).files"
+    },
+    {
+      "nodeid": "tests/unit/test_data_alias_ingestion.py::test_direct_ingestion_rejects_symlink_even_when_inventory_is_bypassed",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.010192900001129601,
+      "detail": "tests\\unit\\test_data_alias_ingestion.py:292: in test_direct_ingestion_rejects_symlink_even_when_inventory_is_bypassed\n    link.symlink_to(target)\nC:\\Users\\AH015398\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\pathlib.py:1386: in symlink_to\n    os.symlink(target, self, target_is_directory)\nE   OSError: [WinError 1314] El cliente no dispone de un privilegio requerido: 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\baseline-1791403313796778900\\\\tmp\\\\test_direct_ingestion_rejects_0\\\\var\\\\uploads\\\\privado.md' -> 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\baseline-1791403313796778900\\\\tmp\\\\test_direct_ingestion_rejects_0\\\\data\\\\enlace.md'"
+    },
+    {
+      "nodeid": "tests/unit/test_execution_profiles.py::test_agent_passes_shared_profile_to_general_and_documental_calls[True-fast]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.005283600003167521,
+      "detail": "tests\\unit\\test_execution_profiles.py:129: in test_agent_passes_shared_profile_to_general_and_documental_calls\n    agent.answer_general(question=\"Explica un concepto.\", memory=None, model_name=policy.fast_model, choice=choice)\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\knowledge_agent.py:129: in answer_general\n    raise AnswerValidationError(detail=\"citas inventadas en una consulta general\")\nE   app.common.errors.AnswerValidationError: La respuesta generada no supero la verificacion de sus fuentes."
+    },
+    {
+      "nodeid": "tests/unit/test_execution_profiles.py::test_agent_passes_shared_profile_to_general_and_documental_calls[True-deep]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.004639700000552693,
+      "detail": "tests\\unit\\test_execution_profiles.py:129: in test_agent_passes_shared_profile_to_general_and_documental_calls\n    agent.answer_general(question=\"Explica un concepto.\", memory=None, model_name=policy.fast_model, choice=choice)\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\knowledge_agent.py:129: in answer_general\n    raise AnswerValidationError(detail=\"citas inventadas en una consulta general\")\nE   app.common.errors.AnswerValidationError: La respuesta generada no supero la verificacion de sus fuentes."
+    },
+    {
+      "nodeid": "tests/unit/test_execution_profiles.py::test_shared_profile_controls_packing_and_full_evidence_is_never_truncated",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.013127800000802381,
+      "detail": "tests\\unit\\test_execution_profiles.py:174: in test_shared_profile_controls_packing_and_full_evidence_is_never_truncated\n    fast = agent.synthesize(question=\"Que regla aplica?\", evidences=(source,),\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\knowledge_agent.py:229: in synthesize\n    raise InferenceFailureError(InferenceFailureKind.CONTEXT_LIMIT)\nE   app.common.inference_errors.InferenceFailureError: El servicio de IA local no esta disponible."
+    },
+    {
+      "nodeid": "tests/unit/test_installer_consolidation.py::test_paquete_conserva_readmes_y_excluye_historial_y_datos_runtime",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.10361129999728291,
+      "detail": "tests\\unit\\test_installer_consolidation.py:303: in test_paquete_conserva_readmes_y_excluye_historial_y_datos_runtime\n    (tmp_path / \"link.txt\").symlink_to(external)\nC:\\Users\\AH015398\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\pathlib.py:1386: in symlink_to\n    os.symlink(target, self, target_is_directory)\nE   OSError: [WinError 1314] El cliente no dispone de un privilegio requerido: 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\baseline-1791403313796778900\\\\tmp\\\\externo.txt' -> 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\baseline-1791403313796778900\\\\tmp\\\\test_paquete_conserva_readmes_0\\\\link.txt'"
+    },
+    {
+      "nodeid": "tests/unit/test_linux_validation.py::test_validate_guarda_antes_de_mutar_y_propaga_gate[1-0]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.27932399999917834,
+      "detail": "tests\\unit\\test_linux_validation.py:40: in test_validate_guarda_antes_de_mutar_y_propaga_gate\n    completed = subprocess.run(\nC:\\Users\\AH015398\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\subprocess.py:548: in run\n    with Popen(*popenargs, **kwargs) as process:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nC:\\Users\\AH015398\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\subprocess.py:1026: in __init__\n    self._execute_child(args, executable, preexec_fn, close_fds,\nC:\\Users\\AH015398\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\subprocess.py:1538: in _execute_child\n    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,\nE   OSError: [WinError 1920] El sistema no tiene acceso al archivo"
+    },
+    {
+      "nodeid": "tests/unit/test_linux_validation.py::test_validate_guarda_antes_de_mutar_y_propaga_gate[0-2]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.2559579999979178,
+      "detail": "tests\\unit\\test_linux_validation.py:40: in test_validate_guarda_antes_de_mutar_y_propaga_gate\n    completed = subprocess.run(\nC:\\Users\\AH015398\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\subprocess.py:548: in run\n    with Popen(*popenargs, **kwargs) as process:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nC:\\Users\\AH015398\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\subprocess.py:1026: in __init__\n    self._execute_child(args, executable, preexec_fn, close_fds,\nC:\\Users\\AH015398\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\subprocess.py:1538: in _execute_child\n    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,\nE   OSError: [WinError 1920] El sistema no tiene acceso al archivo"
+    },
+    {
+      "nodeid": "tests/unit/test_linux_validation.py::test_validate_guarda_antes_de_mutar_y_propaga_gate[0-0]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.24488810000184458,
+      "detail": "tests\\unit\\test_linux_validation.py:40: in test_validate_guarda_antes_de_mutar_y_propaga_gate\n    completed = subprocess.run(\nC:\\Users\\AH015398\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\subprocess.py:548: in run\n    with Popen(*popenargs, **kwargs) as process:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nC:\\Users\\AH015398\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\subprocess.py:1026: in __init__\n    self._execute_child(args, executable, preexec_fn, close_fds,\nC:\\Users\\AH015398\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\subprocess.py:1538: in _execute_child\n    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,\nE   OSError: [WinError 1920] El sistema no tiene acceso al archivo"
+    },
+    {
+      "nodeid": "tests/unit/test_local_model_diagnostics.py::test_total_deadline_cancels_trickling_metadata",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 1.0437280000005558,
+      "detail": "tests\\unit\\test_local_model_diagnostics.py:134: in test_total_deadline_cancels_trickling_metadata\n    report = await diagnostic.collect_report(client=client, timeout=0.03)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nscripts\\local_model_diagnostics.py:230: in collect_report\n    data, error = await _metadata(client, settings.ollama_base_url, f\"/api/{endpoint}\", timeout=timeout)\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nscripts\\local_model_diagnostics.py:151: in _metadata\n    async for chunk in response.aiter_bytes():\n..\\..\\..\\..\\stage1-regression-20261006-113952\\test-env\\Lib\\site-packages\\httpx\\_models.py:997: in aiter_bytes\n    async for raw_bytes in self.aiter_raw():\n..\\..\\..\\..\\stage1-regression-20261006-113952\\test-env\\Lib\\site-packages\\httpx\\_models.py:1055: in aiter_raw\n    async for raw_stream_bytes in self.stream:\n..\\..\\..\\..\\stage1-regression-20261006-113952\\test-env\\Lib\\site-packages\\httpx\\_client.py:176: in __aiter__\n    async for chunk in self._stream:\ntests\\unit\\test_local_model_diagnostics.py:127: in __aiter__\n    await asyncio.sleep(0.01)\nC:\\Users\\AH015398\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\asyncio\\tasks.py:665: in sleep\n    return await future\n           ^^^^^^^^^^^^\nE   asyncio.exceptions.CancelledError\n\nThe above exception was the direct cause of the following exception:\ntests\\unit\\test_local_model_diagnostics.py:133: in test_total_deadline_cancels_trickling_metadata\n    async with asyncio.timeout(1):\n               ^^^^^^^^^^^^^^^^^^\nC:\\Users\\AH015398\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\asyncio\\timeouts.py:115: in __aexit__\n    raise TimeoutError from exc_val\nE   TimeoutError"
+    },
+    {
+      "nodeid": "tests/unit/test_private_reindex_final.py::test_private_reindex_rejects_symlink_outside_conversation[outside]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.038050200000725454,
+      "detail": "tests\\unit\\test_private_reindex_final.py:205: in test_private_reindex_rejects_symlink_outside_conversation\n    stored.symlink_to(destination)\nC:\\Users\\AH015398\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\pathlib.py:1386: in symlink_to\n    os.symlink(target, self, target_is_directory)\nE   OSError: [WinError 1314] El cliente no dispone de un privilegio requerido: 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\baseline-1791403313796778900\\\\tmp\\\\test_private_reindex_rejects_s0\\\\outside.md' -> 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\baseline-1791403313796778900\\\\tmp\\\\test_private_reindex_rejects_s0\\\\uploads\\\\user-a\\\\chat-a\\\\attachment-internal.md'"
+    },
+    {
+      "nodeid": "tests/unit/test_private_reindex_final.py::test_private_reindex_rejects_symlink_outside_conversation[other-owner]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.03581380000105128,
+      "detail": "tests\\unit\\test_private_reindex_final.py:205: in test_private_reindex_rejects_symlink_outside_conversation\n    stored.symlink_to(destination)\nC:\\Users\\AH015398\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\pathlib.py:1386: in symlink_to\n    os.symlink(target, self, target_is_directory)\nE   OSError: [WinError 1314] El cliente no dispone de un privilegio requerido: 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\baseline-1791403313796778900\\\\tmp\\\\test_private_reindex_rejects_s1\\\\uploads\\\\user-b\\\\chat-b\\\\attachment-internal.md' -> 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\baseline-1791403313796778900\\\\tmp\\\\test_private_reindex_rejects_s1\\\\uploads\\\\user-a\\\\chat-a\\\\attachment-internal.md'"
+    },
+    {
+      "nodeid": "tests/unit/test_release_transfer_127.py::test_links_are_rejected_before_any_transfer[previous_root]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.007624800000485266,
+      "detail": "tests\\unit\\test_release_transfer_127.py:177: in test_links_are_rejected_before_any_transfer\n    alias.symlink_to(previous if linked == \"previous_root\" else current, target_is_directory=True)\nC:\\Users\\AH015398\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\pathlib.py:1386: in symlink_to\n    os.symlink(target, self, target_is_directory)\nE   OSError: [WinError 1314] El cliente no dispone de un privilegio requerido: 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\baseline-1791403313796778900\\\\tmp\\\\test_links_are_rejected_before0\\\\previous' -> 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\baseline-1791403313796778900\\\\tmp\\\\test_links_are_rejected_before0\\\\alias-previous_root'"
+    },
+    {
+      "nodeid": "tests/unit/test_release_transfer_127.py::test_links_are_rejected_before_any_transfer[current_root]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.0075058000002172776,
+      "detail": "tests\\unit\\test_release_transfer_127.py:177: in test_links_are_rejected_before_any_transfer\n    alias.symlink_to(previous if linked == \"previous_root\" else current, target_is_directory=True)\nC:\\Users\\AH015398\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\pathlib.py:1386: in symlink_to\n    os.symlink(target, self, target_is_directory)\nE   OSError: [WinError 1314] El cliente no dispone de un privilegio requerido: 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\baseline-1791403313796778900\\\\tmp\\\\test_links_are_rejected_before1\\\\current' -> 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\baseline-1791403313796778900\\\\tmp\\\\test_links_are_rejected_before1\\\\alias-current_root'"
+    },
+    {
+      "nodeid": "tests/unit/test_release_transfer_127.py::test_links_are_rejected_before_any_transfer[source_env]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.00881410000147298,
+      "detail": "tests\\unit\\test_release_transfer_127.py:184: in test_links_are_rejected_before_any_transfer\n    (previous / \".env\").symlink_to(external)\nC:\\Users\\AH015398\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\pathlib.py:1386: in symlink_to\n    os.symlink(target, self, target_is_directory)\nE   OSError: [WinError 1314] El cliente no dispone de un privilegio requerido: 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\baseline-1791403313796778900\\\\tmp\\\\test_links_are_rejected_before2\\\\outside\\\\marker' -> 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\baseline-1791403313796778900\\\\tmp\\\\test_links_are_rejected_before2\\\\previous\\\\.env'"
+    },
+    {
+      "nodeid": "tests/unit/test_release_transfer_127.py::test_links_are_rejected_before_any_transfer[target_env]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.008963399999629473,
+      "detail": "tests\\unit\\test_release_transfer_127.py:186: in test_links_are_rejected_before_any_transfer\n    (current / \".env\").symlink_to(external)\nC:\\Users\\AH015398\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\pathlib.py:1386: in symlink_to\n    os.symlink(target, self, target_is_directory)\nE   OSError: [WinError 1314] El cliente no dispone de un privilegio requerido: 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\baseline-1791403313796778900\\\\tmp\\\\test_links_are_rejected_before3\\\\outside\\\\marker' -> 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\baseline-1791403313796778900\\\\tmp\\\\test_links_are_rejected_before3\\\\current\\\\.env'"
+    },
+    {
+      "nodeid": "tests/unit/test_release_transfer_127.py::test_links_are_rejected_before_any_transfer[old_data_file]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.008828199999697972,
+      "detail": "tests\\unit\\test_release_transfer_127.py:188: in test_links_are_rejected_before_any_transfer\n    (previous / \"data/linked-corpus\").symlink_to(external)\nC:\\Users\\AH015398\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\pathlib.py:1386: in symlink_to\n    os.symlink(target, self, target_is_directory)\nE   OSError: [WinError 1314] El cliente no dispone de un privilegio requerido: 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\baseline-1791403313796778900\\\\tmp\\\\test_links_are_rejected_before4\\\\outside\\\\marker' -> 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\baseline-1791403313796778900\\\\tmp\\\\test_links_are_rejected_before4\\\\previous\\\\data\\\\linked-corpus'"
+    },
+    {
+      "nodeid": "tests/unit/test_release_transfer_127.py::test_links_are_rejected_before_any_transfer[new_var_dir]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.007324099999095779,
+      "detail": "tests\\unit\\test_release_transfer_127.py:190: in test_links_are_rejected_before_any_transfer\n    (current / \"var/linked-storage\").symlink_to(outside, target_is_directory=True)\nC:\\Users\\AH015398\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\pathlib.py:1386: in symlink_to\n    os.symlink(target, self, target_is_directory)\nE   OSError: [WinError 1314] El cliente no dispone de un privilegio requerido: 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\baseline-1791403313796778900\\\\tmp\\\\test_links_are_rejected_before5\\\\outside' -> 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\baseline-1791403313796778900\\\\tmp\\\\test_links_are_rejected_before5\\\\current\\\\var\\\\linked-storage'"
+    },
+    {
+      "nodeid": "tests/unit/test_release_transfer_127.py::test_windows_junction_is_rejected_before_writing_outside_destination",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.00894940000216593,
+      "detail": "tests\\unit\\test_release_transfer_127.py:306: in test_windows_junction_is_rejected_before_writing_outside_destination\n    junction.symlink_to(outside, target_is_directory=True)\nC:\\Users\\AH015398\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\pathlib.py:1386: in symlink_to\n    os.symlink(target, self, target_is_directory)\nE   OSError: [WinError 1314] El cliente no dispone de un privilegio requerido: 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\baseline-1791403313796778900\\\\tmp\\\\test_windows_junction_is_rejec0\\\\outside-storage' -> 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\baseline-1791403313796778900\\\\tmp\\\\test_windows_junction_is_rejec0\\\\current\\\\data'"
+    },
+    {
+      "nodeid": "tests/security/test_supply_chain_123.py::test_external_executable_link_is_blocked",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.007484900001145434,
+      "detail": "tests\\security\\test_supply_chain_123.py:155: in test_external_executable_link_is_blocked\n    (npm_tree / \"node_modules/normal/bin.js\").symlink_to(external)\nC:\\Users\\AH015398\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\pathlib.py:1386: in symlink_to\n    os.symlink(target, self, target_is_directory)\nE   OSError: [WinError 1314] El cliente no dispone de un privilegio requerido: 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\baseline-1791403313796778900\\\\tmp\\\\test_external_executable_link_0\\\\external.js' -> 'C:\\\\wamp64\\\\www\\\\matrix-rh-1.3.0\\\\reports\\\\mejoras-20261007\\\\baseline-1791403313796778900\\\\tmp\\\\test_external_executable_link_0\\\\frontend\\\\node_modules\\\\normal\\\\bin.js'"
+    }
+  ]
+}

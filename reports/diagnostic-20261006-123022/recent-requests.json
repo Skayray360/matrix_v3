@@ -1,0 +1,169 @@
+[
+  {
+    "request_id": "8f2c5e7e-8d4e-4ac2-8c08-4458fe4862ce",
+    "created_at": "2026-10-06 18:24:09",
+    "response_keys": [
+      "answer",
+      "answer_basis",
+      "conversation_id",
+      "grounded",
+      "intent",
+      "latency_ms",
+      "message_id",
+      "sources"
+    ],
+    "question": "Según la plática del Plan de Pensiones por Jubilación de diciembre de 2022, si ingresé en mayo de 2016 y me retiro con 7 años y 6 meses de antigüedad antes de jubilarme, ¿qué porcentaje me corresponde de las aportaciones básica, básica complementaria y adicional complementaria?",
+    "answer_message_id": "0f291360-6abb-419e-8af3-0250f86beeb0",
+    "intent": "documental",
+    "final_answer": "Encontre documentacion relacionada, pero no pude validar una respuesta respaldada por sus fuentes.",
+    "public_sources": [],
+    "status": "completed",
+    "matching": "response.message_id plus immediately preceding same-owner/same-conversation user seq"
+  },
+  {
+    "request_id": "85f79e69-572f-4e26-a6b9-f37d8e392430",
+    "created_at": "2026-10-06 18:23:47",
+    "response_keys": [
+      "answer",
+      "answer_basis",
+      "conversation_id",
+      "grounded",
+      "intent",
+      "latency_ms",
+      "message_id",
+      "sources"
+    ],
+    "question": "¿Cuánto se entrega por el apoyo de casamiento?",
+    "answer_message_id": "ae58c8f7-48c5-4982-8907-d32619b1755e",
+    "intent": "documental",
+    "final_answer": "Encontre documentacion relacionada, pero no pude validar una respuesta respaldada por sus fuentes.",
+    "public_sources": [],
+    "status": "completed",
+    "matching": "response.message_id plus immediately preceding same-owner/same-conversation user seq"
+  },
+  {
+    "request_id": "2d4fbd1f-33d1-4ca8-aa35-fae3d4a5e67c",
+    "created_at": "2026-10-06 18:22:27",
+    "response_keys": [
+      "answer",
+      "answer_basis",
+      "conversation_id",
+      "grounded",
+      "intent",
+      "latency_ms",
+      "message_id",
+      "sources"
+    ],
+    "question": "Explícame mis prestaciones",
+    "answer_message_id": "7efdd8cc-7201-4d4b-b0d9-c10fa7f51585",
+    "intent": "documental",
+    "final_answer": "Las prestaciones son beneficios adicionales a los que un trabajador tiene derecho por pertenecer a un vínculo laboral, y son independientes del salario [[data-alias/prestaciones/PLATICA DE PRESTACIONES JUNIO 2020.pdf#2]]. Su función es mejorar la condición de vida de los trabajadores, reducir sus gastos y fomentar su desarrollo cultural y social [[data-alias/prestaciones/PLATICA DE PRESTACIONES JUNIO 2020.pdf#2]].\n\n### Información documentada\n\nLas prestaciones varían según la población y el tipo de beneficio:\n\n**Para Personal no sindicalizado, planta o eventual:**\n*   Las principales prestaciones incluyen Aguinaldo, Días de vacaciones, Prima vacacional, Fondo de ahorro, Bonificación especial y Reconocimiento a la lealtad [[data-alias/prestaciones/prestaciones.pdf#0]].\n*   El aguinaldo es de 15 días de sueldo nominal vigente, pagadero a más tardar el 20 de diciembre, y se paga proporcionalmente si el empleado no trabajó el año completo; tiene una exención de 30 UMAS de impuesto [[data-alias/prestaciones/prestaciones.pdf#0]].\n\n**Para personal con contrato de planta y eventuales:**\n*   Reciben Vales de Despensa, que consisten en un 10% adicional al sueldo, con un tope máximo de una UMA mensual (equivalente a $2,641.15 a partir de febrero 2020) [[data-alias/prestaciones/PLATICA DE PRESTACIONES JUNIO 2020.pdf#10]].\n*   Este pago se realiza mensualmente por anticipado en los primeros 5 días hábiles de cada mes y se entrega mediante depósito en una tarjeta electrónica de vales tramitada por la empresa [[data-alias/prestaciones/PLATICA DE PRESTACIONES JUNIO 2020.pdf#10]].\n*   Esta prestación aplica para todas las empresas del Grupo, excepto para las empresas de la División Minas [[data-alias/prestaciones/PLATICA DE PRESTACIONES JUNIO 2020.pdf#10]].\n*   La reposición de la tarjeta por extravío tiene un costo de $100.00 [[data-alias/prestaciones/PLATICA DE PRESTACIONES JUNIO 2020.pdf#10]].\n\n**Otros beneficios documentados:**\n*   Existe un Plan de Pensiones por Fallecimiento e Invalidez como parte del paquete de prestaciones [[data-alias/prestaciones/PLATICA DE PLAN DE FALLECIMIENTO E INVALIDEZ RH 2020.pdf#1]].\n*   Para el Personal de Planta, existe cobertura de Aparatos Auditivos con un periodo de espera de 0 meses, una Suma Asegurada de 29.58 UMA (equivalente a $105,488.78 pesos MXP), sin deducible ni coaseguro, con una temporalidad de cada 5 años [[data-alias/gastos_medicos/Gastos medicos 2026.pdf#12]].\n*   Para el Personal de Planta, existe cobertura Dental [[data-alias/gastos_medicos/Gastos medicos 2026.pdf#12]].\n\n### Orientación general\nPara poder precisar qué prestaciones aplican a usted, es necesario conocer su población laboral (por ejemplo, si es planta, eventual, o no sindicalizado) y el tipo de contrato que posee.",
+    "public_sources": [
+      {
+        "label": "PLATICA DE PRESTACIONES JUNIO 2020.pdf, pagina 3",
+        "scope": "corporate",
+        "score": 0.5417,
+        "section": "pagina 3",
+        "category": "prestaciones",
+        "filename": "PLATICA DE PRESTACIONES JUNIO 2020.pdf",
+        "source_id": "data-alias/prestaciones/PLATICA DE PRESTACIONES JUNIO 2020.pdf#2",
+        "page_or_sheet": "pagina 3"
+      },
+      {
+        "label": "PLATICA DE PLAN DE FALLECIMIENTO E INVALIDEZ RH 2020.pdf, pagina 2",
+        "scope": "corporate",
+        "score": 0.4049,
+        "section": "pagina 2",
+        "category": "prestaciones",
+        "filename": "PLATICA DE PLAN DE FALLECIMIENTO E INVALIDEZ RH 2020.pdf",
+        "source_id": "data-alias/prestaciones/PLATICA DE PLAN DE FALLECIMIENTO E INVALIDEZ RH 2020.pdf#1",
+        "page_or_sheet": "pagina 2"
+      },
+      {
+        "label": "Gastos medicos 2026.pdf, pagina 4",
+        "scope": "corporate",
+        "score": 0.3515,
+        "section": "Cobertura de Aparatos Auditivos (Exclusivo Personal de Planta)",
+        "category": "prestaciones",
+        "filename": "Gastos medicos 2026.pdf",
+        "source_id": "data-alias/gastos_medicos/Gastos medicos 2026.pdf#12",
+        "page_or_sheet": "pagina 4"
+      },
+      {
+        "label": "prestaciones.pdf, pagina 1",
+        "scope": "corporate",
+        "score": 0.4569,
+        "section": "pagina 1",
+        "category": "prestaciones",
+        "filename": "prestaciones.pdf",
+        "source_id": "data-alias/prestaciones/prestaciones.pdf#0",
+        "page_or_sheet": "pagina 1"
+      },
+      {
+        "label": "PLATICA DE PRESTACIONES JUNIO 2020.pdf, pagina 11",
+        "scope": "corporate",
+        "score": 0.3974,
+        "section": "pagina 11",
+        "category": "prestaciones",
+        "filename": "PLATICA DE PRESTACIONES JUNIO 2020.pdf",
+        "source_id": "data-alias/prestaciones/PLATICA DE PRESTACIONES JUNIO 2020.pdf#10",
+        "page_or_sheet": "pagina 11"
+      }
+    ],
+    "status": "completed",
+    "matching": "response.message_id plus immediately preceding same-owner/same-conversation user seq"
+  },
+  {
+    "request_id": "ad066b8c-9710-4956-bee5-50d3d7fc891a",
+    "created_at": "2026-10-06 18:23:15",
+    "response_keys": [
+      "answer",
+      "answer_basis",
+      "conversation_id",
+      "grounded",
+      "intent",
+      "latency_ms",
+      "message_id",
+      "sources"
+    ],
+    "question": "¿Qué es el Plan Libre?",
+    "answer_message_id": "100dcbad-a9fd-4463-9aa4-57d69834717a",
+    "intent": "documental",
+    "final_answer": "El Plan Libre es el nombre bajo el cual evolucionó el Plan de Pensiones por Jubilación a partir del primero de julio de 2007 [[data-alias/prestaciones/prestaciones.pdf#4]].\n\n### Información documentada\n\n*   **Origen:** El Plan de Pensiones por Jubilación fue renombrado como Plan Libre el primero de julio de 2007 [[data-alias/prestaciones/prestaciones.pdf#4]].\n*   **Tipos de Aportaciones:** El Plan Libre puede integrar hasta cuatro tipos de aportaciones:\n    *   Aportación básica realizada por la empresa [[data-alias/prestaciones/prestaciones.pdf#4]].\n    *   Aportación básica complementaria realizada por la empresa [[data-alias/prestaciones/prestaciones.pdf#4]].\n    *   Aportación adicional realizada por el empleado, la cual es obligatoria para quienes ganan más de 25 salarios mínimos [[data-alias/prestaciones/prestaciones.pdf#4]].\n    *   Aportación adicional complementaria realizada por la empresa [[data-alias/prestaciones/prestaciones.pdf#4]].\n*   **Manejo de Aportaciones:** Estas aportaciones se ahorran mensualmente en el fideicomiso administrado por la aseguradora GNP, y no pueden ser utilizadas por el colaborador mientras se encuentre activo en la empresa [[data-alias/prestaciones/prestaciones.pdf#4]].\n*   **Aportación Básica:** La empresa aporta el 5% del sueldo nominal del empleado, considerando 13 meses de sueldo por año, en la aportación básica [[data-alias/prestaciones/prestaciones.pdf#4]].\n*   **Aportación Básica Complementaria:** La aportación básica complementaria depende de la antigüedad del empleado:\n    *   Si la antigüedad es menor a 5 años, la aportación es del 50% de la aportación básica [[data-alias/prestaciones/prestaciones.pdf#4]].\n    *   Si la antigüedad es igual o mayor a 5 años, la aportación es del 100% de la aportación básica [[data-alias/prestaciones/prestaciones.pdf#4]].",
+    "public_sources": [
+      {
+        "label": "prestaciones.pdf, pagina 5",
+        "scope": "corporate",
+        "score": 0.5527,
+        "section": "pagina 5",
+        "category": "prestaciones",
+        "filename": "prestaciones.pdf",
+        "source_id": "data-alias/prestaciones/prestaciones.pdf#4",
+        "page_or_sheet": "pagina 5"
+      }
+    ],
+    "status": "completed",
+    "matching": "response.message_id plus immediately preceding same-owner/same-conversation user seq"
+  },
+  {
+    "request_id": "de7c8cf7-6000-4629-869f-9a8b9cf513ae",
+    "created_at": "2026-10-06 18:24:28",
+    "response_keys": [
+      "answer",
+      "answer_basis",
+      "conversation_id",
+      "grounded",
+      "intent",
+      "latency_ms",
+      "message_id",
+      "sources"
+    ],
+    "question": "Según la plática del Plan de Pensiones por Jubilación de diciembre de 2022, si ingresé en mayo de 2016 y me retiro con 7 años y 6 meses de antigüedad antes de jubilarme, ¿qué porcentaje me corresponde de las aportaciones básica, básica complementaria y adicional complementaria?",
+    "answer_message_id": "19b9b395-649f-456f-bb70-8587d51569c4",
+    "intent": "documental",
+    "final_answer": "Encontre documentacion relacionada, pero no pude validar una respuesta respaldada por sus fuentes.",
+    "public_sources": [],
+    "status": "completed",
+    "matching": "response.message_id plus immediately preceding same-owner/same-conversation user seq"
+  }
+]

@@ -1,0 +1,1 @@
+{"probe": "local_mysql_tcp_3306", "accepts_tcp": false, "socket_code": 10035, "authentication_or_database_query_performed": false}

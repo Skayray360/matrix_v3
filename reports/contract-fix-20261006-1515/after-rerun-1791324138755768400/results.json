@@ -1,0 +1,20 @@
+{
+  "exit_code": 1,
+  "collected": 449,
+  "passed": 448,
+  "failed": 1,
+  "subtest_reports": 40,
+  "errors": 0,
+  "skipped": 0,
+  "duration_seconds": 17.075,
+  "isolation_violations": [],
+  "failures": [
+    {
+      "nodeid": "tests/unit/test_rh_routing.py::test_rh_without_evidence_abstains_before_generation[\\xbfCu\\xe1nto se entrega por el apoyo de casamiento?]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.021424400008982047,
+      "detail": "tests\\unit\\test_rh_routing.py:113: in test_rh_without_evidence_abstains_before_generation\n    assert outcome.answer == INSUFFICIENT_ANSWER\nE   AssertionError: assert 'No cuento co... se menciona?' == 'No cuento co...tiene acceso.'\nE     \nE     Skipping 43 identical leading characters in diff, use -v to show\nE     - ente para responder eso dentro de las fuentes a las que usted tiene acceso.\nE     + ente para identificar ese plan o beneficio dentro de las fuentes a las que usted tiene acceso. \u00bfPuede indicar su nombre completo o el documento donde se menciona?"
+    }
+  ]
+}

@@ -1,0 +1,342 @@
+AUDITORÍA DEL PROMPT, CASAMIENTO Y PENSIONES — 6 DE OCTUBRE DE 2026
+
+Resultado: hay un defecto reproducible en la asociación del tema conversacional,
+reglas de generación que llegan intactas al transporte en una reproducción sin
+red y límites reproducibles del validador. NO hay evidencia suficiente para
+atribuir los tres rechazos históricos a una selección concreta de fragmentos o
+a una frase determinada del modelo. Las trazas anteriores no conservaron esos
+datos. Esta auditoría añade observación, no corrige recuperación ni validación.
+
+1. Qué se pudo comprobar del proceso y del prompt
+
+El último backend registrado fue PID 53604. Arrancó el 06/10 a las 12:21:15 y
+se detuvo a las 12:26:41, hora de México (18:21:15 y 18:26:41 UTC). La consulta
+de procesos durante la auditoría encontró Ollama, pero ningún Python del backend;
+los archivos de PID e identidad ya no estaban. No inicié ni detuve servicios.
+Por ello NO certifico una versión cargada por un proceso actualmente activo.
+
+prompts.py tiene SHA-256:
+b5c56aa2eb505b202101c66d420a1d20474090b8a98b411bed5446cd7c13dc8d.
+Su modificación fue a las 12:08:40; el bytecode conservado se escribió a las
+12:21:00, coincide con tamaño/mtime del fuente y contiene exactamente las
+constantes actuales de estilo y aplicabilidad. Es evidencia consistente con
+una carga actualizada antes de esas solicitudes, pero NO sustituye la captura
+del payload histórico ni demuestra por sí sola qué recibió Ollama.
+
+La reproducción en effective-payload-offline.json recorre las funciones reales:
+KnowledgeAgent.synthesize -> _pack_answer_context -> build_answer_messages ->
+_chat_with_fallback -> ModelClient.chat/_chat/_ollama_chat -> OllamaClient.chat
+-> petición HTTP /api/chat. Solo el transporte y sus respuestas son sintéticos.
+Se usa la configuración actual, sin cambiarla. La comprobación del pin también
+recibe inventario HTTP sintético; no acredita el modelo instalado.
+
+En AMBOS payloads, inicial y reintento, están completos RESPONSE_STYLE_POLICY
+y DOCUMENT_SCOPE_POLICY: brevedad, responder primero, no repetir presentación,
+separar condición sindical/contratación/empresa, fechar fuentes y no atribuir
+elegibilidad personal. No se sustituyen ni recortan esas instrucciones.
+
+Tensiones/instrucciones adicionales encontradas:
+- answer_system_policy, prompts.py:169: el modo actual es cited; permite
+  orientación general opcional y separada. El cierre documental aclara que
+  no hace falta esa sección. No obliga a mezclarla con información interna.
+- En extractive se exige copiar completa cada unidad seleccionada. Puede
+  producir extensión, pero no es el modo observado/configurado para estos casos.
+- La cobertura mínima del 34% solo provoca reintento en extractive. En cited
+  no exige citar todas las seis fuentes para aprobar una respuesta.
+- DOCUMENT_SUMMARY pide cubrir el documento y su reducción usa SYSTEM_POLICY
+  extractiva incluso si el modo configurado es cited. Es una tensión real en
+  resúmenes, pero estos tres requests tienen intención documental, no resumen.
+- _pack_answer_context puede retirar memoria y después unidades de evidencia
+  completas para respetar el presupuesto. No reduce las instrucciones system.
+  El reintento vuelve a empaquetar y podría perder fuentes al añadir correcciones;
+  no hay registro histórico de cuáles retiró. No se ha demostrado ese recorte.
+- ModelClient puede anteponer llm_system_prefix; el actual está vacío. Su
+  regeneración por salida incompleta añade una instrucción de respuesta breve
+  sin borrar el sistema. No hay evento de ese tipo en los tres requests.
+- _regenerate solo deshabilita orientación general cuando el primer motivo es
+  mezcla de procedencia. Un primer rechazo numérico deja esa sección opcional.
+- El mensaje final de insuficiencia sustituye el borrador cuando el segundo
+  intento falla. No es una respuesta literal producida por el modelo.
+
+La respuesta real a «Explícame mis prestaciones» (request
+2d4fbd1f-33d1-4ca8-aa35-fae3d4a5e67c) todavía agrupa «no sindicalizado,
+planta o eventual», introduce una definición y enumera beneficios de varias
+épocas. El PDF prestaciones.pdf, página 1, contiene precisamente esa agrupación
+en su metadata textual. El prompt pide distinguirla, pero el modelo la repite.
+El validador cited no verifica semánticamente población, vigencia o concisión.
+Eso explica cómo una respuesta así puede terminar con estado ok; no demuestra
+que el prompt antiguo fuera el cargado. Evidencia: recent-requests.json.
+
+2. Correlación de los rechazos
+
+Fuente: var/logs/backend-20261006-122112.log y SELECTs limitados de las operaciones
+correspondientes. response.message_id identifica la respuesta persistida; la
+pregunta es el turno user inmediatamente anterior del MISMO usuario y conversación.
+No se consultaron cookies/credenciales. Se aplicó el motor real de permisos y
+visibilidad; no se creó una sesión autenticada ni se escribió a la base.
+
+CASAMIENTO
+request_id: 85f79e69-572f-4e26-a6b9-f37d8e392430
+Pregunta: «¿Cuánto se entrega por el apoyo de casamiento?»
+Hora: 12:23:47–12:23:51. Intención registrada: documental.
+RAG: 24 candidatos, 24 tras deduplicación, 6 devueltos; mejor score 0.5178.
+Generación inicial: gemma4:latest; 244 caracteres, 47 tokens de salida;
+prompt_eval_count 3749. agent.regenerating, línea 54:
+  reason = "respuesta documental sin fuentes citadas"
+Reintento: mismo modelo, sin escalado; 227 caracteres, 42 tokens;
+prompt_eval_count 3779. agent.answer_validation_failed, línea 57:
+  reason = "respuesta documental sin fuentes citadas"
+Seis evidencias, cero citas y cero citas inválidas en la validación final.
+La corrección añadida por _retry_note exige citas a cada afirmación documental.
+No podemos saber si el borrador era una abstención prudente no reconocida por
+el conjunto de frases exactas del validador o una respuesta afirmativa sin citas.
+
+PENSIONES — DOS SOLICITUDES IGUALES
+Pregunta: según el documento de diciembre de 2022, ingreso declarado en mayo
+de 2016 y retiro previo a jubilación con 7 años y 6 meses; porcentaje de tres
+aportaciones (básica, básica complementaria, adicional complementaria).
+
+request_id: 8f2c5e7e-8d4e-4ac2-8c08-4458fe4862ce
+Hora: 12:24:08–12:24:17. Intención: documental.
+RAG: 24/24/6; mejor score 0.6737.
+Inicial: 779 caracteres, 190 tokens; prompt_eval_count 4002. Línea 66:
+  reason = "afirmacion numerica sin respaldo en sus fuentes citadas"
+Reintento: 1075 caracteres, 269 tokens; prompt_eval_count 4072. Línea 69:
+  reason = "orientacion general atribuida a fuentes documentales"
+Seis evidencias; dos fuentes citadas y cero fuentes inválidas al rechazar.
+
+request_id: de7c8cf7-6000-4629-869f-9a8b9cf513ae
+Hora: 12:24:28–12:24:36. Intención: documental.
+RAG: 24/24/6; mejor score 0.6984.
+Inicial: 1053 caracteres, 247 tokens; prompt_eval_count 3584. Línea 78:
+  reason = "afirmacion numerica sin respaldo en sus fuentes citadas"
+Reintento: 1210 caracteres, 310 tokens; prompt_eval_count 3654. Línea 82:
+  reason = "orientacion general atribuida a fuentes documentales"
+Seis evidencias; una fuente citada y cero fuentes inválidas al rechazar.
+
+Ambas usaron gemma4:latest, ruta fast, sin escalado. El reintento añadió la
+instrucción de conservar cifras, unidades y condiciones, y de no presentar
+datos de la pregunta como hechos confirmados. La causa final es una cita dentro
+de la sección que split_answer_sections interpreta como general. No demuestra
+por sí sola que la cifra original fuera inventada; tampoco permite identificar
+qué encabezado/sección concreta produjo ese rechazo. No se conservó el borrador.
+
+Los tres terminaron degraded, con la misma respuesta de aplicación:
+«Encontre documentacion relacionada, pero no pude validar una respuesta
+respaldada por sus fuentes.» source_ids y sources persistidos quedaron vacíos
+porque solo publican citas de una respuesta aceptada. Eso NO significa que no
+se recuperaran fuentes. No hay nombres, páginas ni textos de los seis fragmentos
+seleccionados en esos registros. No se puede sustituir esa ausencia por las
+fuentes citadas en otra solicitud exitosa.
+
+Modelo registrado: gemma4:latest. Opciones construidas con la configuración
+actual y comprobadas en el transporte simulado: num_ctx=8192, num_predict=1536,
+top_p=0.9, temperature=0.1 inicialmente y 0.03 en el reintento, think=false,
+keep_alive=15m, stream=false; top_k no se envía. No se cambió ningún parámetro.
+Los logs históricos NO registraron esas opciones ni digest del checkpoint.
+No afirmo conocer el top-k interno que aplicó Ollama ni sus defaults históricos.
+Las salidas registradas están muy por debajo de 1536 tokens y no tienen evento
+de truncamiento: no hay evidencia para aumentar tokens o cambiar temperatura.
+
+3. Consulta al recuperador y defecto de contexto
+
+reconstructed-queries.json usa los turnos previos visibles, el mismo límite
+de memoria, el fingerprint de autorización y las funciones reales actuales de
+ModelPolicy. El fingerprint calculado COINCIDE con el almacenado en cada una
+de las tres operaciones. Son reconstrucciones verificables; no capturas del
+payload histórico. model_policy.py no cambió durante esta auditoría.
+
+Para casamiento se reconstruye exactamente:
+  Explícame mis prestaciones
+  ¿Qué es el Plan Libre?
+  Seguimiento: ¿Cuánto se entrega por el apoyo de casamiento?
+
+Para pensiones 8f2c... se anteponen esos tres temas, incluido casamiento, a la
+pregunta completa. En de7c... se arrastra Plan Libre, casamiento y la pregunta
+anterior de pensiones, y se repite nuevamente la pregunta tras «Seguimiento:».
+format_query añade «task: search result | query: » antes de embeber.
+
+Responsable demostrado: ModelPolicy._uses_previous_topic, model_policy.py:362.
+La rama is_benefit_reference se evalúa antes de reconocer una pregunta completa
+y usa la presencia genérica de plan/prestaciones en el antecedente. Así hereda
+contexto incluso al cambiar de un beneficio empresarial específico a otro.
+Esto contamina la consulta; su efecto concreto en el ranking histórico sigue
+pendiente porque no están guardados los candidatos y sus textos.
+
+Cambio mínimo propuesto, NO aplicado: priorizar la pregunta autosuficiente que
+identifica su propio beneficio/documento; usar antecedente solo para referencias
+elípticas o anafóricas. Evitar duplicar una pregunta completa repetida. No crear
+una excepción para casamiento o Plan Libre.
+Prueba correctiva: secuencia con planes sintéticos A/B y una pregunta completa
+con fecha; verificar consulta RAG sin el tema anterior, y conservar seguimiento
+«¿y cuánto?» junto con cambio a un tema general y revocación de permisos.
+
+4. Contraste con los PDF actuales
+
+Casamiento: no encontré una regla de importe ni condiciones en el texto de los
+seis PDF actuales (84 páginas). La búsqueda casam/matrim/nupc/boda dio cero
+coincidencias; no hubo páginas totalmente vacías ni avisos del extractor.
+Se revisó además el texto completo de las dos presentaciones generales de
+prestaciones. Esto acredita ausencia en el texto extraíble examinado, no la
+inexistencia de una regla en cualquier política empresarial o en imágenes no
+reconocidas por OCR. No se hizo OCR ni revisión visual exhaustiva de las 84 páginas.
+No hay base para inventar un monto ni atribuir uno al usuario. Véase
+corpus-term-search.json. Los SHA de esos seis PDF coinciden con los de documentos
+corporativos indexados en SQL; esa coincidencia no prueba el contenido de Qdrant.
+
+Pensiones: inspección visual de la página 9 y extracción real extract_pdf +
+chunk_blocks del archivo «PLATICA DE PLAN DE PENSIONES POR JUBILACI#U00d3N
+DICIEMBRE 2022.pdf», SHA efb4894c8c3caf3bb42335bb342f2618a19cc6ea086692c69c99c97f9d4368b2.
+La página contiene ambas reglas de ingreso: antes del 1 de abril de 2016,
+100% de básica y complementarias según tabla; desde esa fecha, las tres
+aportaciones según tabla. Conserva encabezado Antigüedad / %, dos columnas
+y siete filas: 0–4.99:0; 5–5.99:50; 6–6.99:60; 7–7.99:70; 8–8.99:80;
+9–9.99:90; 10 en adelante:100.
+
+En la extracción actual, las reglas y tabla caben juntas en chunk 8, página 9,
+644 caracteres. El source_id reconstruido sería:
+data-alias/prestaciones/PLATICA DE PLAN DE PENSIONES POR JUBILACI#U00d3N DICIEMBRE 2022.pdf#8
+El índice de chunk es cero-based; «#8» no es página 8. El extractor guarda
+la tabla como texto con filas, no como objeto de celdas; conserva aquí la
+relación legible entre columnas. numeric_claim_supported reconoce 70% en ese
+texto. No se demuestra extracción defectuosa en ESTA tabla. No abrí Qdrant;
+no afirmo que su payload histórico sea idéntico ni que se recuperara el chunk 8.
+La página 10 añade condiciones de transferencia por renuncia, distintas del
+porcentaje de portabilidad solicitado. Los porcentajes de aportación mensual
+de páginas 5/7 no deben confundirse con los de retiro de página 9.
+
+La fila documental permitiría interpretar condicionalmente el caso declarado
+en el tramo 7–7.99, pero eso no acredita elegibilidad individual ni vigencia
+actual. «Diciembre de 2022» está en el nombre del archivo; no figura en el texto
+extraído de la página 9. No es prueba automática de vigencia.
+
+5. Capa, cambio mínimo propuesto y prueba para cada fallo
+
+A) Extensión y población mezclada.
+Evidencia: respuesta real 2d4f..., instrucciones presentes en ambos payloads de
+la reproducción y agrupación ambigua en metadata textual de prestaciones.pdf.
+Capa: generación/interpretación de la evidencia; el contrato cited no valida
+semántica. Carga histórica del prompt no certificada.
+Archivo/función: prompts.answer_system_policy/build_answer_messages para
+alineación de instrucciones solo si la captura confirma el incumplimiento;
+KnowledgeAgent.synthesize como punto de evaluación de la respuesta.
+Cambio mínimo: no seguir añadiendo reglas a ciegas; verificar primero la traza
+y evaluar instrucciones por caso con fuentes de poblaciones separadas. El
+extractive/reduce es otro contrato que debe tratarse aparte si se aborda resumen.
+Prueba: fuentes sintéticas de diferentes fechas y poblaciones; respuesta breve
+sin convertir condición sindical en contrato ni confirmar paquete personal.
+Una prueba de strings del prompt no demuestra obediencia del modelo.
+
+B) Casamiento.
+Evidencia: no monto en corpus extraíble examinado, seis resultados relacionados,
+dos borradores sin citas descartados. Su texto ya no está disponible.
+Capa: ausencia de evidencia pertinente; posible abstención no reconocida frente
+a generación afirmativa sin respaldo, todavía no distinguibles en ese request.
+Archivo/función: KnowledgeAgent._regenerate/_retry_note y
+grounding._verify_cited_answer, SOLO después de observar los borradores.
+Cambio mínimo propuesto: si se confirma una abstención/solicitud de precisión
+segura, darle un contrato explícito que no exija inventar una cita. No aceptar
+cualquier respuesta que contenga «no sé» ni deshabilitar la validación factual.
+Si hay monto afirmado sin evidencia, mantener el rechazo.
+Prueba: abstención sin cifra admitida bajo ese contrato; un importe inventado
+con una frase de insuficiencia añadida sigue rechazado; fuentes ajenas no bastan.
+
+C) Pensiones: evidencia/contexto.
+Evidencia: regla y tabla presentes y bien extraídas; seleccionados históricos
+desconocidos; consultas contaminadas por antecedentes ajenos.
+Capa demostrada: interpretación contextual. Recuperación incorrecta o pérdida
+por empaquetado siguen pendientes; no están demostradas solo por el score.
+Archivo/función: model_policy._uses_previous_topic; si la traza muestra falta
+de página 9, retriever.Retriever.retrieve; si entra y se pierde, KnowledgeAgent
+._pack_answer_context. No cambiar esos dos últimos sin esa comparación.
+Cambio mínimo: corregir primero la dependencia contextual; después, solo si
+es necesario, asegurar recuperación de la regla y tabla del documento explícito
+dentro de sus permisos, o conservar esa unidad completa en el presupuesto.
+Prueba: corpus sintético con aportaciones mensuales y portabilidad separadas;
+comparar recuperado/empaquetado/enviado y exigir la regla y la tabla pertinente,
+sin ampliar categorías ni acceder a otra conversación. No subir top-k a ciegas.
+
+D) Pensiones: rechazo numérico y reintento.
+Evidencia: numeric_claim_supported acepta «70%» contra la página 9, rechaza
+«El documento de diciembre de 2022 establece 70%» y rechaza el condicional
+«Si declara 7 años y 6 meses...70%». También rechaza correctamente «71%».
+La primera discrepancia nace de comparar la fecha de procedencia exclusivamente
+con e.text, omitiendo metadata; la segunda, de exigir que los datos declarados
+aparezcan en la política. Son limitaciones reproducibles, NO la identificación
+de la frase histórica que falló. El chequeo tampoco prueba la relación semántica
+entre antigüedad, fecha de ingreso y porcentaje: reconocer un número no basta.
+Archivo/función: grounding._verify_cited_answer y numeric_grounding
+.numeric_claim_supported; prompts.build_answer_messages para representar
+procedencia/caso declarado de forma separada; KnowledgeAgent._regenerate
+para mantener la procedencia documental del reintento.
+Cambio mínimo propuesto: tipar y separar metadata de procedencia, supuestos
+declarados y afirmaciones normativas; verificar cada una contra su origen,
+conservando validación estricta de las cifras de la política y sus condiciones.
+No añadir todos los números de la pregunta al conjunto de cifras permitidas.
+En un reintento documental fallido, limitar la corrección al dato rechazado y
+mantener claramente separadas o ausentes las orientaciones generales.
+Prueba: año de metadata válido frente a año inventado; edad/antigüedad declarada
+condicional frente a perfil personal afirmado; porcentaje correcto frente a
+porcentaje inventado o de otra fila; citas en orientación general siguen
+rechazadas. Reproducir primero el borrador real antes de catalogarlo falso rechazo.
+
+6. Qué cambió y cómo se verificó
+
+Solo instrumentación:
+- backend/app/common/answer_diagnostics.py (nuevo): control local opt-in con
+  coincidencia exacta de usuario/conversación/SHA de pregunta saneada, máximo
+  15 minutos y un uso por contenido de control y proceso. Hasta 16 eventos,
+  8 source_ids corporativos enumerados, extractos de 1800 caracteres, consulta
+  de 1600 y borradores de 2400; el resto se identifica por huella/longitud.
+  No vuelca bloques de memoria, SQL ni texto de adjuntos privados. Un borrador
+  acotado sí puede reflejar información declarada; úsese solo en el turno de
+  diagnóstico elegido. Los valores pasan por la redacción existente de secretos.
+  Fallos de observación desactivan la traza y no cambian la respuesta.
+- orchestrator.py: activa la observación DESPUÉS de los controles existentes
+  y anota consulta/clasificación/selección; limpia ContextVar incluso con error.
+- knowledge_agent.py: anota empaquetado, validaciones y plan de reintento.
+- ollama_client.py: observa el payload final inmediatamente antes de _post.
+- backend/tests/unit/test_answer_diagnostics.py (nuevo): 14 casos sintéticos.
+- SHA256SUMS.txt: solo tres entradas existentes actualizadas y las dos nuevas.
+
+No se modificaron prompts.py, model_policy.py, retriever.py, grounding.py,
+numeric_grounding.py, extractores, .env, dependencias, PDFs o frontend. Las
+consultas SQL fueron SELECT, sin migraciones; no se instanció Qdrant.
+
+Las pruebas nuevas ejecutan los constructores, KnowledgeAgent, ModelPolicy,
+ModelClient, OllamaClient y validadores reales. Simulan HTTP con MockTransport y
+configuración/datos sintéticos. NO simulan las funciones de prompt, empaquetado,
+regeneración o validación que afirman observar. No prueban comportamiento real
+del modelo ni recuperación semántica del índice operativo. Las pruebas antiguas
+conservan sus mocks propios; test_authorization y test_rag_pipeline_isolated
+usan motor real de permisos y recuperación aislada con datos sintéticos.
+
+Comando final:
+reports/stage1-regression-20261006-113952/test-env/Scripts/python.exe -B
+reports/diagnostic-20261006-123022/run-tests.py after
+
+Resultado: 356 casos; 355 aprobados, 1 fallido, 0 errores/omitidos, 40 subtests
+aprobados, sin violaciones del aislamiento. Doce suites: las nueve de la etapa
+previa, más test_answer_diagnostics, test_llm_client y test_grounding_numeric_rag_hotfix.
+Detalle definitivo: after-rerun-1791312644986638400/pytest.log y results.json.
+Único fallo: test_rh_routing.py:113, casamiento SIN evidencia, espera literalmente
+INSUFFICIENT_ANSWER y recibe UNKNOWN_BENEFIT_ANSWER. Ya fallaba en las ejecuciones
+before/after de reports/stage1-regression-20261006-113952. No es el mismo camino
+que el incidente real con seis evidencias. No se cambió el assert para ocultarlo.
+
+Ruff pasa en los cinco archivos Python intervenidos. Preflight oficial:
+../.venv/Scripts/python.exe -B -S -m scripts.preflight --integrity-only --require-manifest
+desde backend: exit 0, núcleo conforme. El cotejo COMPLETO conserva ocho
+discrepancias previas: .github/README.md, README.md, backend/README.md,
+data/knowledge/README.md, data/knowledge/especializadas/README.md, docs/README.md,
+infrastructure/README.md y var/README.md. Ningún ausente o cambio ajeno nuevo.
+El preflight verifica un subconjunto operativo y no esos README; no se omitió
+esa diferencia. .env, pyproject.toml y uv.lock conservan sus hashes previos.
+
+Se dejó respaldo recuperable en backup/ y diff en changes.patch. La traza NO
+está activada: no se creó var/diagnostics/next-answer.json. TRACE.txt explica
+cómo preparar una única captura futura cuando exista una instancia que cargue
+esta instrumentación. No inicié servicios ni ejecuté llamadas reales a Ollama.
+
+Los ejemplos y experimentos del informe son lecturas/reproducciones controladas,
+no nuevas respuestas comprobadas del modelo real. No se continuó a otra etapa.

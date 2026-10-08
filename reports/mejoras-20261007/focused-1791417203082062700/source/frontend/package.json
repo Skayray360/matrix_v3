@@ -1,0 +1,52 @@
+{
+  "name": "matrix-rh-frontend",
+  "private": true,
+  "version": "1.3.1",
+  "type": "module",
+  "description": "Interfaz de Matrix RH (React + TypeScript + Vite)",
+  "author": "Aldo Garcia",
+  "packageManager": "npm@11.9.0+sha512.04166853ddba142ca98f86fb57b1258a7c6c59ccb82acb3cf141b77a315898acaaed47395e74f7e0c7b69c486008e68be6a6381ef1aee5a23dd82e0e61decd68",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "e2e": "playwright test",
+    "e2e:install": "playwright install chromium",
+    "test:visual": "playwright test --config playwright.visual.config.ts",
+    "audit:prod": "npm audit --omit=dev --audit-level=low",
+    "audit:all": "npm audit",
+    "lint": "eslint . --max-warnings=0",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"tests/**/*.{ts,tsx}\" \"*.ts\" \"*.json\" \"*.js\" \"*.cjs\"",
+    "format": "prettier --write \"src/**/*.{ts,tsx}\" \"tests/**/*.{ts,tsx}\" \"*.ts\" \"*.json\" \"*.js\" \"*.cjs\""
+  },
+  "dependencies": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.1",
+    "@testing-library/jest-dom": "6.6.3",
+    "@testing-library/react": "16.1.0",
+    "@testing-library/user-event": "14.5.2",
+    "@types/node": "22.20.1",
+    "@types/react": "18.3.18",
+    "@types/react-dom": "18.3.5",
+    "@vitejs/plugin-react": "6.0.5",
+    "jsdom": "25.0.1",
+    "typescript": "5.7.2",
+    "vite": "8.2.1",
+    "vitest": "4.1.11",
+    "@eslint/js": "10.0.1",
+    "eslint": "10.11.0",
+    "typescript-eslint": "8.71.0",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "prettier": "3.9.9"
+  },
+  "engines": {
+    "node": "^22.13.0 || >=24",
+    "npm": ">=10"
+  }
+}

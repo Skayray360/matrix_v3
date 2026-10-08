@@ -1,0 +1,27 @@
+# Creado por Aldo Garcia. No enviar estado ni secretos al contexto de build.
+.git
+.env
+.env.*
+!.env.example
+**/.venv
+**/node_modules
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+**/.coverage*
+**/*.tsbuildinfo
+frontend/dist
+frontend/playwright-report
+frontend/test-results
+var
+logs
+reports/tests
+reports/security
+data/knowledge
+infrastructure/nginx/certs
+**/*.pem
+**/*.key
+**/*.pfx
+**/*.p12
+**/*.bundle
+**/*.zip

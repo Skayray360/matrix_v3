@@ -1,0 +1,141 @@
+--- before/backend/app/llm/model_policy.py
++++ after/backend/app/llm/model_policy.py
+@@ -30,6 +30,7 @@
+     """Intencion detectada por el router."""
+ 
+     IDENTITY = "identity"
++    CAPABILITIES = "capabilities"
+     DOCUMENT_SUMMARY = "document_summary"
+     DOCUMENTAL = "documental"
+     STRUCTURED = "structured"
+@@ -108,6 +109,39 @@
+     "presentate",
+     "que asistente eres",
+ )
++
++_CAPABILITY_REQUEST = re.compile(
++    r"(?:(?:hola|buenos dias|buenas tardes)[, ]+)?"
++    r"(?:(?:quien eres|presentate)[, ]+(?:y )?)?"
++    r"(?:que puedes hacer|que sabes hacer|en que (?:me )?puedes ayudar(?:me)?|"
++    r"como (?:me )?puedes ayudar(?:me)?|cuales son tus (?:capacidades|funciones)|"
++    r"que (?:documentos|informacion) puedes consultar|"
++    r"(?:tienes acceso a|puedes consultar) (?:la )?(?:documentacion interna|documentos autorizados))"
++    r"(?: por mi| por nosotros)?"
++)
++
++# Se reconoce la forma de una referencia, no un catalogo de planes empresariales.
++# Un nombre definido y desconocido requiere fuentes antes de darle significado.
++_NAMED_BENEFIT_REFERENCE = re.compile(
++    r"\b(?:el|del|al|este|ese|nuestro|mi) "
++    r"(?:plan|programa|beneficio|apoyo|seguro|fondo|esquema) "
++    r"(?!(?:de|del|para|en|que|es|son)\b)\w+"
++)
++_DEFINITE_BENEFIT_REFERENCE = re.compile(
++    r"\b(?:el|la|los|las|del|al|este|ese|esa|nuestro|nuestra) "
++    r"(?:plan(?:es)?|programas?|beneficios?|prestaciones?|apoyos?|seguros?|fondos?|esquemas?)\b"
++)
++_CONTEXT_REFERENCE = re.compile(
++    r"\b(?:eso|esto|ello|ese|esa|esos|esas|dicho|dicha|lo anterior|lo mismo|"
++    r"sus (?:condiciones|requisitos|excepciones|beneficios)|su (?:cobertura|vigencia))\b"
++)
++_ELLIPTICAL_FOLLOWUP = re.compile(
++    r"(?:y |pero )?(?:en ese caso|en esa situacion|entonces|"
++    r"con .+|para .+|cuanto(?:s|a|as)?(?: (?:es|seria|son|cuesta|recibo|"
++    r"me (?:dan|toca|corresponde)|dias))?|que requisitos(?: .+)?|"
++    r"como (?:lo |se )?(?:solicito|tramito|aplica)|desde cuando|hasta cuando)"
++)
++
+ 
+ _SUMMARY_MARKERS = (
+     "resume",
+@@ -236,6 +270,12 @@
+     return "".join(char for char in decomposed if not unicodedata.combining(char))
+ 
+ 
++def _complete_request(text: str) -> str:
++    text = _normalized(text).strip(" ¿?¡!.,;:")
++    # Una conjuncion no convierte un concepto independiente en seguimiento.
++    return re.sub(r"^(?:y|por cierto|cambiando de tema|otra pregunta)[, :¿]+", "", text).strip(" ¿?¡!.,;:")
++
++
+ def _contains_phrase(text: str, markers: tuple[str, ...]) -> bool:
+     """Busca frases completas; evita ``sintesis`` dentro de ``fotosintesis``."""
+     return any(
+@@ -294,10 +334,52 @@
+             or _SPECIFIC_PEOPLE_REFERENCE.search(text)
+             or (_BENEFIT_AMOUNT.search(text) and _contains_phrase(text, _BENEFIT_NAMES))
+             or _AMBIGUOUS_FOLLOWUP.fullmatch(text.strip(" ¿?¡!.,;:"))
++            or _NAMED_BENEFIT_REFERENCE.search(text)
++            or _CONTEXT_REFERENCE.search(text)
+         )
+ 
++    @staticmethod
++    def is_benefit_reference(question: str) -> bool:
++        """Referencia que puede necesitar precisar el nombre o documento del plan."""
++        return bool(_DEFINITE_BENEFIT_REFERENCE.search(_normalized(question)))
++
++    def contextual_reference(self, question: str, *, prior_questions: tuple[str, ...] = ()) -> str:
++        """Solo recibe preguntas del historial ya autorizado, nunca hechos como prueba.
++
++        Mantiene el antecedente de seguimientos consecutivos, pero una pregunta
++        independiente reemplaza el tema. No busca coincidencias en temas antiguos.
++        """
++        previous = ""
++        for turn in prior_questions:
++            if self.classify_intent(turn) in (Intent.CONVERSATIONAL, Intent.IDENTITY, Intent.CAPABILITIES):
++                continue
++            if self._uses_previous_topic(turn, previous):
++                previous = f"{previous}\n{turn}"[-1200:]
++            else:
++                previous = turn
++        return previous if self._uses_previous_topic(question, previous) else ""
++
++    def _uses_previous_topic(self, question: str, previous: str) -> bool:
++        if not previous or self.classify_intent(previous) not in (
++            Intent.DOCUMENTAL, Intent.DOCUMENT_SUMMARY, Intent.STRUCTURED, Intent.MIXED,
++        ):
++            return False
++        text = _complete_request(question)
++        if re.match(r"^(?:por cierto|cambiando de tema|otra pregunta)\b", _normalized(question).lstrip("¿ ")):
++            return False
++        if _CONTEXT_REFERENCE.search(text):
++            return True
++        if self.is_benefit_reference(question) and _contains_phrase(
++            _normalized(previous), (*_DOCUMENTAL_MARKERS, "prestaciones", "beneficios", "plan", "programa"),
++        ):
++            return True
++        # Una explicacion completa prevalece sobre el prefijo "y".
++        if _GENERAL_REQUEST.fullmatch(text):
++            return False
++        return bool(_ELLIPTICAL_FOLLOWUP.fullmatch(text))
++
+     # -------------------------------------------------------------- intencion
+-    def classify_intent(self, question: str) -> Intent:
++    def classify_intent(self, question: str, *, previous_question: str = "") -> Intent:
+         """Clasificacion heuristica previa al router.
+ 
+         Se hace en codigo y no en el LLM porque una clasificacion determinista es
+@@ -309,6 +391,8 @@
+         if not text:
+             return Intent.CONVERSATIONAL
+ 
++        if _CAPABILITY_REQUEST.fullmatch(text.strip(" ¿?¡!.,;:")):
++            return Intent.CAPABILITIES
+         if _contains_phrase(text, _IDENTITY_MARKERS):
+             return Intent.IDENTITY
+ 
+@@ -320,12 +404,13 @@
+         if has_structured:
+             return Intent.STRUCTURED
+         # Un saludo inicial nunca convierte el resto de la pregunta en charla.
+-        complete_request = text.strip(" ¿?¡!.,;:")
++        complete_request = _complete_request(question)
+         if complete_request in _CONVERSATIONAL_MARKERS:
+             return Intent.CONVERSATIONAL
+         if (
+             _GENERAL_REQUEST.fullmatch(complete_request)
+             and not self.requires_internal_evidence(question)
++            and not self._uses_previous_topic(question, previous_question)
+         ):
+             return Intent.GENERAL
+         if _contains_phrase(text, _SUMMARY_MARKERS):

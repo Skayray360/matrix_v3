@@ -1,0 +1,20 @@
+{
+  "exit_code": 1,
+  "collected": 312,
+  "passed": 311,
+  "failed": 1,
+  "errors": 0,
+  "skipped": 0,
+  "duration_seconds": 3.436,
+  "isolation_violations": [],
+  "isolation_violation_events": [],
+  "failures": [
+    {
+      "nodeid": "tests/unit/test_conditional_contract.py::test_retry_reports_actual_rejection_before_coverage",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.00024899999698391184,
+      "detail": "tests\\unit\\test_conditional_contract.py:336: in test_retry_reports_actual_rejection_before_coverage\n    assert report.reason in note\nE   AssertionError: assert 'afirmacion documental final sin cita' in 'La respuesta termino con texto sin una cita valida. Cada afirmacion documental, incluidas las notas finales, debe lle...n sindical o contratacion), sin afirmar una regla ni explicar que prestaciones aplican. Esa pregunta no requiere cita.'\nE    +  where 'afirmacion documental final sin cita' = GroundingReport(grounded=False, cited_source_ids=(), invalid_source_ids=(), declares_insufficiency=False, reason='afir...ita', citations_valid=False, factual_verified=False, extractive_verified=False, validation_detail='', claim_index=None).reason"
+    }
+  ]
+}

@@ -1,0 +1,102 @@
+{
+  "checked_at_utc": "2026-10-07T23:32:11.286393+00:00",
+  "http_path_tested": false,
+  "database_writes_allowed": false,
+  "operational_index_opened": false,
+  "conversation_memory_used": false,
+  "private_attachments_used": false,
+  "question_case": "pensions",
+  "question_sha256": "ddcf05c3900880290eaed799bae222b6fff1ad9c82ce84df57dbdda2ff90f5c5",
+  "question_chars": 305,
+  "validation_attempts": [
+    {
+      "retry": false,
+      "grounded": false,
+      "reason": "afirmacion numerica sin respaldo en sus fuentes citadas",
+      "detail": "antiguedad atribuida al caso distinta de la declarada",
+      "claim_index": 2,
+      "cited_source_count": 1,
+      "invalid_source_count": 0,
+      "declares_insufficiency": false
+    },
+    {
+      "retry": true,
+      "grounded": true,
+      "reason": "citas autorizadas y cifras contrastadas; veracidad semantica no evaluada",
+      "detail": "",
+      "claim_index": null,
+      "cited_source_count": 1,
+      "invalid_source_count": 0,
+      "declares_insufficiency": false
+    }
+  ],
+  "signed_context_verified": true,
+  "authorized_category_count": 13,
+  "retrieval": {
+    "fetched": 24,
+    "after_dedup": 24,
+    "returned": 6,
+    "best_score": 0.589019100421214,
+    "truncated": false,
+    "sources": [
+      {
+        "filename": "PLATICA DE PLAN DE PENSIONES POR JUBILACI#U00d3N DICIEMBRE 2022.pdf",
+        "page": "pagina 9",
+        "category": "prestaciones",
+        "scope": "corporate",
+        "score": 0.589019100421214
+      },
+      {
+        "filename": "prestaciones.pdf",
+        "page": "pagina 5",
+        "category": "prestaciones",
+        "scope": "corporate",
+        "score": 0.5571159825196507
+      },
+      {
+        "filename": "PLATICA DE PLAN DE FALLECIMIENTO E INVALIDEZ RH 2020.pdf",
+        "page": "pagina 6",
+        "category": "prestaciones",
+        "scope": "corporate",
+        "score": 0.4610550507503844
+      },
+      {
+        "filename": "prestaciones.pdf",
+        "page": "pagina 4",
+        "category": "prestaciones",
+        "scope": "corporate",
+        "score": 0.5236482499402091
+      },
+      {
+        "filename": "PLATICA DE PLAN DE FALLECIMIENTO E INVALIDEZ RH 2020.pdf",
+        "page": "pagina 12",
+        "category": "prestaciones",
+        "scope": "corporate",
+        "score": 0.4328843067367051
+      },
+      {
+        "filename": "Platicas Cartas designacion 2022 BMA.pdf",
+        "page": "pagina 4",
+        "category": "prestaciones",
+        "scope": "corporate",
+        "score": 0.38413491862590265
+      }
+    ]
+  },
+  "route": {
+    "selected_model": "gemma4:latest",
+    "model_route": "fast",
+    "intent": "documental",
+    "routing_signals": [
+      "fast_path_sufficient"
+    ],
+    "routing_decisive_signals": [],
+    "routing_weak_signals": []
+  },
+  "status": "accepted",
+  "regenerated": true,
+  "model": "gemma4:latest",
+  "grounded": true,
+  "answer_basis": "documented",
+  "latency_ms": 7073
+}

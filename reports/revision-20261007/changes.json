@@ -1,0 +1,85 @@
+{
+  "date": "2026-10-07",
+  "files": [
+    {
+      "path": "backend/app/agents/prompts.py",
+      "kind": "modified",
+      "after_sha256": "8d232e270b4dcb6444754abd6cc4d7d58bcb36a1654f84d2a39bf5807bbc1f83",
+      "before_sha256": "e3681be62eb6a457931f6753a5800dad2862203bcbbd9dc04af3b8f4582f7859"
+    },
+    {
+      "path": "backend/app/rag/chunking.py",
+      "kind": "modified",
+      "after_sha256": "40e7b7730d5e502e5cdfb2430a8ec26853876c7cb749cfc5e56154389c3871c7",
+      "before_sha256": "b4f419b79b8c646825ee2dcc2ccac88d9fe76fafa2bf2cfd84842c363cd3e628"
+    },
+    {
+      "path": "backend/app/rag/claim_context.py",
+      "kind": "modified",
+      "after_sha256": "a11c34fc91c4ba531307085bfcefff832901269ba0a3f8707876e9d3dda103b6",
+      "before_sha256": "0845ce579ad501fa35cecb73472df88e5553a494ce7516c31367682a053fd482"
+    },
+    {
+      "path": "backend/app/rag/numeric_grounding.py",
+      "kind": "modified",
+      "after_sha256": "a7833b01883fc1df2ced8d1f17725ed9b4966bd412649a0d50405f1cbf40a7a9",
+      "before_sha256": "5560542c587351df7636e5794c3fd0bd55e83984f8fdd5bae38ce13c0629f51f"
+    },
+    {
+      "path": "backend/app/rag/retriever.py",
+      "kind": "modified",
+      "after_sha256": "73e8e21a97a5ab25007043f2934944143ca687fd305187007fbc84650455c4d4",
+      "before_sha256": "784d49837ec235af0234b7794b9ab5ab6eb7a121f448966b41679948f02e7fab"
+    },
+    {
+      "path": "backend/app/security/prompt_guard.py",
+      "kind": "modified",
+      "after_sha256": "3738f340580f95fa563f6da8f6a53bca2c20776abc55acbc4ac8f2c7c453023d",
+      "before_sha256": "6e82cf43741d590c40b3a848786de801b7f8f50605509a9cda6c32e3a1222453"
+    },
+    {
+      "path": "backend/app/security/upload_guard.py",
+      "kind": "modified",
+      "after_sha256": "debf40de0180ef1f1f4f3f39b037f57df6ff44063794509c75607b95b7d2718f",
+      "before_sha256": "c7e08556b1a955772803135c65c62daa700a31e570543c8f93539677070e3e42"
+    },
+    {
+      "path": "docs/SECURITY.md",
+      "kind": "modified",
+      "after_sha256": "4f4ce3f70cc760b7fee1cdfe74b158b28878f61100f1d51a4ee419981be61186",
+      "before_sha256": "237f03da3fd3683d6ca3c7d60e796b8a17548cc818e1fe13baa56f0d69d1afac"
+    },
+    {
+      "path": "docs/TESTING.md",
+      "kind": "modified",
+      "after_sha256": "d11d160b3b4c9a227a3f6f880d52a870570f3a85658b428acc6c9f5bfa0b1a85",
+      "before_sha256": "5b115d280e10c110e9eed75731caeb31b3875a68c0d308ae6d6ee73a6dd2193e"
+    },
+    {
+      "path": "SHA256SUMS.txt",
+      "kind": "modified",
+      "after_sha256": "42c7a42e2d64042ef9164f6d9c563a6b38543c90592d5b16a3e4e86bd1c00bd2",
+      "before_sha256": "9605b1489f2e13131baee96904d9115c07333a5dd6ca75352e0d3e6c43eaae74"
+    },
+    {
+      "path": "backend/tests/unit/test_document_table_context_131.py",
+      "kind": "new",
+      "after_sha256": "fa173fbb091b82553fdc52bf9792552661454300498e49a15cea85c867327dda"
+    },
+    {
+      "path": "backend/tests/unit/test_numeric_provenance_revision.py",
+      "kind": "new",
+      "after_sha256": "d232c86f4a66db6bd74affeef6a639d5b26b603bc19692979be27706fa0add51"
+    },
+    {
+      "path": "backend/tests/unit/test_security_boundaries_20261007.py",
+      "kind": "new",
+      "after_sha256": "48b5b4adfd8f12805d67d9551bcb83c1b8f3b7eb05a38fa6efb226e2ee6c33a2"
+    },
+    {
+      "path": "docs/REVISION_DOCUMENTAL_2026-10-07.md",
+      "kind": "new",
+      "after_sha256": "64a13de5ec23d98f96c10770a95e320e7aa14270f9348dff069272e847396929"
+    }
+  ]
+}

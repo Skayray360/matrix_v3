@@ -1,0 +1,97 @@
+{
+  "before": {
+    "tests/unit/test_conversation_policy_stage1.py": {
+      "passed": 30,
+      "failed": 0,
+      "skipped": 0
+    },
+    "tests/unit/test_model_policy.py": {
+      "passed": 33,
+      "failed": 0,
+      "skipped": 0
+    },
+    "tests/unit/test_rh_routing.py": {
+      "passed": 38,
+      "failed": 1,
+      "skipped": 0
+    },
+    "tests/unit/test_routing_timeouts_127.py": {
+      "passed": 52,
+      "failed": 0,
+      "skipped": 0
+    },
+    "tests/unit/test_memory_and_agent.py": {
+      "passed": 18,
+      "failed": 0,
+      "skipped": 0
+    },
+    "tests/unit/test_answer_contract_127.py": {
+      "passed": 21,
+      "failed": 0,
+      "skipped": 0
+    },
+    "tests/unit/test_authorization.py": {
+      "passed": 47,
+      "failed": 0,
+      "skipped": 0
+    },
+    "tests/unit/test_chat_service.py": {
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    "tests/unit/test_rag_pipeline_isolated.py": {
+      "passed": 19,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "after": {
+    "tests/unit/test_conversation_policy_stage1.py": {
+      "passed": 30,
+      "failed": 0,
+      "skipped": 0
+    },
+    "tests/unit/test_model_policy.py": {
+      "passed": 33,
+      "failed": 0,
+      "skipped": 0
+    },
+    "tests/unit/test_rh_routing.py": {
+      "passed": 38,
+      "failed": 1,
+      "skipped": 0
+    },
+    "tests/unit/test_routing_timeouts_127.py": {
+      "passed": 52,
+      "failed": 0,
+      "skipped": 0
+    },
+    "tests/unit/test_memory_and_agent.py": {
+      "passed": 18,
+      "failed": 0,
+      "skipped": 0
+    },
+    "tests/unit/test_answer_contract_127.py": {
+      "passed": 21,
+      "failed": 0,
+      "skipped": 0
+    },
+    "tests/unit/test_authorization.py": {
+      "passed": 47,
+      "failed": 0,
+      "skipped": 0
+    },
+    "tests/unit/test_chat_service.py": {
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    "tests/unit/test_rag_pipeline_isolated.py": {
+      "passed": 19,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "changed_outcomes": {}
+}

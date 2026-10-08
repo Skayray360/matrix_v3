@@ -1,0 +1,164 @@
+# Creado por Aldo Garcia.
+# Politica declarativa de categorias documentales de Matrix RH.
+#
+# Arbol oficial:
+#   data/knowledge/general/**                         -> category: general
+#   data/knowledge/especializadas/<dominio>/**       -> category: <dominio>
+#
+# Las carpetas legacy data/knowledge/<categoria>/** conservan su categoria para
+# permitir una migracion gradual. Este archivo solo describe categorias: las
+# concesiones efectivas viven en category_permissions y se aplican antes de RAG.
+
+version: 1
+
+# Una categoria no declarada no recibe acceso por nombre ni por grupo. El
+# wildcard administrativo sigue siendo una concesion explicita de negocio.
+default_sensitivity: internal
+default_wildcard_eligible: false
+
+categories:
+  # -----------------------------------------------------------------------
+  # Repositorio transversal. HCM_EMP_BASICO_MX es el perfil base obligatorio
+  # definido en la matriz de acceso v1.1.
+  # -----------------------------------------------------------------------
+  - name: general
+    description: Documentacion oficial transversal disponible para empleados autenticados.
+    sensitivity: internal
+    wildcard_eligible: true
+    allowed_groups:
+      - HCM_EMP_BASICO_MX
+    source_owner: rh_atencion_empleado
+
+  # -----------------------------------------------------------------------
+  # Dominios especializados de la matriz de acceso v1.1.
+  # Administradores y coordinadores pueden consultar el dominio; los permisos
+  # de carga/versionado se conceden por separado al rol administrador.
+  # -----------------------------------------------------------------------
+  - name: administracion_personal
+    description: Administracion de personal y Core HCM del empleado.
+    sensitivity: confidential
+    wildcard_eligible: true
+    allowed_groups:
+      - HCM_ADM_ADMPERSONAL_MX
+      - HCM_COORD_ADMPERSONAL_MX
+    source_owner: rh_administracion_personal
+
+  - name: nomina_general
+    description: Politicas y procesos operativos de nomina general.
+    sensitivity: confidential
+    wildcard_eligible: true
+    allowed_groups:
+      - HCM_ADM_NOMINA_GRAL_MX
+      - HCM_COORD_NOMINA_GRAL_MX
+    source_owner: rh_nomina_general
+
+  - name: nomina_confidencial
+    description: Repositorio segregado de nomina confidencial.
+    sensitivity: restricted
+    wildcard_eligible: false
+    allowed_groups:
+      - HCM_ADM_NOMINA_CONF_MX
+      - HCM_COORD_NOMINA_CONF_MX
+    source_owner: rh_nomina_confidencial
+
+  - name: compensaciones
+    description: Compensaciones, bandas, revisiones y politicas salariales.
+    sensitivity: confidential
+    wildcard_eligible: true
+    allowed_groups:
+      - HCM_ADM_COMPENSACIONES_MX
+      - HCM_COORD_COMPENSACIONES_MX
+    source_owner: rh_compensaciones
+
+  - name: talento
+    description: Gestion de talento, desempeno, sucesion y desarrollo.
+    sensitivity: confidential
+    wildcard_eligible: true
+    allowed_groups:
+      - HCM_ADM_TALENTO_MX
+      - HCM_COORD_TALENTO_MX
+    source_owner: rh_talento
+
+  - name: reclutamiento
+    description: Atraccion, seleccion, contratacion y onboarding.
+    sensitivity: internal
+    wildcard_eligible: true
+    allowed_groups:
+      - HCM_ADM_RECLUTAMIENTO_MX
+      - HCM_COORD_RECLUTAMIENTO_MX
+    source_owner: rh_reclutamiento
+
+  - name: capacitacion
+    description: Planes, programas, evidencias y politicas de capacitacion.
+    sensitivity: internal
+    wildcard_eligible: true
+    allowed_groups:
+      - HCM_ADM_CAPACITACION_MX
+      - HCM_COORD_CAPACITACION_MX
+    source_owner: rh_capacitacion
+
+  - name: relaciones_laborales
+    description: Reglamento, relaciones laborales y procedimientos disciplinarios.
+    sensitivity: confidential
+    wildcard_eligible: true
+    allowed_groups:
+      - HCM_ADM_RELLAB_MX
+      - HCM_COORD_RELLAB_MX
+    source_owner: rh_relaciones_laborales
+
+  - name: matrix_rh_ia
+    description: Gobierno funcional y operacion autorizada de Matrix RH e IA.
+    sensitivity: restricted
+    wildcard_eligible: false
+    allowed_groups:
+      - HCM_ADM_IA_MATRIX_MX
+      - HCM_COORD_IA_MATRIX_MX
+    source_owner: rh_matrix_ia
+
+  # -----------------------------------------------------------------------
+  # Dominio propio de documentacion corporativa.
+  # Acceso NOMINAL por eleccion: wildcard_eligible=false lo mantiene fuera del
+  # comodin del administrador de negocio; solo lo ve su grupo/rol concedido.
+  # -----------------------------------------------------------------------
+  - name: documentacion_empresarial
+    description: Documentacion corporativa general de la empresa (dominio propio).
+    sensitivity: internal
+    wildcard_eligible: false
+    allowed_groups:
+      - HCM_ADM_DOCEMPRESARIAL_MX
+      - HCM_COORD_DOCEMPRESARIAL_MX
+    source_owner: rh_documentacion_empresarial
+
+  # -----------------------------------------------------------------------
+  # Categorias del paquete anterior. Se conservan para que una actualizacion
+  # no rompa el corpus ni las dos cuentas sinteticas existentes.
+  # -----------------------------------------------------------------------
+  - name: prestaciones
+    description: Prestaciones, beneficios, vacaciones, aguinaldo y fondo de ahorro.
+    sensitivity: internal
+    wildcard_eligible: true
+    allowed_groups: []
+    source_owner: rh_prestaciones
+
+  - name: nomina
+    description: Categoria legacy de nomina; migrar a nomina_general o nomina_confidencial.
+    sensitivity: confidential
+    wildcard_eligible: true
+    allowed_groups:
+      - HCM_ADM_NOMINA_GRAL_MX
+      - HCM_COORD_NOMINA_GRAL_MX
+    source_owner: rh_nomina
+
+  - name: salud_ambiental
+    description: Salud ocupacional, seguridad, higiene y medio ambiente.
+    sensitivity: internal
+    wildcard_eligible: true
+    allowed_groups: []
+    source_owner: rh_salud_ambiental
+
+  - name: investigaciones_internas
+    description: Expedientes de investigacion interna con concesion estrictamente nominal.
+    sensitivity: restricted
+    wildcard_eligible: false
+    allowed_groups: []
+    source_owner: rh_cumplimiento

@@ -1,0 +1,926 @@
+[
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_application_binds_declared_inputs_to_rule_and_row",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.000621499988483265,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_application_binds_declared_inputs_to_rule_and_row",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.0031039999885251746,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_application_binds_declared_inputs_to_rule_and_row",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.00014940000255592167,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_exact_interval_boundaries_without_filling_gaps[5.999-None]",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.00023099999816622585,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_exact_interval_boundaries_without_filling_gaps[5.999-None]",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.00019410000822972506,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_exact_interval_boundaries_without_filling_gaps[5.999-None]",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.00013050000416114926,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_exact_interval_boundaries_without_filling_gaps[6-63]",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.0002099999983329326,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_exact_interval_boundaries_without_filling_gaps[6-63]",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.00017689999367576092,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_exact_interval_boundaries_without_filling_gaps[6-63]",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.00011619999713730067,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_exact_interval_boundaries_without_filling_gaps[6.001-63]",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.00018600000475998968,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_exact_interval_boundaries_without_filling_gaps[6.001-63]",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.0001689000055193901,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_exact_interval_boundaries_without_filling_gaps[6.001-63]",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.00011480000102892518,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_exact_interval_boundaries_without_filling_gaps[6.99-63]",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.00018760000239126384,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_exact_interval_boundaries_without_filling_gaps[6.99-63]",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.00019640001119114459,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_exact_interval_boundaries_without_filling_gaps[6.99-63]",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.00012040000001434237,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_exact_interval_boundaries_without_filling_gaps[6.991-None]",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.00018149999959859997,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_exact_interval_boundaries_without_filling_gaps[6.991-None]",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.0001666999887675047,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_exact_interval_boundaries_without_filling_gaps[6.991-None]",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.00010670001211110502,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_exact_interval_boundaries_without_filling_gaps[7-81]",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.00018459999409969896,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_exact_interval_boundaries_without_filling_gaps[7-81]",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.00016630000027362257,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_exact_interval_boundaries_without_filling_gaps[7-81]",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.00010670001211110502,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_exact_interval_boundaries_without_filling_gaps[7.001-81]",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.00020009999570902437,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_exact_interval_boundaries_without_filling_gaps[7.001-81]",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.00017229998775292188,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_exact_interval_boundaries_without_filling_gaps[7.001-81]",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.00011570000788196921,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_entry_cutoff_before_at_and_after[31 de enero de 2020-1-True]",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.00021729999571107328,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_entry_cutoff_before_at_and_after[31 de enero de 2020-1-True]",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.0005869000015081838,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_entry_cutoff_before_at_and_after[31 de enero de 2020-1-True]",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.0001404999929945916,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_entry_cutoff_before_at_and_after[1 de febrero de 2020-0-True]",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.00022329999774228781,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_entry_cutoff_before_at_and_after[1 de febrero de 2020-0-True]",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.00031630000739824027,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_entry_cutoff_before_at_and_after[1 de febrero de 2020-0-True]",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.00011170000652782619,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_entry_cutoff_before_at_and_after[2 de febrero de 2020-0-True]",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.00020900000527035445,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_entry_cutoff_before_at_and_after[2 de febrero de 2020-0-True]",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.00032020000799093395,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_entry_cutoff_before_at_and_after[2 de febrero de 2020-0-True]",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.00013559999933931977,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_entry_cutoff_before_at_and_after[febrero de 2020-0-True]",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.0002128999913111329,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_entry_cutoff_before_at_and_after[febrero de 2020-0-True]",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.00031700001272838563,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_entry_cutoff_before_at_and_after[febrero de 2020-0-True]",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.00011589999485295266,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_month_crossing_cutoff_is_ambiguous",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.00011680000170599669,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_month_crossing_cutoff_is_ambiguous",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.00027969999064225703,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_month_crossing_cutoff_is_ambiguous",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.00010269999620504677,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_before_cutoff_does_not_apply_table_to_fixed_component",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.00012149999383836985,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_before_cutoff_does_not_apply_table_to_fixed_component",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.0018800999969244003,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_before_cutoff_does_not_apply_table_to_fixed_component",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.00010980000661220402,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_wrong_row_and_invented_percentage_are_rejected[41]",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.00016429999959655106,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_wrong_row_and_invented_percentage_are_rejected[41]",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.0005385000113165006,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_wrong_row_and_invented_percentage_are_rejected[41]",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.00011390000872779638,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_wrong_row_and_invented_percentage_are_rejected[81]",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.00016060000052675605,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_wrong_row_and_invented_percentage_are_rejected[81]",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.0005598000134341419,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_wrong_row_and_invented_percentage_are_rejected[81]",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.00011399999493733048,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_wrong_row_and_invented_percentage_are_rejected[92]",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.00016119999054353684,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_wrong_row_and_invented_percentage_are_rejected[92]",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.0005213999975239858,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_wrong_row_and_invented_percentage_are_rejected[92]",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.00010810000821948051,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_wrong_row_and_invented_percentage_are_rejected[64]",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.00016730000788811594,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_wrong_row_and_invented_percentage_are_rejected[64]",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.0005200000014156103,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_wrong_row_and_invented_percentage_are_rejected[64]",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.00010639999527484179,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_explicit_wrong_interval_cannot_bypass_case_validation",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.000115999995614402,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_explicit_wrong_interval_cannot_bypass_case_validation",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.0016666000010445714,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_explicit_wrong_interval_cannot_bypass_case_validation",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.00011789999553002417,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_other_source_cannot_supply_percentage_for_wrong_row",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.00012140000762883574,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_other_source_cannot_supply_percentage_for_wrong_row",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.00023360000341199338,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_other_source_cannot_supply_percentage_for_wrong_row",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 9.719999798107892e-05,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_wrong_declared_date_and_incomplete_duration_stay_rejected",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.00011680000170599669,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_wrong_declared_date_and_incomplete_duration_stay_rejected",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.0005662000039592385,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_wrong_declared_date_and_incomplete_duration_stay_rejected",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.00010970000585075468,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_notes_after_table_cannot_be_ignored",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.00011700000322889537,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_notes_after_table_cannot_be_ignored",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.0006573999999091029,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_notes_after_table_cannot_be_ignored",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.00010619999375194311,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_conditional_does_not_certify_personal_eligibility",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.00011560000712051988,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_conditional_does_not_certify_personal_eligibility",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.00045760000648442656,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_conditional_does_not_certify_personal_eligibility",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.00010449999535921961,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_declared_duration_and_exact_derived_decimal_not_normative_values",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.000148899998748675,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_declared_duration_and_exact_derived_decimal_not_normative_values",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.0034466999932192266,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_declared_duration_and_exact_derived_decimal_not_normative_values",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.00011839999933727086,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_only_identified_declared_fields_are_accepted",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.00030670000705868006,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_only_identified_declared_fields_are_accepted",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.0030743999959668145,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_only_identified_declared_fields_are_accepted",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.00022829999215900898,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_metadata_year_is_scoped_to_same_cited_document",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.00021670000569429249,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_metadata_year_is_scoped_to_same_cited_document",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.003847399988444522,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_metadata_year_is_scoped_to_same_cited_document",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.0002536999963922426,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_metadata_does_not_prove_current_validity[Es el nombre actual del programa.]",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.0003428000054555014,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_metadata_does_not_prove_current_validity[Es el nombre actual del programa.]",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.0011509000032674521,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_metadata_does_not_prove_current_validity[Es el nombre actual del programa.]",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.0001357000001007691,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_metadata_does_not_prove_current_validity[La pol\\xedtica est\\xe1 vigente.]",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.00017260000458918512,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_metadata_does_not_prove_current_validity[La pol\\xedtica est\\xe1 vigente.]",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.0004952000017510727,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_metadata_does_not_prove_current_validity[La pol\\xedtica est\\xe1 vigente.]",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.00012149999383836985,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_metadata_does_not_prove_current_validity[No cuento con informaci\\xf3n, pero el plan est\\xe1 vigente.]",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.0001767999929143116,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_metadata_does_not_prove_current_validity[No cuento con informaci\\xf3n, pero el plan est\\xe1 vigente.]",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.000481400013086386,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_metadata_does_not_prove_current_validity[No cuento con informaci\\xf3n, pero el plan est\\xe1 vigente.]",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.000123099991469644,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_safe_nonfactual_responses_do_not_need_fictional_citations[No cuento con informaci\\xf3n documental suficiente para indicar el importe; \\xbfcu\\xe1l es el documento de referencia?]",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.0001770999951986596,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_safe_nonfactual_responses_do_not_need_fictional_citations[No cuento con informaci\\xf3n documental suficiente para indicar el importe; \\xbfcu\\xe1l es el documento de referencia?]",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.0007479000050807372,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_safe_nonfactual_responses_do_not_need_fictional_citations[No cuento con informaci\\xf3n documental suficiente para indicar el importe; \\xbfcu\\xe1l es el documento de referencia?]",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.0001407000090694055,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_safe_nonfactual_responses_do_not_need_fictional_citations[\\xbfCu\\xe1l es su condici\\xf3n sindical?]",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.00016950001008808613,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_safe_nonfactual_responses_do_not_need_fictional_citations[\\xbfCu\\xe1l es su condici\\xf3n sindical?]",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.0007596000068588182,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_safe_nonfactual_responses_do_not_need_fictional_citations[\\xbfCu\\xe1l es su condici\\xf3n sindical?]",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.00022089999401941895,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_safe_nonfactual_responses_do_not_need_fictional_citations[La evidencia disponible no permite comprobar la aplicaci\\xf3n de la tabla a los datos declarados. Necesito una regla y una tabla completas, o precisar los datos del caso.]",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.0003842000005533919,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_safe_nonfactual_responses_do_not_need_fictional_citations[La evidencia disponible no permite comprobar la aplicaci\\xf3n de la tabla a los datos declarados. Necesito una regla y una tabla completas, o precisar los datos del caso.]",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.0007516000041505322,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_safe_nonfactual_responses_do_not_need_fictional_citations[La evidencia disponible no permite comprobar la aplicaci\\xf3n de la tabla a los datos declarados. Necesito una regla y una tabla completas, o precisar los datos del caso.]",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.00011750000703614205,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_table_row_relationship_without_user_case",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.00011139998969156295,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_table_row_relationship_without_user_case",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.0006305999995674938,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_table_row_relationship_without_user_case",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.00010550000297371298,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_bad_tables_do_not_provide_applications[Antig\\xfcedad %\\n0 \\u2013 4.99 0\\n5 \\u2013 5.99 41\\n6 \\u2013 6.99 63 999\\n7 \\u2013 7.99 81\\n8 en adelante 92]",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.00016589999722782522,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_bad_tables_do_not_provide_applications[Antig\\xfcedad %\\n0 \\u2013 4.99 0\\n5 \\u2013 5.99 41\\n6 \\u2013 6.99 63 999\\n7 \\u2013 7.99 81\\n8 en adelante 92]",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.00023779999173711985,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_bad_tables_do_not_provide_applications[Antig\\xfcedad %\\n0 \\u2013 4.99 0\\n5 \\u2013 5.99 41\\n6 \\u2013 6.99 63 999\\n7 \\u2013 7.99 81\\n8 en adelante 92]",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.00010379999002907425,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_bad_tables_do_not_provide_applications[Antig\\xfcedad %\\n0 \\u2013 4.99 0\\n5 \\u2013 5.99 41\\n6 \\u2013 6.99 63\\n6.5 \\u2013 7.99 81\\n8 en adelante 92]",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.00014619999274145812,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_bad_tables_do_not_provide_applications[Antig\\xfcedad %\\n0 \\u2013 4.99 0\\n5 \\u2013 5.99 41\\n6 \\u2013 6.99 63\\n6.5 \\u2013 7.99 81\\n8 en adelante 92]",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.0002641000028233975,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_bad_tables_do_not_provide_applications[Antig\\xfcedad %\\n0 \\u2013 4.99 0\\n5 \\u2013 5.99 41\\n6 \\u2013 6.99 63\\n6.5 \\u2013 7.99 81\\n8 en adelante 92]",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.00010900000052060932,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_bad_tables_do_not_provide_applications[Antig\\xfcedad\\n0 \\u2013 4.99 0\\n5 \\u2013 5.99 41\\n6 \\u2013 6.99 63\\n7 \\u2013 7.99 81\\n8 en adelante 92]",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.00015309998707380146,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_bad_tables_do_not_provide_applications[Antig\\xfcedad\\n0 \\u2013 4.99 0\\n5 \\u2013 5.99 41\\n6 \\u2013 6.99 63\\n7 \\u2013 7.99 81\\n8 en adelante 92]",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.00019320000137668103,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_bad_tables_do_not_provide_applications[Antig\\xfcedad\\n0 \\u2013 4.99 0\\n5 \\u2013 5.99 41\\n6 \\u2013 6.99 63\\n7 \\u2013 7.99 81\\n8 en adelante 92]",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.00010900000052060932,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_extra_conditions_do_not_get_silently_dropped",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.00011029999586753547,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_extra_conditions_do_not_get_silently_dropped",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.0006236000044737011,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_extra_conditions_do_not_get_silently_dropped",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.00010750000365078449,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_heading_cannot_move_conditions_to_other_benefit",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.00011649999942164868,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_heading_cannot_move_conditions_to_other_benefit",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.0004842999915126711,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_heading_cannot_move_conditions_to_other_benefit",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.00010509999992791563,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_case_application_cannot_be_relabelled_general",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.00011140000424347818,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_case_application_cannot_be_relabelled_general",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.00043000000005122274,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_case_application_cannot_be_relabelled_general",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.00010549998842179775,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_real_agent_validates_application_and_retry_cause",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.0001385000068694353,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_real_agent_validates_application_and_retry_cause",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.0068476000014925376,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_real_agent_validates_application_and_retry_cause",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.0001539999939268455,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_context_and_proof_only_use_present_evidence",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.00013469999248627573,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_context_and_proof_only_use_present_evidence",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.0005394000036176294,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_context_and_proof_only_use_present_evidence",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.00010709998605307192,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_real_packing_never_approves_application_when_table_does_not_fit",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.00015640001220162958,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_real_packing_never_approves_application_when_table_does_not_fit",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.0018257999909110367,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_real_packing_never_approves_application_when_table_does_not_fit",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.00013339999713934958,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_retry_keeps_original_alias_when_first_source_no_longer_fits",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.00013339999713934958,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_retry_keeps_original_alias_when_first_source_no_longer_fits",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.0037130999990040436,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_retry_keeps_original_alias_when_first_source_no_longer_fits",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.0001672000071266666,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_context_keeps_self_contained_questions_and_ellipses",
+    "when": "setup",
+    "outcome": "passed",
+    "duration": 0.00013719999697059393,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_context_keeps_self_contained_questions_and_ellipses",
+    "when": "call",
+    "outcome": "passed",
+    "duration": 0.006734199996571988,
+    "detail": ""
+  },
+  {
+    "nodeid": "tests/unit/test_conditional_contract.py::test_context_keeps_self_contained_questions_and_ellipses",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration": 0.00015300000086426735,
+    "detail": ""
+  }
+]

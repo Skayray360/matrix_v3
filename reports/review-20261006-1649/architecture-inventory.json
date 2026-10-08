@@ -1,0 +1,1111 @@
+[
+  {
+    "path": "backend/app/main.py",
+    "lines": 176,
+    "functions": 5,
+    "largest_function": 60,
+    "imports": [
+      "app.api.middleware",
+      "app.api.routes",
+      "app.common.errors",
+      "app.common.logging",
+      "app.config",
+      "app.agents.chat_queue",
+      "app.api.body_limit",
+      "app.jobs.scheduler",
+      "app.database.engine",
+      "app.rag.vector_store",
+      "app.jobs.scheduler"
+    ]
+  },
+  {
+    "path": "backend/app/__init__.py",
+    "lines": 8,
+    "functions": 0,
+    "largest_function": 0,
+    "imports": []
+  },
+  {
+    "path": "backend/app/agents/chat_queue.py",
+    "lines": 429,
+    "functions": 20,
+    "largest_function": 47,
+    "imports": [
+      "app.agents.chat_service",
+      "app.agents.process_owner",
+      "app.auth.sessions",
+      "app.authorization.context",
+      "app.authorization.policy",
+      "app.common.chat_failures",
+      "app.common.errors",
+      "app.common.ids",
+      "app.common.inference_errors",
+      "app.common.logging",
+      "app.config",
+      "app.database.engine",
+      "app.database.models",
+      "app.memory.service",
+      "app.security.admission",
+      "app.llm.ollama_client"
+    ]
+  },
+  {
+    "path": "backend/app/agents/chat_service.py",
+    "lines": 110,
+    "functions": 4,
+    "largest_function": 46,
+    "imports": [
+      "app.agents.orchestrator",
+      "app.authorization.context",
+      "app.authorization.policy",
+      "app.common.answers",
+      "app.common.chat_failures",
+      "app.common.errors",
+      "app.database.engine",
+      "app.database.models",
+      "app.llm.provider",
+      "app.memory.service"
+    ]
+  },
+  {
+    "path": "backend/app/agents/knowledge_agent.py",
+    "lines": 962,
+    "functions": 20,
+    "largest_function": 177,
+    "imports": [
+      "app.agents.prompts",
+      "app.common",
+      "app.common.answers",
+      "app.common.answers",
+      "app.common.errors",
+      "app.common.inference_errors",
+      "app.common.logging",
+      "app.config",
+      "app.llm.model_policy",
+      "app.llm.ollama_client",
+      "app.llm.provider",
+      "app.memory.service",
+      "app.rag.citation_aliases",
+      "app.rag.grounding",
+      "app.rag.schemas",
+      "app.structured_data.tool"
+    ]
+  },
+  {
+    "path": "backend/app/agents/orchestrator.py",
+    "lines": 722,
+    "functions": 15,
+    "largest_function": 123,
+    "imports": [
+      "app.agents.knowledge_agent",
+      "app.agents.prompts",
+      "app.agents.query_planner",
+      "app.audit.service",
+      "app.authorization.context",
+      "app.authorization.policy",
+      "app.common",
+      "app.common.answers",
+      "app.common.answers",
+      "app.common.errors",
+      "app.common.logging",
+      "app.config",
+      "app.database.models",
+      "app.llm.model_policy",
+      "app.llm.ollama_client",
+      "app.llm.provider",
+      "app.memory.service",
+      "app.rag.retriever",
+      "app.rag.schemas",
+      "app.security.prompt_guard",
+      "app.structured_data.tool"
+    ]
+  },
+  {
+    "path": "backend/app/agents/process_owner.py",
+    "lines": 70,
+    "functions": 3,
+    "largest_function": 18,
+    "imports": [
+      "app.config.settings"
+    ]
+  },
+  {
+    "path": "backend/app/agents/prompts.py",
+    "lines": 425,
+    "functions": 9,
+    "largest_function": 57,
+    "imports": [
+      "app.common.answers",
+      "app.config",
+      "app.memory.service",
+      "app.rag.citation_aliases",
+      "app.rag.claim_context",
+      "app.rag.schemas",
+      "app.security.prompt_guard",
+      "app.structured_data.tool"
+    ]
+  },
+  {
+    "path": "backend/app/agents/query_planner.py",
+    "lines": 150,
+    "functions": 3,
+    "largest_function": 59,
+    "imports": [
+      "app.common.logging",
+      "app.config",
+      "app.llm.provider",
+      "app.structured_data.schemas"
+    ]
+  },
+  {
+    "path": "backend/app/agents/__init__.py",
+    "lines": 6,
+    "functions": 0,
+    "largest_function": 0,
+    "imports": [
+      "app.agents.orchestrator"
+    ]
+  },
+  {
+    "path": "backend/app/api/body_limit.py",
+    "lines": 70,
+    "functions": 3,
+    "largest_function": 52,
+    "imports": [
+      "app.common.errors",
+      "app.config",
+      "app.security.admission"
+    ]
+  },
+  {
+    "path": "backend/app/api/deps.py",
+    "lines": 132,
+    "functions": 8,
+    "largest_function": 20,
+    "imports": [
+      "app.auth.sessions",
+      "app.authorization.context",
+      "app.authorization.policy",
+      "app.common.errors",
+      "app.common.ids",
+      "app.common.logging",
+      "app.config",
+      "app.database.engine",
+      "app.database.models"
+    ]
+  },
+  {
+    "path": "backend/app/api/middleware.py",
+    "lines": 136,
+    "functions": 5,
+    "largest_function": 22,
+    "imports": [
+      "app.common.errors",
+      "app.common.ids",
+      "app.common.logging"
+    ]
+  },
+  {
+    "path": "backend/app/api/schemas.py",
+    "lines": 151,
+    "functions": 0,
+    "largest_function": 0,
+    "imports": [
+      "app.common.answers"
+    ]
+  },
+  {
+    "path": "backend/app/api/__init__.py",
+    "lines": 2,
+    "functions": 0,
+    "largest_function": 0,
+    "imports": []
+  },
+  {
+    "path": "backend/app/audit/service.py",
+    "lines": 131,
+    "functions": 4,
+    "largest_function": 40,
+    "imports": [
+      "app.authorization.context",
+      "app.common.ids",
+      "app.common.logging",
+      "app.database.models"
+    ]
+  },
+  {
+    "path": "backend/app/audit/__init__.py",
+    "lines": 6,
+    "functions": 0,
+    "largest_function": 0,
+    "imports": [
+      "app.audit.service"
+    ]
+  },
+  {
+    "path": "backend/app/auth/entra_provider.py",
+    "lines": 338,
+    "functions": 22,
+    "largest_function": 39,
+    "imports": [
+      "app.auth.provider",
+      "app.common.errors",
+      "app.common.ids",
+      "app.common.logging",
+      "app.config",
+      "app.database.models"
+    ]
+  },
+  {
+    "path": "backend/app/auth/local_provider.py",
+    "lines": 134,
+    "functions": 5,
+    "largest_function": 59,
+    "imports": [
+      "app.auth.passwords",
+      "app.auth.provider",
+      "app.common.errors",
+      "app.common.ids",
+      "app.common.logging",
+      "app.config",
+      "app.database.models"
+    ]
+  },
+  {
+    "path": "backend/app/auth/oidc_provider.py",
+    "lines": 66,
+    "functions": 13,
+    "largest_function": 3,
+    "imports": [
+      "app.auth.entra_provider",
+      "app.auth.provider",
+      "app.common.ids"
+    ]
+  },
+  {
+    "path": "backend/app/auth/passwords.py",
+    "lines": 72,
+    "functions": 5,
+    "largest_function": 8,
+    "imports": []
+  },
+  {
+    "path": "backend/app/auth/provider.py",
+    "lines": 106,
+    "functions": 6,
+    "largest_function": 21,
+    "imports": [
+      "app.common.errors",
+      "app.config",
+      "app.auth.entra_provider",
+      "app.auth.local_provider",
+      "app.auth.oidc_provider"
+    ]
+  },
+  {
+    "path": "backend/app/auth/sessions.py",
+    "lines": 165,
+    "functions": 8,
+    "largest_function": 25,
+    "imports": [
+      "app.common.errors",
+      "app.common.ids",
+      "app.common.logging",
+      "app.config",
+      "app.database.models"
+    ]
+  },
+  {
+    "path": "backend/app/auth/__init__.py",
+    "lines": 6,
+    "functions": 0,
+    "largest_function": 0,
+    "imports": [
+      "app.auth.provider"
+    ]
+  },
+  {
+    "path": "backend/app/authorization/categories.py",
+    "lines": 253,
+    "functions": 12,
+    "largest_function": 46,
+    "imports": [
+      "app.common.errors",
+      "app.common.logging",
+      "app.config"
+    ]
+  },
+  {
+    "path": "backend/app/authorization/context.py",
+    "lines": 160,
+    "functions": 9,
+    "largest_function": 26,
+    "imports": [
+      "app.common.errors"
+    ]
+  },
+  {
+    "path": "backend/app/authorization/policy.py",
+    "lines": 292,
+    "functions": 15,
+    "largest_function": 82,
+    "imports": [
+      "app.authorization.categories",
+      "app.authorization.context",
+      "app.common.logging",
+      "app.config",
+      "app.database.models",
+      "app.authorization.context"
+    ]
+  },
+  {
+    "path": "backend/app/authorization/__init__.py",
+    "lines": 7,
+    "functions": 0,
+    "largest_function": 0,
+    "imports": [
+      "app.authorization.context",
+      "app.authorization.policy"
+    ]
+  },
+  {
+    "path": "backend/app/common/answers.py",
+    "lines": 72,
+    "functions": 4,
+    "largest_function": 14,
+    "imports": []
+  },
+  {
+    "path": "backend/app/common/answer_diagnostics.py",
+    "lines": 187,
+    "functions": 13,
+    "largest_function": 46,
+    "imports": [
+      "app.common.logging",
+      "app.common.redaction",
+      "app.config.settings",
+      "app.agents.prompts",
+      "app.security.prompt_guard"
+    ]
+  },
+  {
+    "path": "backend/app/common/chat_failures.py",
+    "lines": 17,
+    "functions": 1,
+    "largest_function": 11,
+    "imports": [
+      "app.common.errors"
+    ]
+  },
+  {
+    "path": "backend/app/common/errors.py",
+    "lines": 195,
+    "functions": 2,
+    "largest_function": 5,
+    "imports": []
+  },
+  {
+    "path": "backend/app/common/ids.py",
+    "lines": 54,
+    "functions": 7,
+    "largest_function": 9,
+    "imports": []
+  },
+  {
+    "path": "backend/app/common/inference_errors.py",
+    "lines": 77,
+    "functions": 3,
+    "largest_function": 12,
+    "imports": [
+      "app.common.errors"
+    ]
+  },
+  {
+    "path": "backend/app/common/logging.py",
+    "lines": 111,
+    "functions": 7,
+    "largest_function": 20,
+    "imports": [
+      "app.common.redaction"
+    ]
+  },
+  {
+    "path": "backend/app/common/redaction.py",
+    "lines": 109,
+    "functions": 3,
+    "largest_function": 21,
+    "imports": []
+  },
+  {
+    "path": "backend/app/common/__init__.py",
+    "lines": 2,
+    "functions": 0,
+    "largest_function": 0,
+    "imports": []
+  },
+  {
+    "path": "backend/app/config/settings.py",
+    "lines": 609,
+    "functions": 26,
+    "largest_function": 55,
+    "imports": [
+      "app.common.errors"
+    ]
+  },
+  {
+    "path": "backend/app/config/__init__.py",
+    "lines": 22,
+    "functions": 0,
+    "largest_function": 0,
+    "imports": [
+      "app.config.settings"
+    ]
+  },
+  {
+    "path": "backend/app/database/engine.py",
+    "lines": 91,
+    "functions": 5,
+    "largest_function": 20,
+    "imports": [
+      "app.common.errors",
+      "app.common.logging",
+      "app.config"
+    ]
+  },
+  {
+    "path": "backend/app/database/migrator.py",
+    "lines": 306,
+    "functions": 11,
+    "largest_function": 56,
+    "imports": [
+      "app.common.errors",
+      "app.common.ids",
+      "app.common.logging",
+      "app.config",
+      "app.database.engine",
+      "app.database.engine",
+      "app.database.engine"
+    ]
+  },
+  {
+    "path": "backend/app/database/models.py",
+    "lines": 432,
+    "functions": 1,
+    "largest_function": 2,
+    "imports": [
+      "app.common.answers",
+      "app.common.ids",
+      "app.common.ids"
+    ]
+  },
+  {
+    "path": "backend/app/database/__init__.py",
+    "lines": 7,
+    "functions": 0,
+    "largest_function": 0,
+    "imports": [
+      "app.database.engine",
+      "app.database.models"
+    ]
+  },
+  {
+    "path": "backend/app/ingestion/extract_worker.py",
+    "lines": 21,
+    "functions": 1,
+    "largest_function": 6,
+    "imports": [
+      "app.ingestion.loaders"
+    ]
+  },
+  {
+    "path": "backend/app/ingestion/isolated_extraction.py",
+    "lines": 89,
+    "functions": 1,
+    "largest_function": 66,
+    "imports": [
+      "app.common.errors",
+      "app.config",
+      "app.config.settings",
+      "app.ingestion.loaders",
+      "app.rag.chunking",
+      "app.security.upload_guard"
+    ]
+  },
+  {
+    "path": "backend/app/ingestion/knowledge_layout.py",
+    "lines": 378,
+    "functions": 16,
+    "largest_function": 78,
+    "imports": [
+      "app.authorization.categories",
+      "app.common.errors",
+      "app.config",
+      "app.config.settings",
+      "app.ingestion.loaders"
+    ]
+  },
+  {
+    "path": "backend/app/ingestion/loaders.py",
+    "lines": 409,
+    "functions": 12,
+    "largest_function": 90,
+    "imports": [
+      "app.common.errors",
+      "app.common.logging",
+      "app.rag.chunking",
+      "app.rag.chunking",
+      "app.rag.chunking",
+      "app.rag.chunking"
+    ]
+  },
+  {
+    "path": "backend/app/ingestion/reconciler.py",
+    "lines": 435,
+    "functions": 9,
+    "largest_function": 66,
+    "imports": [
+      "app.authorization.categories",
+      "app.common.ids",
+      "app.common.logging",
+      "app.config",
+      "app.database.models",
+      "app.ingestion.knowledge_layout",
+      "app.ingestion.loaders",
+      "app.ingestion.service",
+      "app.rag.schemas",
+      "app.rag.vector_store"
+    ]
+  },
+  {
+    "path": "backend/app/ingestion/service.py",
+    "lines": 685,
+    "functions": 15,
+    "largest_function": 113,
+    "imports": [
+      "app.authorization.categories",
+      "app.common.errors",
+      "app.common.ids",
+      "app.common.logging",
+      "app.config",
+      "app.database.models",
+      "app.ingestion.isolated_extraction",
+      "app.ingestion.loaders",
+      "app.llm.ollama_client",
+      "app.llm.provider",
+      "app.memory.service",
+      "app.rag.chunking",
+      "app.rag.embedding_prompts",
+      "app.rag.index_manifest",
+      "app.rag.schemas",
+      "app.rag.vector_store",
+      "app.security.upload_guard"
+    ]
+  },
+  {
+    "path": "backend/app/ingestion/__init__.py",
+    "lines": 6,
+    "functions": 0,
+    "largest_function": 0,
+    "imports": [
+      "app.ingestion.loaders"
+    ]
+  },
+  {
+    "path": "backend/app/jobs/retention.py",
+    "lines": 156,
+    "functions": 5,
+    "largest_function": 78,
+    "imports": [
+      "app.auth.sessions",
+      "app.common.errors",
+      "app.common.ids",
+      "app.common.logging",
+      "app.config",
+      "app.database.models",
+      "app.ingestion.service",
+      "app.memory.service"
+    ]
+  },
+  {
+    "path": "backend/app/jobs/scheduler.py",
+    "lines": 111,
+    "functions": 6,
+    "largest_function": 27,
+    "imports": [
+      "app.common.ids",
+      "app.common.logging",
+      "app.config",
+      "app.database.engine",
+      "app.ingestion.reconciler",
+      "app.jobs.retention"
+    ]
+  },
+  {
+    "path": "backend/app/jobs/__init__.py",
+    "lines": 6,
+    "functions": 0,
+    "largest_function": 0,
+    "imports": [
+      "app.jobs.scheduler"
+    ]
+  },
+  {
+    "path": "backend/app/llm/model_policy.py",
+    "lines": 542,
+    "functions": 15,
+    "largest_function": 57,
+    "imports": [
+      "app.config"
+    ]
+  },
+  {
+    "path": "backend/app/llm/ollama_client.py",
+    "lines": 370,
+    "functions": 15,
+    "largest_function": 99,
+    "imports": [
+      "app.common.errors",
+      "app.common.inference_errors",
+      "app.common.logging",
+      "app.config",
+      "app.llm.provider",
+      "app.common.answer_diagnostics",
+      "app.llm.provider"
+    ]
+  },
+  {
+    "path": "backend/app/llm/provider.py",
+    "lines": 691,
+    "functions": 24,
+    "largest_function": 165,
+    "imports": [
+      "app.common.errors",
+      "app.common.inference_errors",
+      "app.common.logging",
+      "app.config",
+      "app.llm.ollama_client",
+      "app.security.admission"
+    ]
+  },
+  {
+    "path": "backend/app/llm/__init__.py",
+    "lines": 13,
+    "functions": 0,
+    "largest_function": 0,
+    "imports": [
+      "app.llm.model_policy",
+      "app.llm.ollama_client"
+    ]
+  },
+  {
+    "path": "backend/app/memory/service.py",
+    "lines": 395,
+    "functions": 17,
+    "largest_function": 60,
+    "imports": [
+      "app.authorization.context",
+      "app.common.errors",
+      "app.common.ids",
+      "app.common.logging",
+      "app.database.models",
+      "app.structured_data.sources"
+    ]
+  },
+  {
+    "path": "backend/app/memory/__init__.py",
+    "lines": 6,
+    "functions": 0,
+    "largest_function": 0,
+    "imports": [
+      "app.memory.service"
+    ]
+  },
+  {
+    "path": "backend/app/rag/chunking.py",
+    "lines": 246,
+    "functions": 7,
+    "largest_function": 80,
+    "imports": []
+  },
+  {
+    "path": "backend/app/rag/citation_aliases.py",
+    "lines": 45,
+    "functions": 3,
+    "largest_function": 15,
+    "imports": [
+      "app.rag.schemas",
+      "app.structured_data.tool"
+    ]
+  },
+  {
+    "path": "backend/app/rag/claim_context.py",
+    "lines": 453,
+    "functions": 21,
+    "largest_function": 87,
+    "imports": [
+      "app.rag.numeric_grounding",
+      "app.rag.schemas"
+    ]
+  },
+  {
+    "path": "backend/app/rag/embedding_prompts.py",
+    "lines": 40,
+    "functions": 2,
+    "largest_function": 6,
+    "imports": [
+      "app.config",
+      "app.config"
+    ]
+  },
+  {
+    "path": "backend/app/rag/grounding.py",
+    "lines": 373,
+    "functions": 10,
+    "largest_function": 135,
+    "imports": [
+      "app.common.answers",
+      "app.common.logging",
+      "app.rag.claim_context",
+      "app.rag.schemas",
+      "app.agents.prompts",
+      "app.agents.prompts"
+    ]
+  },
+  {
+    "path": "backend/app/rag/index_manifest.py",
+    "lines": 100,
+    "functions": 3,
+    "largest_function": 31,
+    "imports": [
+      "app.config",
+      "app.database.engine",
+      "app.database.models"
+    ]
+  },
+  {
+    "path": "backend/app/rag/numeric_grounding.py",
+    "lines": 293,
+    "functions": 8,
+    "largest_function": 53,
+    "imports": []
+  },
+  {
+    "path": "backend/app/rag/retriever.py",
+    "lines": 349,
+    "functions": 13,
+    "largest_function": 87,
+    "imports": [
+      "app.authorization.context",
+      "app.common.errors",
+      "app.common.logging",
+      "app.config",
+      "app.llm.ollama_client",
+      "app.llm.provider",
+      "app.rag.embedding_prompts",
+      "app.rag.index_manifest",
+      "app.rag.schemas",
+      "app.rag.vector_store"
+    ]
+  },
+  {
+    "path": "backend/app/rag/schemas.py",
+    "lines": 135,
+    "functions": 6,
+    "largest_function": 15,
+    "imports": [
+      "app.common.ids",
+      "app.rag.chunking"
+    ]
+  },
+  {
+    "path": "backend/app/rag/vector_store.py",
+    "lines": 464,
+    "functions": 18,
+    "largest_function": 61,
+    "imports": [
+      "app.common.errors",
+      "app.common.logging",
+      "app.config",
+      "app.rag.schemas",
+      "app.database.engine",
+      "app.database.models",
+      "app.rag.index_manifest",
+      "app.rag.index_manifest",
+      "app.rag.index_manifest",
+      "app.rag.index_manifest"
+    ]
+  },
+  {
+    "path": "backend/app/rag/__init__.py",
+    "lines": 6,
+    "functions": 0,
+    "largest_function": 0,
+    "imports": [
+      "app.rag.schemas"
+    ]
+  },
+  {
+    "path": "backend/app/security/admission.py",
+    "lines": 49,
+    "functions": 3,
+    "largest_function": 17,
+    "imports": [
+      "app.common.errors"
+    ]
+  },
+  {
+    "path": "backend/app/security/prompt_guard.py",
+    "lines": 92,
+    "functions": 3,
+    "largest_function": 17,
+    "imports": [
+      "app.common.logging"
+    ]
+  },
+  {
+    "path": "backend/app/security/rate_limit.py",
+    "lines": 69,
+    "functions": 4,
+    "largest_function": 15,
+    "imports": []
+  },
+  {
+    "path": "backend/app/security/upload_guard.py",
+    "lines": 191,
+    "functions": 6,
+    "largest_function": 32,
+    "imports": [
+      "app.common.errors",
+      "app.common.ids",
+      "app.common.logging",
+      "app.config",
+      "app.ingestion.loaders"
+    ]
+  },
+  {
+    "path": "backend/app/security/__init__.py",
+    "lines": 7,
+    "functions": 0,
+    "largest_function": 0,
+    "imports": [
+      "app.security.rate_limit",
+      "app.security.upload_guard"
+    ]
+  },
+  {
+    "path": "backend/app/structured_data/adapters.py",
+    "lines": 212,
+    "functions": 9,
+    "largest_function": 43,
+    "imports": [
+      "app.auth.provider",
+      "app.common.errors",
+      "app.common.logging",
+      "app.structured_data.compiler",
+      "app.structured_data.sources"
+    ]
+  },
+  {
+    "path": "backend/app/structured_data/compiler.py",
+    "lines": 239,
+    "functions": 4,
+    "largest_function": 99,
+    "imports": [
+      "app.common.errors",
+      "app.common.logging",
+      "app.structured_data.schemas",
+      "app.structured_data.validator"
+    ]
+  },
+  {
+    "path": "backend/app/structured_data/schemas.py",
+    "lines": 198,
+    "functions": 10,
+    "largest_function": 18,
+    "imports": []
+  },
+  {
+    "path": "backend/app/structured_data/scope.py",
+    "lines": 103,
+    "functions": 4,
+    "largest_function": 53,
+    "imports": [
+      "app.authorization.context",
+      "app.common.errors",
+      "app.structured_data.schemas"
+    ]
+  },
+  {
+    "path": "backend/app/structured_data/sources.py",
+    "lines": 221,
+    "functions": 18,
+    "largest_function": 14,
+    "imports": [
+      "app.auth.provider",
+      "app.common.errors",
+      "app.common.logging",
+      "app.config",
+      "app.structured_data.schemas"
+    ]
+  },
+  {
+    "path": "backend/app/structured_data/tool.py",
+    "lines": 185,
+    "functions": 8,
+    "largest_function": 33,
+    "imports": [
+      "app.authorization.context",
+      "app.authorization.policy",
+      "app.common.errors",
+      "app.common.logging",
+      "app.structured_data.adapters",
+      "app.structured_data.compiler",
+      "app.structured_data.schemas",
+      "app.structured_data.sources",
+      "app.structured_data.validator"
+    ]
+  },
+  {
+    "path": "backend/app/structured_data/validator.py",
+    "lines": 208,
+    "functions": 8,
+    "largest_function": 74,
+    "imports": [
+      "app.authorization.context",
+      "app.authorization.policy",
+      "app.common.errors",
+      "app.common.logging",
+      "app.config",
+      "app.structured_data.schemas",
+      "app.structured_data.scope",
+      "app.structured_data.sources"
+    ]
+  },
+  {
+    "path": "backend/app/structured_data/__init__.py",
+    "lines": 7,
+    "functions": 0,
+    "largest_function": 0,
+    "imports": [
+      "app.structured_data.schemas",
+      "app.structured_data.tool"
+    ]
+  },
+  {
+    "path": "backend/app/api/routes/admin.py",
+    "lines": 248,
+    "functions": 8,
+    "largest_function": 56,
+    "imports": [
+      "app.api.deps",
+      "app.api.schemas",
+      "app.audit.service",
+      "app.authorization.categories",
+      "app.authorization.context",
+      "app.authorization.policy",
+      "app.common.errors",
+      "app.common.logging",
+      "app.config",
+      "app.database.models",
+      "app.ingestion.reconciler",
+      "app.ingestion.service",
+      "app.rag.schemas",
+      "app.security.upload_guard",
+      "app.security.upload_guard",
+      "app.database.models",
+      "app.structured_data.sources"
+    ]
+  },
+  {
+    "path": "backend/app/api/routes/auth.py",
+    "lines": 344,
+    "functions": 11,
+    "largest_function": 63,
+    "imports": [
+      "app.api.deps",
+      "app.api.schemas",
+      "app.audit.service",
+      "app.auth.provider",
+      "app.auth.sessions",
+      "app.authorization.context",
+      "app.common.errors",
+      "app.common.ids",
+      "app.common.logging",
+      "app.config",
+      "app.database.models",
+      "app.security.rate_limit",
+      "app.authorization.policy"
+    ]
+  },
+  {
+    "path": "backend/app/api/routes/chat.py",
+    "lines": 176,
+    "functions": 7,
+    "largest_function": 51,
+    "imports": [
+      "app.agents.chat_queue",
+      "app.agents.chat_service",
+      "app.agents.chat_service",
+      "app.api.deps",
+      "app.api.schemas",
+      "app.authorization.context",
+      "app.common.errors",
+      "app.common.ids",
+      "app.config",
+      "app.database.models",
+      "app.memory.service",
+      "app.security.rate_limit"
+    ]
+  },
+  {
+    "path": "backend/app/api/routes/conversations.py",
+    "lines": 280,
+    "functions": 8,
+    "largest_function": 73,
+    "imports": [
+      "app.api.deps",
+      "app.api.schemas",
+      "app.audit.service",
+      "app.authorization.context",
+      "app.authorization.policy",
+      "app.common.errors",
+      "app.common.logging",
+      "app.config",
+      "app.database.models",
+      "app.ingestion.service",
+      "app.memory.service",
+      "app.rag.schemas",
+      "app.security.upload_guard",
+      "app.agents.chat_queue",
+      "app.authorization.policy"
+    ]
+  },
+  {
+    "path": "backend/app/api/routes/health.py",
+    "lines": 142,
+    "functions": 2,
+    "largest_function": 113,
+    "imports": [
+      "app.api.schemas",
+      "app.common.logging",
+      "app.config",
+      "app.database.engine",
+      "app.llm.ollama_client",
+      "app.rag.vector_store",
+      "app.auth.provider",
+      "app.database.migrator",
+      "app.agents.chat_queue",
+      "app.agents.process_owner",
+      "app.common.ids",
+      "app.database.engine",
+      "app.database.models"
+    ]
+  },
+  {
+    "path": "backend/app/api/routes/__init__.py",
+    "lines": 2,
+    "functions": 0,
+    "largest_function": 0,
+    "imports": []
+  }
+]

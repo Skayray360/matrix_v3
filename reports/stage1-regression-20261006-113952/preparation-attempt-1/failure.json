@@ -1,0 +1,5 @@
+{
+  "exit_code": 1,
+  "classification": "preparation",
+  "reason": "The audit write guard blocked pytest TemporaryFile outside the report; no tests ran. Fixed by setting process TMP and TEMP to isolated report storage; guard unchanged."
+}

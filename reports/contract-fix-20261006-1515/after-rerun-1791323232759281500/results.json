@@ -1,0 +1,27 @@
+{
+  "exit_code": 1,
+  "collected": 444,
+  "passed": 442,
+  "failed": 2,
+  "subtest_reports": 40,
+  "errors": 0,
+  "skipped": 0,
+  "duration_seconds": 16.883,
+  "isolation_violations": [],
+  "failures": [
+    {
+      "nodeid": "tests/unit/test_conditional_contract.py::test_metadata_does_not_prove_current_validity[No cuento con informaci\\xf3n, pero el plan est\\xe1 vigente.]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.0007426999945892021,
+      "detail": "tests\\unit\\test_conditional_contract.py:198: in test_metadata_does_not_prove_current_validity\n    assert verify(cite(statement)).reason == \"vigencia actual no acreditada\"\nE   AssertionError: assert 'abstencion m... documentales' == 'vigencia act...no acreditada'\nE     \nE     - vigencia actual no acreditada\nE     + abstencion mezclada con afirmaciones documentales"
+    },
+    {
+      "nodeid": "tests/unit/test_rh_routing.py::test_rh_without_evidence_abstains_before_generation[\\xbfCu\\xe1nto se entrega por el apoyo de casamiento?]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.019428900006460026,
+      "detail": "tests\\unit\\test_rh_routing.py:113: in test_rh_without_evidence_abstains_before_generation\n    assert outcome.answer == INSUFFICIENT_ANSWER\nE   AssertionError: assert 'No cuento co... se menciona?' == 'No cuento co...tiene acceso.'\nE     \nE     Skipping 43 identical leading characters in diff, use -v to show\nE     - ente para responder eso dentro de las fuentes a las que usted tiene acceso.\nE     + ente para identificar ese plan o beneficio dentro de las fuentes a las que usted tiene acceso. \u00bfPuede indicar su nombre completo o el documento donde se menciona?"
+    }
+  ]
+}

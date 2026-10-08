@@ -1,0 +1,198 @@
+[
+  {
+    "request_id": "22e4ddc5-a68d-48f2-bf59-45864b6291d3",
+    "conversation_id": "88399734-a228-48b1-939b-e1078db51255",
+    "created_at": "2026-10-06 22:46:05",
+    "question": "dime como se llena la carta de beneficiarios",
+    "response": {
+      "answer": "### Información documentada\n\nPara llenar la carta de designación de beneficiarios, se deben considerar los siguientes puntos:\n\n*   Es importante que la fecha de llenado de la carta sea la más reciente, ya que al ocurrir un siniestro se tomará en cuenta la carta con la fecha más reciente [[data-alias/prestaciones/PLATICA DE PLAN DE FALLECIMIENTO E INVALIDEZ RH 2020.pdf#13]].\n*   Se deben asentar los nombres completos de los beneficiarios tal como aparecen en sus actas de nacimiento y la carta debe estar firmada para tener validez [[data-alias/prestaciones/PLATICA DE PLAN DE FALLECIMIENTO E INVALIDEZ RH 2020.pdf#13]].\n*   Se recomienda actualizar la Carta de Designación de Beneficiarios si hay cambios en el estado civil, si nace un hijo o si se desea designar otros o más beneficiarios [[data-alias/prestaciones/PLATICA DE PLAN DE FALLECIMIENTO E INVALIDEZ RH 2020.pdf#13]].\n*   Los nombres y apellidos de los beneficiarios deben escribirse exactamente como aparecen en su identificación oficial o acta de nacimiento, sin abreviarlos [[data-alias/prestaciones/Platicas Cartas designacion 2022 BMA.pdf#11]].\n*   Si el asegurado no está casado legalmente, debe poner \"concubino (a)\" [[data-alias/prestaciones/Platicas Cartas designacion 2022 BMA.pdf#11]].\n*   Si el asegurado está divorciado y desea dejar a su ex-esposa, debe poner \"sin parentesco\" [[data-alias/prestaciones/Platicas Cartas designacion 2022 BMA.pdf#11]].\n*   El empleado puede elegir si sus beneficiarios recibirán pensión o si recibirán inmediatamente el capital en una sola exhibición [[data-alias/prestaciones/PLATICA DE PLAN DE FALLECIMIENTO E INVALIDEZ RH 2020.pdf#12]].\n*   Si se elige no dejar pensión, el capital se entregará inmediatamente a los beneficiarios según los porcentajes indicados por el empleado en la carta [[data-alias/prestaciones/PLATICA DE PLAN DE FALLECIMIENTO E INVALIDEZ RH 2020.pdf#12]].\n*   En la carta se especifica que el capital cubre en primer término la Prima de Antigüedad [[data-alias/prestaciones/Platicas Cartas designacion 2022 BMA.pdf#9]].\n*   La condición para la entrega de capital debe ser clara y precisa para evitar confusiones [[data-alias/prestaciones/Platicas Cartas designacion 2022 BMA.pdf#11]].\n*   Si no hay sobrevivientes señalados en la carta, los beneficiarios se designarán a través de un juicio sucesorio ante un juez de lo civil [[data-alias/prestaciones/Platicas Cartas designacion 2022 BMA.pdf#9]].",
+      "intent": "documental",
+      "sources": [
+        {
+          "label": "PLATICA DE PLAN DE FALLECIMIENTO E INVALIDEZ RH 2020.pdf, pagina 14",
+          "scope": "corporate",
+          "score": 0.5784,
+          "section": "pagina 14",
+          "category": "prestaciones",
+          "filename": "PLATICA DE PLAN DE FALLECIMIENTO E INVALIDEZ RH 2020.pdf",
+          "source_id": "data-alias/prestaciones/PLATICA DE PLAN DE FALLECIMIENTO E INVALIDEZ RH 2020.pdf#13",
+          "page_or_sheet": "pagina 14"
+        },
+        {
+          "label": "Platicas Cartas designacion 2022 BMA.pdf, pagina 10",
+          "scope": "corporate",
+          "score": 0.5204,
+          "section": "pagina 10",
+          "category": "prestaciones",
+          "filename": "Platicas Cartas designacion 2022 BMA.pdf",
+          "source_id": "data-alias/prestaciones/Platicas Cartas designacion 2022 BMA.pdf#9",
+          "page_or_sheet": "pagina 10"
+        },
+        {
+          "label": "Platicas Cartas designacion 2022 BMA.pdf, pagina 12",
+          "scope": "corporate",
+          "score": 0.5196,
+          "section": "pagina 12",
+          "category": "prestaciones",
+          "filename": "Platicas Cartas designacion 2022 BMA.pdf",
+          "source_id": "data-alias/prestaciones/Platicas Cartas designacion 2022 BMA.pdf#11",
+          "page_or_sheet": "pagina 12"
+        },
+        {
+          "label": "PLATICA DE PLAN DE FALLECIMIENTO E INVALIDEZ RH 2020.pdf, pagina 13",
+          "scope": "corporate",
+          "score": 0.5265,
+          "section": "pagina 13",
+          "category": "prestaciones",
+          "filename": "PLATICA DE PLAN DE FALLECIMIENTO E INVALIDEZ RH 2020.pdf",
+          "source_id": "data-alias/prestaciones/PLATICA DE PLAN DE FALLECIMIENTO E INVALIDEZ RH 2020.pdf#12",
+          "page_or_sheet": "pagina 13"
+        }
+      ],
+      "grounded": true,
+      "latency_ms": 14128,
+      "message_id": "f24d77a7-604e-4029-89d2-3dccbcb0b3a3",
+      "answer_basis": "documented",
+      "conversation_id": "88399734-a228-48b1-939b-e1078db51255"
+    },
+    "answer_chars": 2434,
+    "same_scope": true
+  },
+  {
+    "request_id": "d55aa78f-2e9f-4ac9-a647-a1de35275359",
+    "conversation_id": "88399734-a228-48b1-939b-e1078db51255",
+    "created_at": "2026-10-06 22:45:36",
+    "question": "explicame sobre la carta de beneficiarios",
+    "response": {
+      "answer": "### Orientación general\n\nLa carta de beneficiarios es un documento formal que designa a las personas o entidades que recibirán los activos o beneficios de un titular en caso de su fallecimiento o incapacidad.\n\n**Carta de Beneficiarios**\n\nEs el instrumento legal mediante el cual se establece quiénes serán los herederos o receptores de los bienes, seguros o prestaciones asociadas a un individuo.",
+      "intent": "general",
+      "sources": [],
+      "grounded": false,
+      "latency_ms": 2060,
+      "message_id": "22c1f0f1-5fb7-4179-9170-810f0156e5c3",
+      "answer_basis": "general",
+      "conversation_id": "88399734-a228-48b1-939b-e1078db51255"
+    },
+    "answer_chars": 396,
+    "same_scope": true
+  },
+  {
+    "request_id": "4357a3f6-b9ff-4fd9-b820-d1a039f2e889",
+    "conversation_id": "88399734-a228-48b1-939b-e1078db51255",
+    "created_at": "2026-10-06 22:45:22",
+    "question": "que puedes hacer",
+    "response": {
+      "answer": "Soy Matrix RH. Puedo consultar, resumir y comparar los documentos disponibles dentro de sus permisos, incluidos los adjuntos de esta conversacion, y citar las fuentes utilizadas. Si las fuentes no bastan o un termino es ambiguo, lo indicare y pedire precision. Tambien puedo explicar conceptos y responder preguntas generales, distinguiendo esa orientacion de la informacion documentada.",
+      "intent": "capabilities",
+      "sources": [],
+      "grounded": false,
+      "latency_ms": 5,
+      "message_id": "b4d5b88c-67cd-4cb7-9573-e4a995fc6eea",
+      "answer_basis": "general",
+      "conversation_id": "88399734-a228-48b1-939b-e1078db51255"
+    },
+    "answer_chars": 387,
+    "same_scope": true
+  },
+  {
+    "request_id": "d37fd0fb-0026-45dd-bd29-f0c8f84dac80",
+    "conversation_id": "88399734-a228-48b1-939b-e1078db51255",
+    "created_at": "2026-10-06 22:44:51",
+    "question": "quien eres",
+    "response": {
+      "answer": "Soy Matrix RH.",
+      "intent": "identity",
+      "sources": [],
+      "grounded": false,
+      "latency_ms": 10,
+      "message_id": "016752ad-7c66-4718-8bb4-527baa186c0e",
+      "answer_basis": "general",
+      "conversation_id": "88399734-a228-48b1-939b-e1078db51255"
+    },
+    "answer_chars": 14,
+    "same_scope": true
+  },
+  {
+    "request_id": "3d6aa3f4-a457-4815-a71d-71d6cf042bce",
+    "conversation_id": "88399734-a228-48b1-939b-e1078db51255",
+    "created_at": "2026-10-06 22:44:15",
+    "question": "Según la plática del Plan de Pensiones por Jubilación de diciembre de 2022, si ingresé en mayo de 2016 y me retiro con 7 años y 6 meses de antigüedad antes de jubilarme, ¿qué porcentaje me corresponde de las aportaciones básica, básica complementaria y adicional complementaria? Indica documento y página.",
+    "response": {
+      "answer": "Encontre documentacion relacionada, pero no pude validar una respuesta respaldada por sus fuentes.",
+      "intent": "documental",
+      "sources": [],
+      "grounded": false,
+      "latency_ms": 27298,
+      "message_id": "d74a7a07-2193-4e2b-a78d-5a2f270ada42",
+      "answer_basis": "insufficient",
+      "conversation_id": "88399734-a228-48b1-939b-e1078db51255"
+    },
+    "answer_chars": 98,
+    "same_scope": true
+  },
+  {
+    "request_id": "3df7c529-421d-4733-a077-bede438469c3",
+    "conversation_id": "6cd8b210-5f5f-4ed4-91ca-329aad41f44e",
+    "created_at": "2026-10-06 19:15:13",
+    "question": "Según la plática del Plan de Pensiones por Jubilación de diciembre de 2022, si ingresé en mayo de 2016 y me retiro con 7 años y 6 meses de antigüedad antes de jubilarme, ¿qué porcentaje me corresponde de las aportaciones básica, básica complementaria y adicional complementaria?",
+    "response": {
+      "answer": "Encontre documentacion relacionada, pero no pude validar una respuesta respaldada por sus fuentes.",
+      "intent": "documental",
+      "sources": [],
+      "grounded": false,
+      "latency_ms": 10766,
+      "message_id": "0fac8de5-5f3f-41f3-bd43-7458c6870e07",
+      "answer_basis": "insufficient",
+      "conversation_id": "6cd8b210-5f5f-4ed4-91ca-329aad41f44e"
+    },
+    "answer_chars": 98,
+    "same_scope": true
+  },
+  {
+    "request_id": "61a95692-0e10-4b41-8be2-6a388569333c",
+    "conversation_id": "6cd8b210-5f5f-4ed4-91ca-329aad41f44e",
+    "created_at": "2026-10-06 19:14:57",
+    "question": "Según la plática del Plan de Pensiones por Jubilación de diciembre de 2022, si ingresé en mayo de 2016 y me retiro con 7 años y 6 meses de antigüedad antes de jubilarme, ¿qué porcentaje me corresponde de las aportaciones básica, básica complementaria y adicional complementaria?",
+    "response": {
+      "answer": "Encontre documentacion relacionada, pero no pude validar una respuesta respaldada por sus fuentes.",
+      "intent": "documental",
+      "sources": [],
+      "grounded": false,
+      "latency_ms": 9548,
+      "message_id": "44c7ade2-1d49-42b9-bf11-ee3709802713",
+      "answer_basis": "insufficient",
+      "conversation_id": "6cd8b210-5f5f-4ed4-91ca-329aad41f44e"
+    },
+    "answer_chars": 98,
+    "same_scope": true
+  },
+  {
+    "request_id": "d3552d47-aa3c-44d5-aa84-e073f1fd0ca4",
+    "conversation_id": "6cd8b210-5f5f-4ed4-91ca-329aad41f44e",
+    "created_at": "2026-10-06 19:13:00",
+    "question": "¿Qué es el Plan Libre?",
+    "response": {
+      "answer": "El Plan Libre es el nombre actual del Plan de Pensiones por Jubilación, el cual evolucionó el primero de julio de 2007 [[data-alias/prestaciones/prestaciones.pdf#4]].\n\n### Información documentada\n\n*   **Evolución:** El Plan de Pensiones por Jubilación fue renombrado como Plan Libre el primero de julio de 2007 [[data-alias/prestaciones/prestaciones.pdf#4]].\n*   **Tipos de Aportaciones:** El Plan Libre puede integrar hasta cuatro tipos de aportaciones:\n    1.  Aportación básica realizada por la empresa [[data-alias/prestaciones/prestaciones.pdf#4]].\n    2.  Aportación básica complementaria realizada por la empresa [[data-alias/prestaciones/prestaciones.pdf#4]].\n    3.  Aportación adicional realizada por el empleado, la cual es obligatoria para quienes ganan más de 25 salarios mínimos [[data-alias/prestaciones/prestaciones.pdf#4]].\n    4.  Aportación adicional complementaria realizada por la empresa [[data-alias/prestaciones/prestaciones.pdf#4]].\n*   **Manejo de Aportaciones:** Estas aportaciones se ahorran mensualmente en el fideicomiso administrado por la aseguradora GNP, y no pueden ser utilizadas por el colaborador mientras se encuentre activo en la empresa [[data-alias/prestaciones/prestaciones.pdf#4]].\n*   **Aportación Básica:** La empresa aporta el 5% del sueldo nominal del empleado, considerando 13 meses de sueldo por año, en la aportación básica [[data-alias/prestaciones/prestaciones.pdf#4]].\n*   **Aportación Básica Complementaria:** La aportación básica complementaria depende de la antigüedad del empleado:\n    *   Si la antigüedad es menor a 5 años, la aportación es del 50% de la aportación básica [[data-alias/prestaciones/prestaciones.pdf#4]].\n    *   Si la antigüedad es igual o mayor a 5 años, la aportación es del 100% de la aportación básica [[data-alias/prestaciones/prestaciones.pdf#4]].",
+      "intent": "documental",
+      "sources": [
+        {
+          "label": "prestaciones.pdf, pagina 5",
+          "scope": "corporate",
+          "score": 0.5534,
+          "section": "pagina 5",
+          "category": "prestaciones",
+          "filename": "prestaciones.pdf",
+          "source_id": "data-alias/prestaciones/prestaciones.pdf#4",
+          "page_or_sheet": "pagina 5"
+        }
+      ],
+      "grounded": true,
+      "latency_ms": 7113,
+      "message_id": "9dc3c90a-36b7-4272-a575-6f392a09d718",
+      "answer_basis": "documented",
+      "conversation_id": "6cd8b210-5f5f-4ed4-91ca-329aad41f44e"
+    },
+    "answer_chars": 1829,
+    "same_scope": true
+  }
+]

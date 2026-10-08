@@ -1,0 +1,97 @@
+{
+  "exit_code": 1,
+  "collected": 432,
+  "passed": 420,
+  "failed": 12,
+  "subtest_reports": 40,
+  "errors": 0,
+  "skipped": 0,
+  "duration_seconds": 20.092,
+  "isolation_violations": [],
+  "failures": [
+    {
+      "nodeid": "tests/unit/test_answer_diagnostics.py::test_real_generation_payload_and_retry_are_observed",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.04414050000195857,
+      "detail": "tests\\unit\\test_answer_diagnostics.py:116: in test_real_generation_payload_and_retry_are_observed\n    assert result.regenerated and result.grounding.grounded\nE   AssertionError: assert (True and False)\nE    +  where True = SynthesisResult(answer='Encontre documentacion relacionada, pero no pude validar una respuesta respaldada por sus fuen...ted=True, escalated_to_deep=False, cited_source_ids=(), hierarchical=False, map_batches=0, answer_basis='insufficient').regenerated\nE    +  and   False = GroundingReport(grounded=False, cited_source_ids=('synthetic/plan.pdf#0',), invalid_source_ids=(), declares_insufficie... extractive_verified=False, validation_detail='afirmacion numerica sin respaldo en sus fuentes citadas', claim_index=1).grounded\nE    +    where GroundingReport(grounded=False, cited_source_ids=('synthetic/plan.pdf#0',), invalid_source_ids=(), declares_insufficie... extractive_verified=False, validation_detail='afirmacion numerica sin respaldo en sus fuentes citadas', claim_index=1) = SynthesisResult(answer='Encontre documentacion relacionada, pero no pude validar una respuesta respaldada por sus fuen...ted=True, escalated_to_deep=False, cited_source_ids=(), hierarchical=False, map_batches=0, answer_basis='insufficient').grounding"
+    },
+    {
+      "nodeid": "tests/unit/test_answer_diagnostics.py::test_synthetic_table_works_but_metadata_year_and_user_age_do_not",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.00031779998971614987,
+      "detail": "tests\\unit\\test_answer_diagnostics.py:181: in test_synthetic_table_works_but_metadata_year_and_user_age_do_not\n    assert numeric_claim_supported(\"La tasa es 70%\", (source.text,))\nE   AssertionError: assert False\nE    +  where False = numeric_claim_supported('La tasa es 70%', ('Antig\u00fcedad %\\n7 \u2013 7.99 70',))"
+    },
+    {
+      "nodeid": "tests/unit/test_answer_diagnostics.py::test_synthetic_safe_clarification_has_exact_string_limitation",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.00042100000428035855,
+      "detail": "tests\\unit\\test_answer_diagnostics.py:192: in test_synthetic_safe_clarification_has_exact_string_limitation\n    assert report.reason == \"respuesta documental sin fuentes citadas\"\nE   AssertionError: assert 'abstencion documental' == 'respuesta do...entes citadas'\nE     \nE     - respuesta documental sin fuentes citadas\nE     + abstencion documental"
+    },
+    {
+      "nodeid": "tests/unit/test_grounding_numeric_rag_hotfix.py::test_supported_numeric_representations_keep_citations_and_units[Antig\\xfcedad %\\n0 \\u2013 4.99 0\\n5 \\u2013 5.99 50\\n7 \\u2013 7.99 70\\n10 en adelante 100-Corresponde el 70%.]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.00043479999294504523,
+      "detail": "tests\\unit\\test_grounding_numeric_rag_hotfix.py:54: in test_supported_numeric_representations_keep_citations_and_units\n    assert result.grounded, result.reason\nE   AssertionError: afirmacion numerica sin respaldo en sus fuentes citadas\nE   assert False\nE    +  where False = GroundingReport(grounded=False, cited_source_ids=('prestaciones/ejemplo-numerico.txt#1',), invalid_source_ids=(), decl... extractive_verified=False, validation_detail='afirmacion numerica sin respaldo en sus fuentes citadas', claim_index=1).grounded"
+    },
+    {
+      "nodeid": "tests/unit/test_grounding_numeric_rag_hotfix.py::test_supported_numeric_representations_keep_citations_and_units[Antig\\xfcedad %\\n0 \\u2013 4.99 0\\n5 \\u2013 5.99 50\\n7 \\u2013 7.99 70\\n10 en adelante 100-Corresponde el **70 %**.]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.0005966000026091933,
+      "detail": "tests\\unit\\test_grounding_numeric_rag_hotfix.py:54: in test_supported_numeric_representations_keep_citations_and_units\n    assert result.grounded, result.reason\nE   AssertionError: afirmacion numerica sin respaldo en sus fuentes citadas\nE   assert False\nE    +  where False = GroundingReport(grounded=False, cited_source_ids=('prestaciones/ejemplo-numerico.txt#1',), invalid_source_ids=(), decl... extractive_verified=False, validation_detail='afirmacion numerica sin respaldo en sus fuentes citadas', claim_index=1).grounded"
+    },
+    {
+      "nodeid": "tests/unit/test_grounding_numeric_rag_hotfix.py::test_supported_numeric_representations_keep_citations_and_units[Antig\\xfcedad %\\n0 \\u2013 4.99 0\\n5 \\u2013 5.99 50\\n7 \\u2013 7.99 70\\n10 en adelante 100-Corresponde el 70 por ciento.]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.0004287000047042966,
+      "detail": "tests\\unit\\test_grounding_numeric_rag_hotfix.py:54: in test_supported_numeric_representations_keep_citations_and_units\n    assert result.grounded, result.reason\nE   AssertionError: afirmacion numerica sin respaldo en sus fuentes citadas\nE   assert False\nE    +  where False = GroundingReport(grounded=False, cited_source_ids=('prestaciones/ejemplo-numerico.txt#1',), invalid_source_ids=(), decl... extractive_verified=False, validation_detail='afirmacion numerica sin respaldo en sus fuentes citadas', claim_index=1).grounded"
+    },
+    {
+      "nodeid": "tests/unit/test_grounding_numeric_rag_hotfix.py::test_supported_numeric_representations_keep_citations_and_units[| Antig\\xfcedad | % |\\n| --- | ---: |\\n| 7 \\u2013 7.99 | 70 |-Corresponde el 70%.]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.0004563999973470345,
+      "detail": "tests\\unit\\test_grounding_numeric_rag_hotfix.py:54: in test_supported_numeric_representations_keep_citations_and_units\n    assert result.grounded, result.reason\nE   AssertionError: afirmacion numerica sin respaldo en sus fuentes citadas\nE   assert False\nE    +  where False = GroundingReport(grounded=False, cited_source_ids=('prestaciones/ejemplo-numerico.txt#1',), invalid_source_ids=(), decl... extractive_verified=False, validation_detail='afirmacion numerica sin respaldo en sus fuentes citadas', claim_index=1).grounded"
+    },
+    {
+      "nodeid": "tests/unit/test_grounding_numeric_rag_hotfix.py::test_valid_generation_is_not_replaced_by_insufficient_answer[Antig\\xfcedad %\\n0 \\u2013 4.99 0\\n5 \\u2013 5.99 50\\n7 \\u2013 7.99 70\\n10 en adelante 100-Corresponde el 70%.]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.0012706999987130985,
+      "detail": "tests\\unit\\test_grounding_numeric_rag_hotfix.py:156: in test_valid_generation_is_not_replaced_by_insufficient_answer\n    assert result.answer == f\"{answer} [[{SOURCE}]]\"\nE   AssertionError: assert 'Encontre doc... sus fuentes.' == 'Corresponde ...erico.txt#1]]'\nE     \nE     - Corresponde el 70%. [[prestaciones/ejemplo-numerico.txt#1]]\nE     + Encontre documentacion relacionada, pero no pude validar una respuesta respaldada por sus fuentes."
+    },
+    {
+      "nodeid": "tests/unit/test_conversation_policy_stage1.py::ClassificationTests::test_context_resolves_definite_benefit_reference",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.004801699993549846,
+      "detail": "tests\\unit\\test_conversation_policy_stage1.py:114: in test_context_resolves_definite_benefit_reference\n    self.assertEqual(reference, \"Explica nuestras prestaciones\")\nE   AssertionError: '' != 'Explica nuestras prestaciones'\nE   + Explica nuestras prestaciones"
+    },
+    {
+      "nodeid": "tests/unit/test_conversation_policy_stage1.py::OrchestrationTests::test_benefit_followup_queries_authorized_scope_then_requests_precision",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.014370899996720254,
+      "detail": "tests\\unit\\test_conversation_policy_stage1.py:257: in test_benefit_followup_queries_authorized_scope_then_requests_precision\n    self.assertIn(\"nuestras prestaciones\", args[\"question\"])\nE   AssertionError: 'nuestras prestaciones' not found in 'Qu\u00e9 es el plan libre'"
+    },
+    {
+      "nodeid": "tests/unit/test_conversation_policy_stage1.py::OrchestrationTests::test_contextual_benefit_cannot_fallback_to_general",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.013074600006802939,
+      "detail": "tests\\unit\\test_conversation_policy_stage1.py:270: in test_contextual_benefit_cannot_fallback_to_general\n    result = self.chat(\"Qu\u00e9 es el plan de ahorro\")\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests\\unit\\test_conversation_policy_stage1.py:221: in chat\n    return self.orchestrator.handle_chat(\napp\\common\\answer_diagnostics.py:52: in wrapped\n    return function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\orchestrator.py:197: in handle_chat\n    return self._finish_general(\napp\\agents\\orchestrator.py:490: in _finish_general\n    synthesis = self._agent.answer_general(\napp\\agents\\knowledge_agent.py:106: in answer_general\n    result, fallback_used = self._chat_with_fallback(\napp\\agents\\knowledge_agent.py:513: in _chat_with_fallback\n    self._llm.chat(\ntests\\unit\\test_conversation_policy_stage1.py:60: in chat\n    raise AssertionError(\"No debe generar sin una respuesta sintetica prevista.\")\nE   AssertionError: No debe generar sin una respuesta sintetica prevista."
+    },
+    {
+      "nodeid": "tests/unit/test_rh_routing.py::test_rh_without_evidence_abstains_before_generation[\\xbfCu\\xe1nto se entrega por el apoyo de casamiento?]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.01637240000127349,
+      "detail": "tests\\unit\\test_rh_routing.py:113: in test_rh_without_evidence_abstains_before_generation\n    assert outcome.answer == INSUFFICIENT_ANSWER\nE   AssertionError: assert 'No cuento co... se menciona?' == 'No cuento co...tiene acceso.'\nE     \nE     Skipping 43 identical leading characters in diff, use -v to show\nE     - ente para responder eso dentro de las fuentes a las que usted tiene acceso.\nE     + ente para identificar ese plan o beneficio dentro de las fuentes a las que usted tiene acceso. \u00bfPuede indicar su nombre completo o el documento donde se menciona?"
+    }
+  ]
+}

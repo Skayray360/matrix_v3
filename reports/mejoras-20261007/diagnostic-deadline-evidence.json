@@ -1,0 +1,15 @@
+{
+  "classification": "One-second diagnostic fixture deadline exceeded in baseline and focal rerun; implementation and test unchanged",
+  "baseline": "baseline-1791403313796778900",
+  "focused": "focused-1791407488999127400",
+  "files": {
+    "backend/scripts/local_model_diagnostics.py": {
+      "before": "5f3c5101365f6c42dc9120b108285651c73bd4ded992eaa3ee62166f6fe56c9b",
+      "current": "5f3c5101365f6c42dc9120b108285651c73bd4ded992eaa3ee62166f6fe56c9b"
+    },
+    "backend/tests/unit/test_local_model_diagnostics.py": {
+      "before": "b481d7a1474d9b1adcbed3d9dd97891dd27077e4419ff5fe1a1552959a409a80",
+      "current": "b481d7a1474d9b1adcbed3d9dd97891dd27077e4419ff5fe1a1552959a409a80"
+    }
+  }
+}

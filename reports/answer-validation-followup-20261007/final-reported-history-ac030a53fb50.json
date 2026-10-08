@@ -1,0 +1,296 @@
+{
+  "transport": "FastAPI TestClient ASGI in-process; no browser or TCP",
+  "run_id": "ac030a53fb50",
+  "real_inference": true,
+  "scenario": "reported-history",
+  "repetitions": 2,
+  "started_utc": "2026-10-08T15:30:21.091096+00:00",
+  "source": {
+    "authorized_categories": 13,
+    "roles": 1,
+    "corporate_documents": 6,
+    "history_prefix_turns": 4
+  },
+  "cases": [
+    {
+      "case": "reported-history-1-benefits",
+      "http_submit": 202,
+      "http_poll": 200,
+      "status": "completed",
+      "status_transitions": [
+        "running",
+        "completed"
+      ],
+      "calculated_application": false,
+      "elapsed_seconds": 11.12,
+      "persisted_status": "completed",
+      "pending_message_cleared": true,
+      "pending_session_cleared": true,
+      "thread_turns": 6,
+      "thread_assistant_turns": 3,
+      "assistant_published": true,
+      "answer_chars": 3305,
+      "answer_basis": "documented",
+      "grounded": true,
+      "intent": "documental",
+      "source_count": 4,
+      "latency_ms": 10102,
+      "stored_citations_match": true,
+      "sources": [
+        {
+          "filename": "PLATICA DE PRESTACIONES JUNIO 2020.pdf",
+          "page_or_sheet": "pagina 3",
+          "category": "prestaciones",
+          "source_id": "data-alias/prestaciones/PLATICA DE PRESTACIONES JUNIO 2020.pdf#2"
+        },
+        {
+          "filename": "Gastos medicos 2026.pdf",
+          "page_or_sheet": "pagina 4",
+          "category": "prestaciones",
+          "source_id": "data-alias/gastos_medicos/Gastos medicos 2026.pdf#11"
+        },
+        {
+          "filename": "prestaciones.pdf",
+          "page_or_sheet": "pagina 1",
+          "category": "prestaciones",
+          "source_id": "data-alias/prestaciones/prestaciones.pdf#0"
+        },
+        {
+          "filename": "PLATICA DE PRESTACIONES JUNIO 2020.pdf",
+          "page_or_sheet": "pagina 11",
+          "category": "prestaciones",
+          "source_id": "data-alias/prestaciones/PLATICA DE PRESTACIONES JUNIO 2020.pdf#10"
+        }
+      ],
+      "passed": true
+    },
+    {
+      "case": "reported-history-1-pension",
+      "http_submit": 202,
+      "http_poll": 200,
+      "status": "completed",
+      "status_transitions": [
+        "running",
+        "completed"
+      ],
+      "calculated_application": false,
+      "elapsed_seconds": 8.89,
+      "persisted_status": "completed",
+      "pending_message_cleared": true,
+      "pending_session_cleared": true,
+      "thread_turns": 8,
+      "thread_assistant_turns": 4,
+      "assistant_published": true,
+      "answer_chars": 1397,
+      "answer_basis": "documented",
+      "grounded": true,
+      "intent": "documental",
+      "source_count": 1,
+      "latency_ms": 8186,
+      "stored_citations_match": true,
+      "sources": [
+        {
+          "filename": "PLATICA DE PLAN DE PENSIONES POR JUBILACI#U00d3N DICIEMBRE 2022.pdf",
+          "page_or_sheet": "pagina 9",
+          "category": "prestaciones",
+          "source_id": "data-alias/prestaciones/PLATICA DE PLAN DE PENSIONES POR JUBILACI#U00d3N DICIEMBRE 2022.pdf#8"
+        }
+      ],
+      "pension_acceptance": {
+        "basic_70_percent": true,
+        "basic_complementary_70_percent": true,
+        "additional_complementary_70_percent": true,
+        "correct_document_cited": true,
+        "correct_document_page_9_cited": true,
+        "complete_pension_answer": true
+      },
+      "calculated_application_direct_check": {
+        "separate_from_published_answer": true,
+        "real_generation_evidence_captured": true,
+        "returned_answer": true,
+        "grounded": true,
+        "complete_pension_answer": true
+      },
+      "passed": true
+    },
+    {
+      "case": "reported-history-2-benefits",
+      "http_submit": 202,
+      "http_poll": 200,
+      "status": "completed",
+      "status_transitions": [
+        "running",
+        "completed"
+      ],
+      "calculated_application": false,
+      "elapsed_seconds": 14.05,
+      "persisted_status": "completed",
+      "pending_message_cleared": true,
+      "pending_session_cleared": true,
+      "thread_turns": 6,
+      "thread_assistant_turns": 3,
+      "assistant_published": true,
+      "answer_chars": 2369,
+      "answer_basis": "documented",
+      "grounded": true,
+      "intent": "documental",
+      "source_count": 3,
+      "latency_ms": 13775,
+      "stored_citations_match": true,
+      "sources": [
+        {
+          "filename": "PLATICA DE PRESTACIONES JUNIO 2020.pdf",
+          "page_or_sheet": "pagina 3",
+          "category": "prestaciones",
+          "source_id": "data-alias/prestaciones/PLATICA DE PRESTACIONES JUNIO 2020.pdf#2"
+        },
+        {
+          "filename": "prestaciones.pdf",
+          "page_or_sheet": "pagina 1",
+          "category": "prestaciones",
+          "source_id": "data-alias/prestaciones/prestaciones.pdf#0"
+        },
+        {
+          "filename": "PLATICA DE PRESTACIONES JUNIO 2020.pdf",
+          "page_or_sheet": "pagina 11",
+          "category": "prestaciones",
+          "source_id": "data-alias/prestaciones/PLATICA DE PRESTACIONES JUNIO 2020.pdf#10"
+        }
+      ],
+      "passed": true
+    },
+    {
+      "case": "reported-history-2-pension",
+      "http_submit": 202,
+      "http_poll": 200,
+      "status": "completed",
+      "status_transitions": [
+        "running",
+        "completed"
+      ],
+      "calculated_application": true,
+      "elapsed_seconds": 9.41,
+      "persisted_status": "completed",
+      "pending_message_cleared": true,
+      "pending_session_cleared": true,
+      "thread_turns": 8,
+      "thread_assistant_turns": 4,
+      "assistant_published": true,
+      "answer_chars": 620,
+      "answer_basis": "documented",
+      "grounded": true,
+      "intent": "documental",
+      "source_count": 1,
+      "latency_ms": 9194,
+      "stored_citations_match": true,
+      "sources": [
+        {
+          "filename": "PLATICA DE PLAN DE PENSIONES POR JUBILACI#U00d3N DICIEMBRE 2022.pdf",
+          "page_or_sheet": "pagina 9",
+          "category": "prestaciones",
+          "source_id": "data-alias/prestaciones/PLATICA DE PLAN DE PENSIONES POR JUBILACI#U00d3N DICIEMBRE 2022.pdf#8"
+        }
+      ],
+      "pension_acceptance": {
+        "basic_70_percent": true,
+        "basic_complementary_70_percent": true,
+        "additional_complementary_70_percent": true,
+        "correct_document_cited": true,
+        "correct_document_page_9_cited": true,
+        "complete_pension_answer": true
+      },
+      "calculated_application_direct_check": {
+        "separate_from_published_answer": true,
+        "real_generation_evidence_captured": true,
+        "returned_answer": true,
+        "grounded": true,
+        "complete_pension_answer": true
+      },
+      "passed": true
+    }
+  ],
+  "validations": [
+    {
+      "case": "reported-history-1-benefits",
+      "grounded": true,
+      "reason": "citas autorizadas y cifras contrastadas; veracidad semantica no evaluada",
+      "validation_detail": "",
+      "claim_index": null,
+      "cited_sources": 4
+    },
+    {
+      "case": "reported-history-1-pension",
+      "grounded": true,
+      "reason": "citas autorizadas y cifras contrastadas; veracidad semantica no evaluada",
+      "validation_detail": "",
+      "claim_index": null,
+      "cited_sources": 1
+    },
+    {
+      "case": "reported-history-2-benefits",
+      "grounded": false,
+      "reason": "afirmacion documental final sin cita",
+      "validation_detail": "",
+      "claim_index": null,
+      "cited_sources": 5
+    },
+    {
+      "case": "reported-history-2-benefits",
+      "grounded": true,
+      "reason": "citas autorizadas y cifras contrastadas; veracidad semantica no evaluada",
+      "validation_detail": "",
+      "claim_index": null,
+      "cited_sources": 3
+    },
+    {
+      "case": "reported-history-2-pension",
+      "grounded": false,
+      "reason": "afirmacion numerica sin respaldo en sus fuentes citadas",
+      "validation_detail": "antiguedad atribuida al caso distinta de la declarada",
+      "claim_index": 2,
+      "cited_sources": 1
+    },
+    {
+      "case": "reported-history-2-pension",
+      "grounded": false,
+      "reason": "afirmacion numerica sin respaldo en sus fuentes citadas",
+      "validation_detail": "datos declarados sin aplicacion condicional",
+      "claim_index": 2,
+      "cited_sources": 1
+    },
+    {
+      "case": "reported-history-2-pension",
+      "grounded": true,
+      "reason": "citas autorizadas y cifras contrastadas; veracidad semantica no evaluada",
+      "validation_detail": "",
+      "claim_index": null,
+      "cited_sources": 1
+    }
+  ],
+  "code_sha256": {
+    "backend/app/common/answers.py": "ba12a7c9ad96ded1db5efef3cb0da18d386858031573943292df582f0db37b67",
+    "backend/app/rag/claim_context.py": "8104cf15fba39bf776e2a6e82d7020fb0c8291c282a73afb875f5c4cc8fc16a5",
+    "backend/app/rag/grounding.py": "b7fe31ba033ff2fc7d79bf0edd9a71f2c5919b1c5e17d90eca8122ec8c979757",
+    "backend/app/agents/prompts.py": "e174fff1d95cb7b18b4882bc9941b1b6a95df088f9d8ebb8474a74aaefed2115",
+    "backend/app/agents/knowledge_agent.py": "ea32a8b62bd54be1ef8da43c7ead35235a1d4df482ecc3a4ec6d29d03012f635",
+    "backend/app/rag/calculated_application.py": "3ed81561623f5d95256e8c49e2c2d842cd9ae62d4128d9549cba05329f823fb3"
+  },
+  "runtime_sqlite_retained": false,
+  "sqlite_adaptations": {
+    "mediumtext_compiles_as_text": true,
+    "message_sequence_assigned_like_existing_tests": true,
+    "autoflush": false,
+    "explicit_flush_and_commit_unchanged": true,
+    "reason": "SQLite global writer lock differs from MySQL row locks during nested reauthorization"
+  },
+  "auth_checks": {
+    "cookie_resolved": true,
+    "missing_csrf_rejected": true,
+    "authorization_equivalent": true,
+    "dependency_overrides": 0
+  },
+  "workers_before_shutdown": 0,
+  "clean_shutdown": true,
+  "finished_utc": "2026-10-08T15:31:05.915189+00:00",
+  "passed": true
+}

@@ -1,0 +1,34 @@
+{
+  "phase": "baseline",
+  "node": "v24.14.0",
+  "lock_sha256": "2D0201637D190218D52C072CD4DDCFBDDEDAFCAE8DCF2D303299B947F869E862",
+  "results": [
+    {
+      "seconds": 131.9350905,
+      "command": "npm.cmd test -- --maxWorkers=2 --no-file-parallelism --reporter=json --outputFile=test-results.json",
+      "name": "test",
+      "exit_code": 0
+    },
+    {
+      "seconds": 32.0082734,
+      "command": "npm.cmd run typecheck",
+      "name": "typecheck",
+      "exit_code": 0
+    },
+    {
+      "seconds": 30.7764282,
+      "command": "npm.cmd run lint",
+      "name": "lint",
+      "exit_code": 0
+    },
+    {
+      "seconds": 29.3220718,
+      "command": "npm.cmd run build",
+      "name": "build",
+      "exit_code": 0
+    }
+  ],
+  "network": "External Node TCP connections and all UDP sends blocked; Vitest IPC/loopback allowed; component tests mock API",
+  "run": "C:\\wamp64\\www\\matrix-rh-1.3.0\\reports\\revision-20261007\\frontend-baseline-1791394854249",
+  "source": "C:\\wamp64\\www\\matrix-rh-1.3.0\\reports\\revision-20261007\\before\\frontend"
+}

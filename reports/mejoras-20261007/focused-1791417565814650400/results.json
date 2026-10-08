@@ -1,0 +1,12 @@
+{
+  "exit_code": 0,
+  "collected": 61,
+  "passed": 61,
+  "failed": 0,
+  "errors": 0,
+  "skipped": 0,
+  "duration_seconds": 1.977,
+  "isolation_violations": [],
+  "isolation_violation_events": [],
+  "failures": []
+}

@@ -1,0 +1,20 @@
+{
+  "synthetic": true,
+  "network": "all routes fulfilled from isolated build and synthetic JSON",
+  "results": [
+    {
+      "width": 1280,
+      "passed": true,
+      "viewport": 1280,
+      "responseHeight": 4200.09375,
+      "tableCount": 1
+    },
+    {
+      "width": 390,
+      "passed": true,
+      "viewport": 390,
+      "responseHeight": 7597.265625,
+      "tableCount": 1
+    }
+  ]
+}

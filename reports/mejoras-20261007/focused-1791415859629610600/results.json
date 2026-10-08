@@ -1,0 +1,76 @@
+{
+  "exit_code": 1,
+  "collected": 21,
+  "passed": 12,
+  "failed": 9,
+  "errors": 0,
+  "skipped": 0,
+  "duration_seconds": 2.004,
+  "isolation_violations": [],
+  "isolation_violation_events": [],
+  "failures": [
+    {
+      "nodeid": "tests/unit/test_clarification_contract.py::test_complete_clarifying_questions_can_follow_documented_claims[Para poder explicarle sus prestaciones de manera espec\\xedfica, \\xbfpodr\\xeda indicarme si usted pertenece al personal no sindicalizado, de planta o eventual?]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.0007823000014468562,
+      "detail": "tests\\unit\\test_clarification_contract.py:43: in test_complete_clarifying_questions_can_follow_documented_claims\n    assert safe_nonfactual_text(question)\nE   AssertionError: assert False\nE    +  where False = safe_nonfactual_text('Para poder explicarle sus prestaciones de manera espec\u00edfica, \u00bfpodr\u00eda indicarme si usted pertenece al personal no sindicalizado, de planta o eventual?')"
+    },
+    {
+      "nodeid": "tests/unit/test_clarification_contract.py::test_complete_clarifying_questions_can_follow_documented_claims[Para poder explicarle sus prestaciones, \\xbfpodr\\xeda indicarme su condici\\xf3n sindical y su tipo de contrataci\\xf3n?]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.0003423000016482547,
+      "detail": "tests\\unit\\test_clarification_contract.py:43: in test_complete_clarifying_questions_can_follow_documented_claims\n    assert safe_nonfactual_text(question)\nE   AssertionError: assert False\nE    +  where False = safe_nonfactual_text('Para poder explicarle sus prestaciones, \u00bfpodr\u00eda indicarme su condici\u00f3n sindical y su tipo de contrataci\u00f3n?')"
+    },
+    {
+      "nodeid": "tests/unit/test_clarification_contract.py::test_complete_clarifying_questions_can_follow_documented_claims[Para explicarte tus prestaciones, \\xbfpuedes precisarme tu tipo de contrataci\\xf3n?]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.00027240000054007396,
+      "detail": "tests\\unit\\test_clarification_contract.py:43: in test_complete_clarifying_questions_can_follow_documented_claims\n    assert safe_nonfactual_text(question)\nE   AssertionError: assert False\nE    +  where False = safe_nonfactual_text('Para explicarte tus prestaciones, \u00bfpuedes precisarme tu tipo de contrataci\u00f3n?')"
+    },
+    {
+      "nodeid": "tests/unit/test_clarification_contract.py::test_complete_clarifying_questions_can_follow_documented_claims[Para explicar las prestaciones, \\xbfpuede especificarnos su condici\\xf3n sindical?]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.0002153999994334299,
+      "detail": "tests\\unit\\test_clarification_contract.py:43: in test_complete_clarifying_questions_can_follow_documented_claims\n    assert safe_nonfactual_text(question)\nE   AssertionError: assert False\nE    +  where False = safe_nonfactual_text('Para explicar las prestaciones, \u00bfpuede especificarnos su condici\u00f3n sindical?')"
+    },
+    {
+      "nodeid": "tests/unit/test_clarification_contract.py::test_complete_clarifying_questions_can_follow_documented_claims[\\xbfPodr\\xeda indicarnos su tipo de contrataci\\xf3n?]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.00021810000180266798,
+      "detail": "tests\\unit\\test_clarification_contract.py:43: in test_complete_clarifying_questions_can_follow_documented_claims\n    assert safe_nonfactual_text(question)\nE   AssertionError: assert False\nE    +  where False = safe_nonfactual_text('\u00bfPodr\u00eda indicarnos su tipo de contrataci\u00f3n?')"
+    },
+    {
+      "nodeid": "tests/unit/test_clarification_contract.py::test_complete_clarifying_questions_can_follow_documented_claims[\\xbfPuedes precisarnos tu condici\\xf3n sindical?]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.000252499998168787,
+      "detail": "tests\\unit\\test_clarification_contract.py:43: in test_complete_clarifying_questions_can_follow_documented_claims\n    assert safe_nonfactual_text(question)\nE   AssertionError: assert False\nE    +  where False = safe_nonfactual_text('\u00bfPuedes precisarnos tu condici\u00f3n sindical?')"
+    },
+    {
+      "nodeid": "tests/unit/test_clarification_contract.py::test_complete_clarifying_questions_can_follow_documented_claims[\\xbfPuede especificarme su tipo de contrataci\\xf3n?]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.0002285999980813358,
+      "detail": "tests\\unit\\test_clarification_contract.py:43: in test_complete_clarifying_questions_can_follow_documented_claims\n    assert safe_nonfactual_text(question)\nE   AssertionError: assert False\nE    +  where False = safe_nonfactual_text('\u00bfPuede especificarme su tipo de contrataci\u00f3n?')"
+    },
+    {
+      "nodeid": "tests/unit/test_clarification_contract.py::test_complete_clarifying_questions_can_follow_documented_claims[\\xbfPodr\\xedas compartirme el documento de referencia?]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.0003652000013971701,
+      "detail": "tests\\unit\\test_clarification_contract.py:43: in test_complete_clarifying_questions_can_follow_documented_claims\n    assert safe_nonfactual_text(question)\nE   AssertionError: assert False\nE    +  where False = safe_nonfactual_text('\u00bfPodr\u00edas compartirme el documento de referencia?')"
+    },
+    {
+      "nodeid": "tests/unit/test_clarification_contract.py::test_complete_clarifying_questions_can_follow_documented_claims[\\xbfPodr\\xeda compartirnos el documento de referencia?]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.00044940000225324184,
+      "detail": "tests\\unit\\test_clarification_contract.py:43: in test_complete_clarifying_questions_can_follow_documented_claims\n    assert safe_nonfactual_text(question)\nE   AssertionError: assert False\nE    +  where False = safe_nonfactual_text('\u00bfPodr\u00eda compartirnos el documento de referencia?')"
+    }
+  ]
+}

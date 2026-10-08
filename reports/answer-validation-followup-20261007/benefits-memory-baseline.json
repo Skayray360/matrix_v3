@@ -1,0 +1,109 @@
+{
+  "checked_at_utc": "2026-10-07T23:44:30.018821+00:00",
+  "http_path_tested": false,
+  "database_writes_allowed": false,
+  "operational_index_opened": false,
+  "conversation_memory_used": true,
+  "memory_mode": "reported",
+  "private_attachments_used": false,
+  "question_case": "benefits",
+  "question_sha256": "0a35d5cc0c86f2a9544aa596d2e9e71e3cd96c4ae215af718f5d5cdc6fa3bf46",
+  "question_chars": 32,
+  "validation_attempts": [
+    {
+      "retry": false,
+      "grounded": false,
+      "reason": "afirmacion documental final sin cita",
+      "detail": "",
+      "claim_index": null,
+      "cited_source_count": 5,
+      "invalid_source_count": 0,
+      "declares_insufficiency": false
+    },
+    {
+      "retry": true,
+      "grounded": false,
+      "reason": "afirmacion documental final sin cita",
+      "detail": "",
+      "claim_index": null,
+      "cited_source_count": 5,
+      "invalid_source_count": 0,
+      "declares_insufficiency": false
+    }
+  ],
+  "memory": {
+    "turn_count": 4,
+    "summary_present": false,
+    "roles": [
+      "user",
+      "assistant",
+      "user",
+      "assistant"
+    ]
+  },
+  "signed_context_verified": true,
+  "authorized_category_count": 13,
+  "retrieval": {
+    "fetched": 17,
+    "after_dedup": 17,
+    "returned": 6,
+    "best_score": 0.538675129474379,
+    "truncated": false,
+    "sources": [
+      {
+        "filename": "PLATICA DE PRESTACIONES JUNIO 2020.pdf",
+        "page": "pagina 3",
+        "category": "prestaciones",
+        "scope": "corporate",
+        "score": 0.538675129474379
+      },
+      {
+        "filename": "PLATICA DE PLAN DE FALLECIMIENTO E INVALIDEZ RH 2020.pdf",
+        "page": "pagina 2",
+        "category": "prestaciones",
+        "scope": "corporate",
+        "score": 0.38311900346517647
+      },
+      {
+        "filename": "Gastos medicos 2026.pdf",
+        "page": "pagina 4",
+        "category": "prestaciones",
+        "scope": "corporate",
+        "score": 0.3602327481042148
+      },
+      {
+        "filename": "Gastos medicos 2026.pdf",
+        "page": "pagina 12",
+        "category": "prestaciones",
+        "scope": "corporate",
+        "score": 0.36306638060986324
+      },
+      {
+        "filename": "prestaciones.pdf",
+        "page": "pagina 1",
+        "category": "prestaciones",
+        "scope": "corporate",
+        "score": 0.4240753997594757
+      },
+      {
+        "filename": "PLATICA DE PRESTACIONES JUNIO 2020.pdf",
+        "page": "pagina 11",
+        "category": "prestaciones",
+        "scope": "corporate",
+        "score": 0.37595951893999624
+      }
+    ]
+  },
+  "route": {
+    "selected_model": "gemma4:latest",
+    "model_route": "fast",
+    "intent": "documental",
+    "routing_signals": [
+      "fast_path_sufficient"
+    ],
+    "routing_decisive_signals": [],
+    "routing_weak_signals": []
+  },
+  "status": "failed",
+  "error_type": "AnswerValidationError"
+}

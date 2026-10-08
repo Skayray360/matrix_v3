@@ -1,0 +1,195 @@
+{
+  "exit_code": 1,
+  "collected": 461,
+  "passed": 435,
+  "failed": 26,
+  "subtest_reports": 40,
+  "errors": 0,
+  "skipped": 0,
+  "duration_seconds": 39.51,
+  "isolation_violations": [],
+  "failures": [
+    {
+      "nodeid": "tests/unit/test_conditional_contract.py::test_safe_nonfactual_responses_do_not_need_fictional_citations[La evidencia disponible no permite comprobar la aplicaci\\xf3n de la tabla a los datos declarados. Necesito una regla y una tabla completas, o precisar los datos del caso.]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.0010419000027468428,
+      "detail": "tests\\unit\\test_conditional_contract.py:211: in test_safe_nonfactual_responses_do_not_need_fictional_citations\n    assert verify(text).grounded\nE   AssertionError: assert False\nE    +  where False = GroundingReport(grounded=False, cited_source_ids=(), invalid_source_ids=(), declares_insufficiency=False, reason='resp...das', citations_valid=False, factual_verified=False, extractive_verified=False, validation_detail='', claim_index=None).grounded\nE    +    where GroundingReport(grounded=False, cited_source_ids=(), invalid_source_ids=(), declares_insufficiency=False, reason='resp...das', citations_valid=False, factual_verified=False, extractive_verified=False, validation_detail='', claim_index=None) = verify('La evidencia disponible no permite comprobar la aplicaci\u00f3n de la tabla a los datos declarados. Necesito una regla y una tabla completas, o precisar los datos del caso.')"
+    },
+    {
+      "nodeid": "tests/unit/test_conditional_contract.py::test_failed_generation_is_distinct_from_missing_application_evidence[True]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.0035719000006793067,
+      "detail": "tests\\unit\\test_conditional_contract.py:322: in test_failed_generation_is_distinct_from_missing_application_evidence\n    result = KnowledgeAgent(llm=Client(), policy=policy).synthesize(\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\knowledge_agent.py:300: in synthesize\n    return self._regenerate(\napp\\agents\\knowledge_agent.py:480: in _regenerate\n    raise AnswerValidationError(detail=retry_report.validation_detail or retry_report.reason)\nE   app.common.errors.AnswerValidationError: La respuesta generada no supero la verificacion de sus fuentes."
+    },
+    {
+      "nodeid": "tests/unit/test_conditional_contract.py::test_failed_generation_is_distinct_from_missing_application_evidence[False]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.0017956000083358958,
+      "detail": "tests\\unit\\test_conditional_contract.py:322: in test_failed_generation_is_distinct_from_missing_application_evidence\n    result = KnowledgeAgent(llm=Client(), policy=policy).synthesize(\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\knowledge_agent.py:300: in synthesize\n    return self._regenerate(\napp\\agents\\knowledge_agent.py:480: in _regenerate\n    raise AnswerValidationError(detail=retry_report.validation_detail or retry_report.reason)\nE   app.common.errors.AnswerValidationError: La respuesta generada no supero la verificacion de sus fuentes."
+    },
+    {
+      "nodeid": "tests/unit/test_conditional_contract.py::test_real_packing_never_approves_application_when_table_does_not_fit",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.0017171999934362248,
+      "detail": "tests\\unit\\test_conditional_contract.py:360: in test_real_packing_never_approves_application_when_table_does_not_fit\n    result = KnowledgeAgent(llm=Client(), policy=policy).synthesize(\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\knowledge_agent.py:300: in synthesize\n    return self._regenerate(\napp\\agents\\knowledge_agent.py:374: in _regenerate\n    raise InferenceFailureError(InferenceFailureKind.CONTEXT_LIMIT)\nE   app.common.inference_errors.InferenceFailureError: El servicio de IA local no esta disponible."
+    },
+    {
+      "nodeid": "tests/unit/test_conditional_contract.py::test_retry_keeps_original_alias_when_first_source_no_longer_fits",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.005265999992843717,
+      "detail": "tests\\unit\\test_conditional_contract.py:394: in test_retry_keeps_original_alias_when_first_source_no_longer_fits\n    result = KnowledgeAgent(llm=client, policy=policy).synthesize(\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\knowledge_agent.py:300: in synthesize\n    return self._regenerate(\napp\\agents\\knowledge_agent.py:401: in _regenerate\n    retry_result, retry_fallback = self._chat_with_fallback(\napp\\agents\\knowledge_agent.py:500: in _chat_with_fallback\n    self._llm.chat(\ntests\\unit\\test_conditional_contract.py:387: in chat\n    assert first.text not in kwargs[\"messages\"][1][\"content\"]\nE   AssertionError: assert 'Contenido d...documental. ' not in '<<<EVIDENCI...ion general.'\nE     \nE     'Contenido document...tenido documental. ' is contained here:\nE       e: 0.900)\nE       Contenido documental. Contenido documental. Contenido documental. Contenido documental. Contenido documental. Contenido documental. Contenido documental. Contenido documental. Contenido documental. Contenido documental. Contenido documental. Contenido documental. Contenido documental. Contenido documental. Contenido documental. Contenido documental. Contenido documental. Contenido documental. Contenido documental. Contenido documental. Contenido documental. Contenido documental. Contenido document...\nE     \nE     ...Full output truncated (10 lines hidden), use '-vv' to show"
+    },
+    {
+      "nodeid": "tests/unit/test_grounding.py::TestVerificacion::test_declarar_falta_de_acceso_es_valido",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.00023040000814944506,
+      "detail": "tests\\unit\\test_grounding.py:85: in test_declarar_falta_de_acceso_es_valido\n    assert report.grounded is True\nE   AssertionError: assert False is True\nE    +  where False = GroundingReport(grounded=False, cited_source_ids=(), invalid_source_ids=(), declares_insufficiency=False, reason='resp...ble', citations_valid=False, factual_verified=False, extractive_verified=False, validation_detail='', claim_index=None).grounded"
+    },
+    {
+      "nodeid": "tests/unit/test_model_policy.py::TestClasificacionDeIntencion::test_saludo_conserva_intenciones_y_seguimientos[Hola, \\xbfqui\\xe9n eres?-identity]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.0003125000075669959,
+      "detail": "tests\\unit\\test_model_policy.py:63: in test_saludo_conserva_intenciones_y_seguimientos\n    assert policy.classify_intent(question) is expected\nE   AssertionError: assert <Intent.DOCUMENTAL: 'documental'> is <Intent.IDENTITY: 'identity'>\nE    +  where <Intent.DOCUMENTAL: 'documental'> = classify_intent('Hola, \u00bfqui\u00e9n eres?')\nE    +    where classify_intent = <app.llm.model_policy.ModelPolicy object at 0x000002614D0317F0>.classify_intent"
+    },
+    {
+      "nodeid": "tests/unit/test_rh_routing.py::test_rh_without_evidence_abstains_before_generation[\\xbfCu\\xe1ntos d\\xedas me dan si me caso?]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.025393899995833635,
+      "detail": "tests\\unit\\test_rh_routing.py:112: in test_rh_without_evidence_abstains_before_generation\n    outcome = orchestrator.handle_chat(db, ctx=context, conversation=conversation, message=question)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\answer_diagnostics.py:52: in wrapped\n    return function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\orchestrator.py:225: in handle_chat\n    return self._finish_no_evidence(\napp\\agents\\orchestrator.py:645: in _finish_no_evidence\n    return self._finish_insufficient(\napp\\agents\\orchestrator.py:686: in _finish_insufficient\n    synthesis = self._agent.ask_clarification(question=question, model_name=self._model_policy.fast_model)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\knowledge_agent.py:144: in ask_clarification\n    result, _ = self._chat_with_fallback(\napp\\agents\\knowledge_agent.py:500: in _chat_with_fallback\n    self._llm.chat(\ntests\\unit\\test_rh_routing.py:86: in chat\n    assert self.answer, \"No debe inferir una politica sin evidencia.\"\nE   AssertionError: No debe inferir una politica sin evidencia.\nE   assert ''\nE    +  where '' = <test_rh_routing.ControlledLlm object at 0x000002614CFDA6F0>.answer"
+    },
+    {
+      "nodeid": "tests/unit/test_rh_routing.py::test_rh_without_evidence_abstains_before_generation[\\xbfQu\\xe9 pasa si tengo 3 retardos?]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.015284699999028817,
+      "detail": "tests\\unit\\test_rh_routing.py:112: in test_rh_without_evidence_abstains_before_generation\n    outcome = orchestrator.handle_chat(db, ctx=context, conversation=conversation, message=question)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\answer_diagnostics.py:52: in wrapped\n    return function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\orchestrator.py:225: in handle_chat\n    return self._finish_no_evidence(\napp\\agents\\orchestrator.py:645: in _finish_no_evidence\n    return self._finish_insufficient(\napp\\agents\\orchestrator.py:686: in _finish_insufficient\n    synthesis = self._agent.ask_clarification(question=question, model_name=self._model_policy.fast_model)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\knowledge_agent.py:144: in ask_clarification\n    result, _ = self._chat_with_fallback(\napp\\agents\\knowledge_agent.py:500: in _chat_with_fallback\n    self._llm.chat(\ntests\\unit\\test_rh_routing.py:86: in chat\n    assert self.answer, \"No debe inferir una politica sin evidencia.\"\nE   AssertionError: No debe inferir una politica sin evidencia.\nE   assert ''\nE    +  where '' = <test_rh_routing.ControlledLlm object at 0x000002614CF5F950>.answer"
+    },
+    {
+      "nodeid": "tests/unit/test_rh_routing.py::test_rh_without_evidence_abstains_before_generation[\\xbfC\\xf3mo registro a mi pareja en el IMSS?]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.015356199990492314,
+      "detail": "tests\\unit\\test_rh_routing.py:112: in test_rh_without_evidence_abstains_before_generation\n    outcome = orchestrator.handle_chat(db, ctx=context, conversation=conversation, message=question)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\answer_diagnostics.py:52: in wrapped\n    return function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\orchestrator.py:225: in handle_chat\n    return self._finish_no_evidence(\napp\\agents\\orchestrator.py:645: in _finish_no_evidence\n    return self._finish_insufficient(\napp\\agents\\orchestrator.py:686: in _finish_insufficient\n    synthesis = self._agent.ask_clarification(question=question, model_name=self._model_policy.fast_model)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\knowledge_agent.py:144: in ask_clarification\n    result, _ = self._chat_with_fallback(\napp\\agents\\knowledge_agent.py:500: in _chat_with_fallback\n    self._llm.chat(\ntests\\unit\\test_rh_routing.py:86: in chat\n    assert self.answer, \"No debe inferir una politica sin evidencia.\"\nE   AssertionError: No debe inferir una politica sin evidencia.\nE   assert ''\nE    +  where '' = <test_rh_routing.ControlledLlm object at 0x000002614CFB5670>.answer"
+    },
+    {
+      "nodeid": "tests/unit/test_rh_routing.py::test_rh_without_evidence_abstains_before_generation[\\xbfCu\\xe1l es el importe del bono?]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.015142999996896833,
+      "detail": "tests\\unit\\test_rh_routing.py:112: in test_rh_without_evidence_abstains_before_generation\n    outcome = orchestrator.handle_chat(db, ctx=context, conversation=conversation, message=question)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\answer_diagnostics.py:52: in wrapped\n    return function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\orchestrator.py:225: in handle_chat\n    return self._finish_no_evidence(\napp\\agents\\orchestrator.py:645: in _finish_no_evidence\n    return self._finish_insufficient(\napp\\agents\\orchestrator.py:686: in _finish_insufficient\n    synthesis = self._agent.ask_clarification(question=question, model_name=self._model_policy.fast_model)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\knowledge_agent.py:144: in ask_clarification\n    result, _ = self._chat_with_fallback(\napp\\agents\\knowledge_agent.py:500: in _chat_with_fallback\n    self._llm.chat(\ntests\\unit\\test_rh_routing.py:86: in chat\n    assert self.answer, \"No debe inferir una politica sin evidencia.\"\nE   AssertionError: No debe inferir una politica sin evidencia.\nE   assert ''\nE    +  where '' = <test_rh_routing.ControlledLlm object at 0x000002614CDC3830>.answer"
+    },
+    {
+      "nodeid": "tests/unit/test_rh_routing.py::test_rh_without_evidence_abstains_before_generation[Hola, \\xbfc\\xf3mo entrego la incapacidad del IMSS?]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.020960100009688176,
+      "detail": "tests\\unit\\test_rh_routing.py:112: in test_rh_without_evidence_abstains_before_generation\n    outcome = orchestrator.handle_chat(db, ctx=context, conversation=conversation, message=question)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\answer_diagnostics.py:52: in wrapped\n    return function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\orchestrator.py:225: in handle_chat\n    return self._finish_no_evidence(\napp\\agents\\orchestrator.py:645: in _finish_no_evidence\n    return self._finish_insufficient(\napp\\agents\\orchestrator.py:686: in _finish_insufficient\n    synthesis = self._agent.ask_clarification(question=question, model_name=self._model_policy.fast_model)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\knowledge_agent.py:144: in ask_clarification\n    result, _ = self._chat_with_fallback(\napp\\agents\\knowledge_agent.py:500: in _chat_with_fallback\n    self._llm.chat(\ntests\\unit\\test_rh_routing.py:86: in chat\n    assert self.answer, \"No debe inferir una politica sin evidencia.\"\nE   AssertionError: No debe inferir una politica sin evidencia.\nE   assert ''\nE    +  where '' = <test_rh_routing.ControlledLlm object at 0x000002614CE1B4D0>.answer"
+    },
+    {
+      "nodeid": "tests/unit/test_rh_routing.py::test_rh_without_evidence_abstains_before_generation[\\xbfCu\\xe1nto se entrega por el apoyo de casamiento?]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.05792739999014884,
+      "detail": "tests\\unit\\test_rh_routing.py:112: in test_rh_without_evidence_abstains_before_generation\n    outcome = orchestrator.handle_chat(db, ctx=context, conversation=conversation, message=question)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\answer_diagnostics.py:52: in wrapped\n    return function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\orchestrator.py:225: in handle_chat\n    return self._finish_no_evidence(\napp\\agents\\orchestrator.py:645: in _finish_no_evidence\n    return self._finish_insufficient(\napp\\agents\\orchestrator.py:686: in _finish_insufficient\n    synthesis = self._agent.ask_clarification(question=question, model_name=self._model_policy.fast_model)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\knowledge_agent.py:144: in ask_clarification\n    result, _ = self._chat_with_fallback(\napp\\agents\\knowledge_agent.py:500: in _chat_with_fallback\n    self._llm.chat(\ntests\\unit\\test_rh_routing.py:86: in chat\n    assert self.answer, \"No debe inferir una politica sin evidencia.\"\nE   AssertionError: No debe inferir una politica sin evidencia.\nE   assert ''\nE    +  where '' = <test_rh_routing.ControlledLlm object at 0x000002614D0BF710>.answer"
+    },
+    {
+      "nodeid": "tests/unit/test_rh_routing.py::test_rh_without_evidence_abstains_before_generation[Hola, \\xbfcu\\xe1nto me dan cuando nazca mi beb\\xe9?]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.016390200005844235,
+      "detail": "tests\\unit\\test_rh_routing.py:112: in test_rh_without_evidence_abstains_before_generation\n    outcome = orchestrator.handle_chat(db, ctx=context, conversation=conversation, message=question)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\answer_diagnostics.py:52: in wrapped\n    return function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\orchestrator.py:225: in handle_chat\n    return self._finish_no_evidence(\napp\\agents\\orchestrator.py:645: in _finish_no_evidence\n    return self._finish_insufficient(\napp\\agents\\orchestrator.py:686: in _finish_insufficient\n    synthesis = self._agent.ask_clarification(question=question, model_name=self._model_policy.fast_model)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\knowledge_agent.py:144: in ask_clarification\n    result, _ = self._chat_with_fallback(\napp\\agents\\knowledge_agent.py:500: in _chat_with_fallback\n    self._llm.chat(\ntests\\unit\\test_rh_routing.py:86: in chat\n    assert self.answer, \"No debe inferir una politica sin evidencia.\"\nE   AssertionError: No debe inferir una politica sin evidencia.\nE   assert ''\nE    +  where '' = <test_rh_routing.ControlledLlm object at 0x000002614CE251C0>.answer"
+    },
+    {
+      "nodeid": "tests/unit/test_rh_routing.py::test_rh_without_evidence_abstains_before_generation[Gracias, necesito tiempo para atender a mi mam\\xe1]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.016085900002508424,
+      "detail": "tests\\unit\\test_rh_routing.py:112: in test_rh_without_evidence_abstains_before_generation\n    outcome = orchestrator.handle_chat(db, ctx=context, conversation=conversation, message=question)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\answer_diagnostics.py:52: in wrapped\n    return function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\orchestrator.py:225: in handle_chat\n    return self._finish_no_evidence(\napp\\agents\\orchestrator.py:645: in _finish_no_evidence\n    return self._finish_insufficient(\napp\\agents\\orchestrator.py:686: in _finish_insufficient\n    synthesis = self._agent.ask_clarification(question=question, model_name=self._model_policy.fast_model)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\knowledge_agent.py:144: in ask_clarification\n    result, _ = self._chat_with_fallback(\napp\\agents\\knowledge_agent.py:500: in _chat_with_fallback\n    self._llm.chat(\ntests\\unit\\test_rh_routing.py:86: in chat\n    assert self.answer, \"No debe inferir una politica sin evidencia.\"\nE   AssertionError: No debe inferir una politica sin evidencia.\nE   assert ''\nE    +  where '' = <test_rh_routing.ControlledLlm object at 0x000002614C9FFA40>.answer"
+    },
+    {
+      "nodeid": "tests/unit/test_rh_routing.py::test_rh_without_evidence_abstains_before_generation[Expl\\xedcame Python y cu\\xe1nto me dan si me caso]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.01663689999259077,
+      "detail": "tests\\unit\\test_rh_routing.py:112: in test_rh_without_evidence_abstains_before_generation\n    outcome = orchestrator.handle_chat(db, ctx=context, conversation=conversation, message=question)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\answer_diagnostics.py:52: in wrapped\n    return function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\orchestrator.py:225: in handle_chat\n    return self._finish_no_evidence(\napp\\agents\\orchestrator.py:645: in _finish_no_evidence\n    return self._finish_insufficient(\napp\\agents\\orchestrator.py:686: in _finish_insufficient\n    synthesis = self._agent.ask_clarification(question=question, model_name=self._model_policy.fast_model)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\knowledge_agent.py:144: in ask_clarification\n    result, _ = self._chat_with_fallback(\napp\\agents\\knowledge_agent.py:500: in _chat_with_fallback\n    self._llm.chat(\ntests\\unit\\test_rh_routing.py:86: in chat\n    assert self.answer, \"No debe inferir una politica sin evidencia.\"\nE   AssertionError: No debe inferir una politica sin evidencia.\nE   assert ''\nE    +  where '' = <test_rh_routing.ControlledLlm object at 0x000002614CA249E0>.answer"
+    },
+    {
+      "nodeid": "tests/unit/test_rh_routing.py::test_rh_without_evidence_abstains_before_generation[Explica qu\\xe9 es el aprendizaje autom\\xe1tico en nuestra empresa]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.014418500009924173,
+      "detail": "tests\\unit\\test_rh_routing.py:112: in test_rh_without_evidence_abstains_before_generation\n    outcome = orchestrator.handle_chat(db, ctx=context, conversation=conversation, message=question)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\answer_diagnostics.py:52: in wrapped\n    return function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\orchestrator.py:225: in handle_chat\n    return self._finish_no_evidence(\napp\\agents\\orchestrator.py:645: in _finish_no_evidence\n    return self._finish_insufficient(\napp\\agents\\orchestrator.py:686: in _finish_insufficient\n    synthesis = self._agent.ask_clarification(question=question, model_name=self._model_policy.fast_model)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\knowledge_agent.py:144: in ask_clarification\n    result, _ = self._chat_with_fallback(\napp\\agents\\knowledge_agent.py:500: in _chat_with_fallback\n    self._llm.chat(\ntests\\unit\\test_rh_routing.py:86: in chat\n    assert self.answer, \"No debe inferir una politica sin evidencia.\"\nE   AssertionError: No debe inferir una politica sin evidencia.\nE   assert ''\nE    +  where '' = <test_rh_routing.ControlledLlm object at 0x000002614C1B9400>.answer"
+    },
+    {
+      "nodeid": "tests/unit/test_rh_routing.py::test_rh_without_evidence_abstains_before_generation[Conocimiento general: \\xbfqu\\xe9 pasa si tengo 3 retardos?]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.018267000006744638,
+      "detail": "tests\\unit\\test_rh_routing.py:112: in test_rh_without_evidence_abstains_before_generation\n    outcome = orchestrator.handle_chat(db, ctx=context, conversation=conversation, message=question)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\answer_diagnostics.py:52: in wrapped\n    return function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\orchestrator.py:225: in handle_chat\n    return self._finish_no_evidence(\napp\\agents\\orchestrator.py:645: in _finish_no_evidence\n    return self._finish_insufficient(\napp\\agents\\orchestrator.py:686: in _finish_insufficient\n    synthesis = self._agent.ask_clarification(question=question, model_name=self._model_policy.fast_model)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\knowledge_agent.py:144: in ask_clarification\n    result, _ = self._chat_with_fallback(\napp\\agents\\knowledge_agent.py:500: in _chat_with_fallback\n    self._llm.chat(\ntests\\unit\\test_rh_routing.py:86: in chat\n    assert self.answer, \"No debe inferir una politica sin evidencia.\"\nE   AssertionError: No debe inferir una politica sin evidencia.\nE   assert ''\nE    +  where '' = <test_rh_routing.ControlledLlm object at 0x000002614D060740>.answer"
+    },
+    {
+      "nodeid": "tests/unit/test_rh_routing.py::test_unknown_rh_uses_real_acl_before_model[False]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.024955600005341694,
+      "detail": "tests\\unit\\test_rh_routing.py:143: in test_unknown_rh_uses_real_acl_before_model\n    outcome = orchestrator.handle_chat(\napp\\common\\answer_diagnostics.py:52: in wrapped\n    return function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\orchestrator.py:225: in handle_chat\n    return self._finish_no_evidence(\napp\\agents\\orchestrator.py:642: in _finish_no_evidence\n    return self._finish_denied(\napp\\agents\\orchestrator.py:672: in _finish_denied\n    raise ForbiddenError()\nE   app.common.errors.ForbiddenError: No tiene acceso a esa informacion."
+    },
+    {
+      "nodeid": "tests/unit/test_rh_routing.py::test_authorized_followup_retrieves_previous_topic_instead_of_general",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.02366789999359753,
+      "detail": "tests\\unit\\test_rh_routing.py:171: in test_authorized_followup_retrieves_previous_topic_instead_of_general\n    outcome = orchestrator.handle_chat(db, ctx=context, conversation=conversation, message=\"\u00bfY en ese caso?\")\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\answer_diagnostics.py:52: in wrapped\n    return function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\orchestrator.py:225: in handle_chat\n    return self._finish_no_evidence(\napp\\agents\\orchestrator.py:645: in _finish_no_evidence\n    return self._finish_insufficient(\napp\\agents\\orchestrator.py:686: in _finish_insufficient\n    synthesis = self._agent.ask_clarification(question=question, model_name=self._model_policy.fast_model)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\knowledge_agent.py:144: in ask_clarification\n    result, _ = self._chat_with_fallback(\napp\\agents\\knowledge_agent.py:500: in _chat_with_fallback\n    self._llm.chat(\ntests\\unit\\test_rh_routing.py:86: in chat\n    assert self.answer, \"No debe inferir una politica sin evidencia.\"\nE   AssertionError: No debe inferir una politica sin evidencia.\nE   assert ''\nE    +  where '' = <test_rh_routing.ControlledLlm object at 0x000002614D01CFB0>.answer"
+    },
+    {
+      "nodeid": "tests/unit/test_rh_routing.py::test_revoked_memory_never_supplies_rh_fact",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.01905800000531599,
+      "detail": "tests\\unit\\test_rh_routing.py:195: in test_revoked_memory_never_supplies_rh_fact\n    outcome = orchestrator.handle_chat(db, ctx=current, conversation=conversation, message=\"\u00bfY en ese caso?\")\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\answer_diagnostics.py:52: in wrapped\n    return function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\orchestrator.py:225: in handle_chat\n    return self._finish_no_evidence(\napp\\agents\\orchestrator.py:645: in _finish_no_evidence\n    return self._finish_insufficient(\napp\\agents\\orchestrator.py:686: in _finish_insufficient\n    synthesis = self._agent.ask_clarification(question=question, model_name=self._model_policy.fast_model)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\knowledge_agent.py:144: in ask_clarification\n    result, _ = self._chat_with_fallback(\napp\\agents\\knowledge_agent.py:500: in _chat_with_fallback\n    self._llm.chat(\ntests\\unit\\test_rh_routing.py:86: in chat\n    assert self.answer, \"No debe inferir una politica sin evidencia.\"\nE   AssertionError: No debe inferir una politica sin evidencia.\nE   assert ''\nE    +  where '' = <test_rh_routing.ControlledLlm object at 0x000002614D01CB90>.answer"
+    },
+    {
+      "nodeid": "tests/unit/test_rh_routing.py::test_old_general_policy_claim_never_becomes_rh_evidence",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.021965599997201934,
+      "detail": "tests\\unit\\test_rh_routing.py:214: in test_old_general_policy_claim_never_becomes_rh_evidence\n    outcome = orchestrator.handle_chat(\napp\\common\\answer_diagnostics.py:52: in wrapped\n    return function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\orchestrator.py:225: in handle_chat\n    return self._finish_no_evidence(\napp\\agents\\orchestrator.py:645: in _finish_no_evidence\n    return self._finish_insufficient(\napp\\agents\\orchestrator.py:686: in _finish_insufficient\n    synthesis = self._agent.ask_clarification(question=question, model_name=self._model_policy.fast_model)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\knowledge_agent.py:144: in ask_clarification\n    result, _ = self._chat_with_fallback(\napp\\agents\\knowledge_agent.py:500: in _chat_with_fallback\n    self._llm.chat(\ntests\\unit\\test_rh_routing.py:86: in chat\n    assert self.answer, \"No debe inferir una politica sin evidencia.\"\nE   AssertionError: No debe inferir una politica sin evidencia.\nE   assert ''\nE    +  where '' = <test_rh_routing.ControlledLlm object at 0x000002614CFD6720>.answer"
+    },
+    {
+      "nodeid": "tests/unit/test_rh_routing.py::test_weak_retrieval_never_enables_unverified_general_fallback",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.019176100002368912,
+      "detail": "tests\\unit\\test_rh_routing.py:236: in test_weak_retrieval_never_enables_unverified_general_fallback\n    outcome = orchestrator.handle_chat(\napp\\common\\answer_diagnostics.py:52: in wrapped\n    return function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\orchestrator.py:248: in handle_chat\n    synthesis: SynthesisResult = self._agent.synthesize(\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\knowledge_agent.py:300: in synthesize\n    return self._regenerate(\napp\\agents\\knowledge_agent.py:480: in _regenerate\n    raise AnswerValidationError(detail=retry_report.validation_detail or retry_report.reason)\nE   app.common.errors.AnswerValidationError: La respuesta generada no supero la verificacion de sus fuentes."
+    },
+    {
+      "nodeid": "tests/unit/test_memory_and_agent.py::TestAgenteDeConocimiento::test_sin_evidencia_no_llama_al_modelo",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.0001568000006955117,
+      "detail": "tests\\unit\\test_memory_and_agent.py:101: in test_sin_evidencia_no_llama_al_modelo\n    resultado = agent.synthesize(\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\knowledge_agent.py:201: in synthesize\n    return self.ask_clarification(question=question, model_name=model_name)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\common\\timing.py:20: in measured\n    return function(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\knowledge_agent.py:151: in ask_clarification\n    raise AnswerValidationError(detail=\"solicitud de precision contiene afirmaciones no acreditadas\")\nE   app.common.errors.AnswerValidationError: La respuesta generada no supero la verificacion de sus fuentes."
+    },
+    {
+      "nodeid": "tests/unit/test_memory_and_agent.py::TestAgenteDeConocimiento::test_si_insiste_en_inventar_se_declara_insuficiencia",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.0007920000061858445,
+      "detail": "tests\\unit\\test_memory_and_agent.py:146: in test_si_insiste_en_inventar_se_declara_insuficiencia\n    resultado = agent.synthesize(\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\knowledge_agent.py:300: in synthesize\n    return self._regenerate(\napp\\agents\\knowledge_agent.py:480: in _regenerate\n    raise AnswerValidationError(detail=retry_report.validation_detail or retry_report.reason)\nE   app.common.errors.AnswerValidationError: La respuesta generada no supero la verificacion de sus fuentes."
+    },
+    {
+      "nodeid": "tests/unit/test_memory_and_agent.py::TestAgenteDeConocimiento::test_no_encadena_intentos_indefinidos",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.002622300002258271,
+      "detail": "tests\\unit\\test_memory_and_agent.py:161: in test_no_encadena_intentos_indefinidos\n    agent.synthesize(question=\"Cuantos dias?\", evidences=EVIDENCIAS, model_name=\"gemma4:latest\")\napp\\common\\timing.py:25: in measured\n    result = function(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\napp\\agents\\knowledge_agent.py:300: in synthesize\n    return self._regenerate(\napp\\agents\\knowledge_agent.py:480: in _regenerate\n    raise AnswerValidationError(detail=retry_report.validation_detail or retry_report.reason)\nE   app.common.errors.AnswerValidationError: La respuesta generada no supero la verificacion de sus fuentes."
+    }
+  ]
+}

@@ -1,0 +1,444 @@
+[
+  {
+    "file": "data/prestaciones/PLATICA DE PRESTACIONES JUNIO 2020.pdf",
+    "sha256": "2460cfc0113a84cb1eeb1ba76a2c630c86daf1145f1d6a7bdb36034ad833f36c",
+    "registered_sha256": "2460cfc0113a84cb1eeb1ba76a2c630c86daf1145f1d6a7bdb36034ad833f36c",
+    "page_count": 22,
+    "chunk_count": 22,
+    "warnings": [],
+    "pages": [
+      {
+        "physical_page": 1,
+        "text": "PAQUETE DE PRESTACIONES\nMAYO 2020\n1",
+        "layout_text": "PAQUETE DE PRESTACIONES\n                      MAYO 2020\n\n\n\n\n\n\n\n\n\n\n\n\n\n                               1"
+      },
+      {
+        "physical_page": 11,
+        "text": "11\nEsta prestación aplica para personal con contrato de planta y eventuales.\nLos empleados reciben un 10% adicional a su sueldo, de ayuda para \ndespensa y hasta un tope máximo de una UMA (Unidad de Medida y \nActualización) mensual (2,641.15 a partir de febrero 2020).\nEsta ayuda se recibe mediante un depósito en una tarjeta electrónica de\nvales que la empresa le tramita al empleado.\nEl pago se realiza mensualmente por anticipado en los primeros 5 días\nhábiles de cada mes.\nEsta prestación aplica para todas las empresas del Grupo, excepto para\nlas empresas de la División Minas.\nLa reposición por extravío de la tarjeta tiene un costo de $100.00\nVales de Despensa",
+        "layout_text": "Vales de Despensa\n\n\nEsta prestación aplica para personal con contrato de planta y eventuales.\nLos empleados reciben un 10% adicional a su sueldo, de ayuda para\ndespensa y hasta un tope máximo de una UMA (Unidad de Medida y\nActualización) mensual (2,641.15 a partir de febrero 2020).\nEsta  ayuda   se  recibe  mediante    un  depósito  en  una   tarjeta electrónica   de\nvales que  la empresa    le tramita al empleado.\nEl pago   se  realiza  mensualmente      por  anticipado   en  los  primeros   5  días\nhábiles  de cada  mes.\nEsta  prestación   aplica  para  todas   las empresas     del Grupo,   excepto   para\nlas empresas    de la División  Minas.\nLa reposición   por extravío  de  latarjeta tiene  un costo  de  $100.00\n\n\n\n\n\n\n\n\n\n                                                                                      11"
+      },
+      {
+        "physical_page": 21,
+        "text": "21\nBono que se otorga al personal que además de sus objetivos capturados\nen su planeación anual, realiza o participa en un proyecto o actividad que\ngenera valor agregado a los procesos de su área, División y/o Grupo.\nCriterios para ser acreedor al bono:\n• Ser empleado con contrato de planta.\n• Contar con 1 año de antigüedad en la Empresa.\n• Contar con CADE 3 o mayor.\nLos días pagados para este bono van desde 5 hasta 60 días del salario\nbase del empleado y puede ser una mezcla de varios reconocimientos en\nun año calendario.\nLos autorizadores para el bono son:\n• Jefe Inmediato\n• Director Divisional\n• Recursos Humanos Corporativo\n¿Qué es el Bono por Desempeño Extraordinario?",
+        "layout_text": "¿Qué es el Bono por Desempeño Extraordinario?\n\n\nBono  que  se  otorga  al personal  que  además    de  sus objetivos  capturados\nen su  planeación   anual, realiza o  participa en un  proyecto  o  actividad que\ngenera  valor agregado   a los procesos   de su  área, División y/o Grupo.\n\nCriteriospara  ser acreedor   albono:\n\n•  Ser empleado    con  contrato de  planta.\n•  Contar  con  1 año  de antigüedad   en  laEmpresa.\n•  Contar  con  CADE   3 o mayor.\n\nLos  días pagados    para  este bono   van  desde   5 hasta  60  días  del salario\nbase  del empleado    y puede   ser una  mezcla   de varios  reconocimientos    en\nun año  calendario.\n\nLos autorizadores   para  elbono  son:\n•  Jefe Inmediato\n•  Director Divisional\n•  Recursos   Humanos    Corporativo\n                                                                                  21"
+      }
+    ],
+    "chunks": [
+      {
+        "source_id": "data-alias/prestaciones/PLATICA DE PRESTACIONES JUNIO 2020.pdf#0",
+        "text": "PAQUETE DE PRESTACIONES\nMAYO 2020\n1",
+        "section": "pagina 1",
+        "page_or_sheet": "pagina 1",
+        "index": 0,
+        "sha256": "09df89da42e09af0a95ff3fff838f917c2ea721e0f980c94a747bf0f5fdced2c",
+        "sanitized_sha256": "09df89da42e09af0a95ff3fff838f917c2ea721e0f980c94a747bf0f5fdced2c"
+      },
+      {
+        "source_id": "data-alias/prestaciones/PLATICA DE PRESTACIONES JUNIO 2020.pdf#1",
+        "text": "2\n\n1. Qué son las Prestaciones.\n2. Aguinaldo.\n3. Vacaciones y Prima Vacacional.\n4. Vales de Despensa y Tickets Restaurant.\n5. Plan de Fondo de Ahorro y Bonificación Especial.\n6. Cuota Obrero Patronal.\n7. Bono por Desempeño Extraordinario.\n\nTemas.",
+        "section": "pagina 2",
+        "page_or_sheet": "pagina 2",
+        "index": 1,
+        "sha256": "66aa514bc1e99af91b116add31ab692a0a1cbe6f3e129c5d51327b6cff29b115",
+        "sanitized_sha256": "66aa514bc1e99af91b116add31ab692a0a1cbe6f3e129c5d51327b6cff29b115"
+      },
+      {
+        "source_id": "data-alias/prestaciones/PLATICA DE PRESTACIONES JUNIO 2020.pdf#2",
+        "text": "¿Qué son las prestaciones y cuál es su función?\n3\n\n• Son beneficios adicionales a los que el trabajador se hace acreedor al\n\npertenecer a un vinculo laboral.\n\n• Existen cuando nace o hay una la relación contractual y serán\n\nindependientes al salario.\n\n• Podrán consistir en beneficios de carácter económico, cultural, o médicos,\n\nla ley establece prestaciones obligatorias que todo patrón debe de otorgar\na sus empleados.\nLa función que desempeñan las prestaciones laborales es que\nsiempre están orientadas a mejorar la condición de vida de los\ntrabajadores, reducir sus gastos y otorgarle fomentos que propicien\nsu desarrollo cultural y social.",
+        "section": "pagina 3",
+        "page_or_sheet": "pagina 3",
+        "index": 2,
+        "sha256": "9b73e7e1d9e0fb16c34b3da47af9d6aea953a168ae0e2762cfca26ab1500309a",
+        "sanitized_sha256": "9b73e7e1d9e0fb16c34b3da47af9d6aea953a168ae0e2762cfca26ab1500309a"
+      },
+      {
+        "source_id": "data-alias/prestaciones/PLATICA DE PRESTACIONES JUNIO 2020.pdf#3",
+        "text": "AGUINALDO\n4",
+        "section": "pagina 4",
+        "page_or_sheet": "pagina 4",
+        "index": 3,
+        "sha256": "e80159010d4c361e5f63fa19edce6e64686dfad45ea060d46d68937b83a35bb8",
+        "sanitized_sha256": "e80159010d4c361e5f63fa19edce6e64686dfad45ea060d46d68937b83a35bb8"
+      },
+      {
+        "source_id": "data-alias/prestaciones/PLATICA DE PRESTACIONES JUNIO 2020.pdf#4",
+        "text": "5\n\n• Esta prestación aplica para personal con contrato de planta y\n\neventuales.\nEs equivalente a 15 días del sueldo nominal, mismo que debe pagarse\nantes del día 20 de diciembre de cada año, quienes no cumplan el año de\nservicio se les paga la parte proporcional conforme a los días laborados.\nAguinaldo",
+        "section": "pagina 5",
+        "page_or_sheet": "pagina 5",
+        "index": 4,
+        "sha256": "fe2a953abd1155c02b0fe18165e0d76e21e0b62e38ee90c3e01e34cb612b0baa",
+        "sanitized_sha256": "fe2a953abd1155c02b0fe18165e0d76e21e0b62e38ee90c3e01e34cb612b0baa"
+      },
+      {
+        "source_id": "data-alias/prestaciones/PLATICA DE PRESTACIONES JUNIO 2020.pdf#5",
+        "text": "VACACIONES Y PRIMA\nVACACIONAL\n6",
+        "section": "pagina 6",
+        "page_or_sheet": "pagina 6",
+        "index": 5,
+        "sha256": "de13ee9b210df9934443241e90322566c20823ab4e2ca5b88918bc5b3ec8f646",
+        "sanitized_sha256": "de13ee9b210df9934443241e90322566c20823ab4e2ca5b88918bc5b3ec8f646"
+      },
+      {
+        "source_id": "data-alias/prestaciones/PLATICA DE PRESTACIONES JUNIO 2020.pdf#6",
+        "text": "7\nEsta prestación aplica para personal con contrato de planta y eventuales.\nConforme a la Ley Federal del Trabajo, los empleados disfrutarán de su\nperiodo vacacional dentro del año siguiente al aniversario de su ingreso.\nLos empleados pueden disfrutar sus vacaciones en uno o varios períodos\nde acuerdo a las necesidades del trabajo, es obligatorio disfrutar en un\nperiodo de vacaciones por lo menos seis días continuos (considerando un\nsábado), los demás días pueden disfrutarse de la manera que requiera el\ntrabajador considerando que el período mínimo es de un día.\nLas días de vacaciones no disfrutados en el periodo correspondiente, se\ncancelan.\nVacaciones y Prima Vacacional",
+        "section": "pagina 7",
+        "page_or_sheet": "pagina 7",
+        "index": 6,
+        "sha256": "839421a72e3fe310875105271dd972f2eb2bcfbc4b6fd5a7166d36c029988d92",
+        "sanitized_sha256": "839421a72e3fe310875105271dd972f2eb2bcfbc4b6fd5a7166d36c029988d92"
+      },
+      {
+        "source_id": "data-alias/prestaciones/PLATICA DE PRESTACIONES JUNIO 2020.pdf#7",
+        "text": "8\nLa Prima Vacacional se paga vía nómina de manera automática en el mes\nen que el empleado cumple aniversario de antigüedad en la empresa, no\nes necesario disfrutar días de vacaciones para recibir el pago de la prima\nvacacional.\nLos días de Vacaciones y el pago de la Prima Vacacional, se computan de\nacuerdo a la siguiente tabla:\nVacaciones y Prima Vacacional",
+        "section": "pagina 8",
+        "page_or_sheet": "pagina 8",
+        "index": 7,
+        "sha256": "f58d0b2bc309450978dc3560f8991c3594420b6ea9783d900592833d57a9d250",
+        "sanitized_sha256": "f58d0b2bc309450978dc3560f8991c3594420b6ea9783d900592833d57a9d250"
+      },
+      {
+        "source_id": "data-alias/prestaciones/PLATICA DE PRESTACIONES JUNIO 2020.pdf#8",
+        "text": "9\nLos puestos gerenciales o de mayor nivel disfrutan de 26 días de\nvacaciones y 21.5 días de prima vacacional, independientemente de su\nantigüedad en el puesto, sin embargo si por antigüedad les corresponde\nun periodo mayor, disfrutarán del mas alto.\nEn las unidades donde no laboran los sábados, se deben considerar 4 en\ncada periodo vacacional.\nVacaciones y Prima Vacacional",
+        "section": "pagina 9",
+        "page_or_sheet": "pagina 9",
+        "index": 8,
+        "sha256": "a41b07fcb563c0dc79e87644676cc7dc8bf22b3c9651063b65f0a47fcc5551f5",
+        "sanitized_sha256": "a41b07fcb563c0dc79e87644676cc7dc8bf22b3c9651063b65f0a47fcc5551f5"
+      },
+      {
+        "source_id": "data-alias/prestaciones/PLATICA DE PRESTACIONES JUNIO 2020.pdf#9",
+        "text": "VALES DE DESPENSA\nY TICKETS RESTAURANT\n10",
+        "section": "pagina 10",
+        "page_or_sheet": "pagina 10",
+        "index": 9,
+        "sha256": "5b5379acf664d1382b1f78870833b3d826c53b4762509f5d7a2722c4d30b167e",
+        "sanitized_sha256": "5b5379acf664d1382b1f78870833b3d826c53b4762509f5d7a2722c4d30b167e"
+      },
+      {
+        "source_id": "data-alias/prestaciones/PLATICA DE PRESTACIONES JUNIO 2020.pdf#10",
+        "text": "11\nEsta prestación aplica para personal con contrato de planta y eventuales.\nLos empleados reciben un 10% adicional a su sueldo, de ayuda para\ndespensa y hasta un tope máximo de una UMA (Unidad de Medida y\nActualización) mensual (2,641.15 a partir de febrero 2020).\nEsta ayuda se recibe mediante un depósito en una tarjeta electrónica de\nvales que la empresa le tramita al empleado.\nEl pago se realiza mensualmente por anticipado en los primeros 5 días\nhábiles de cada mes.\nEsta prestación aplica para todas las empresas del Grupo, excepto para\nlas empresas de la División Minas.\nLa reposición por extravío de la tarjeta tiene un costo de $100.00\nVales de Despensa",
+        "section": "pagina 11",
+        "page_or_sheet": "pagina 11",
+        "index": 10,
+        "sha256": "f333d5dbde8ff675812c5d807631b3b3f798e09af4144f2ada9cbb25531df367",
+        "sanitized_sha256": "f333d5dbde8ff675812c5d807631b3b3f798e09af4144f2ada9cbb25531df367"
+      },
+      {
+        "source_id": "data-alias/prestaciones/PLATICA DE PRESTACIONES JUNIO 2020.pdf#11",
+        "text": "12\nEsta prestación aplica para personal con contrato de planta y eventuales.\nLos empleados reciben un total de $2390 de los cuales $1860 son\naportados por la Empresa y sólo 530 por el empleado que representa el\n20% de una UMA mensual.\nEsta ayuda se recibe mediante un depósito en una tarjeta electrónica de\ntickets que la Empresa le tramita al empleado.\nEl pago se realiza mensualmente por anticipado en los primeros 5 días\nhábiles de cada mes.\nEsta prestación aplica para el personal que se encuentra en la CDMX.\nLa reposición por extravío de la tarjeta tiene un costo de $100.00\nTickets Restaurant",
+        "section": "pagina 12",
+        "page_or_sheet": "pagina 12",
+        "index": 11,
+        "sha256": "9740e2f4073e1d7d61983d9b40284aca762885945f727b8b6e926b17116c0e4f",
+        "sanitized_sha256": "9740e2f4073e1d7d61983d9b40284aca762885945f727b8b6e926b17116c0e4f"
+      },
+      {
+        "source_id": "data-alias/prestaciones/PLATICA DE PRESTACIONES JUNIO 2020.pdf#12",
+        "text": "FONDO DE AHORRO Y\nBONIFICACIÓN ESPECIAL\n13",
+        "section": "pagina 13",
+        "page_or_sheet": "pagina 13",
+        "index": 12,
+        "sha256": "68ea95a82388ac2bc64cac91ba87fb45901b919724c52299b6316a7ac1f38a6b",
+        "sanitized_sha256": "68ea95a82388ac2bc64cac91ba87fb45901b919724c52299b6316a7ac1f38a6b"
+      },
+      {
+        "source_id": "data-alias/prestaciones/PLATICA DE PRESTACIONES JUNIO 2020.pdf#13",
+        "text": "14\nEsta prestación aplica para personal con contrato de planta y eventuales.\nEl propósito fundamental de esta prestación es el de fomentar el ahorro\nde los empleados.\nEl Fondo de Ahorro tiene un ejercicio anual comprendido del 1 de julio al\n30 de junio del siguiente año.\nTipos de aportaciones:\n\n- Aportación empleado: Los empleados aportan el 12.5% de su sueldo\n\nmensual, hasta el límite máximo que marca la Ley del Impuesto Sobre la\nRenta que es el valor de una UMA mensual por 1.3 veces.\nUMA vigente 86.88 x 30.4 x 1.3 veces = $ 3,433.50\n\n- Aportación Empresa: La empresa también hace una aportación\n\nmensual, igual a la que realiza el empleado, independientemente de la\nantigüedad del empleado en el Grupo.\nFondo de Ahorro.",
+        "section": "pagina 14",
+        "page_or_sheet": "pagina 14",
+        "index": 13,
+        "sha256": "c82366f4e878fb6e6e1950b648179c04b40de9d85a0e72976345c55ccbca44b0",
+        "sanitized_sha256": "c82366f4e878fb6e6e1950b648179c04b40de9d85a0e72976345c55ccbca44b0"
+      },
+      {
+        "source_id": "data-alias/prestaciones/PLATICA DE PRESTACIONES JUNIO 2020.pdf#14",
+        "text": "15\nDurante el ejercicio anual del fondo de ahorro, solamente se tiene derecho\na solicitar un préstamo, en cualquier mes del ejercicio.\nEl monto que se puede solicitar es hasta el total acumulado de aportación\nempleado y de aportación de la empresa, a la fecha en que se solicite el\npréstamo.\nDe este préstamo no se cobran intereses al empleado y se puede pagar\nen:\n– Abonos mensuales vía nómina.\n– En un solo pago al cierre del ejercicio.\n– Una combinación de las dos anteriores, que consiste en una parte\npor nómina mensual y el resto al cierre del ejercicio.\nCondiciones del Fondo de Ahorro.",
+        "section": "pagina 15",
+        "page_or_sheet": "pagina 15",
+        "index": 14,
+        "sha256": "20610c036f0298b0fc56030881eecfcd806ba4f89b885f70f470ea49f9873787",
+        "sanitized_sha256": "20610c036f0298b0fc56030881eecfcd806ba4f89b885f70f470ea49f9873787"
+      },
+      {
+        "source_id": "data-alias/prestaciones/PLATICA DE PRESTACIONES JUNIO 2020.pdf#15",
+        "text": "16\nEn nómina general, los préstamos se otorgan DOS VECES AL MES y se\npagan el primer y tercer martes del mes, excepto en junio, mes en el que\nno hay préstamos y julio y diciembre que se otorgan en una sola fecha.\nPara nómina confidencial hay dos fechas de otorgamiento de prestamos,\nel 1er y 3er martes de cada mes, excepto en junio que no se otorgan, en\njulio solamente es el 3er martes y en diciembre regularmente se otorga en\nla primer quincena del mes.\nTodos los prestamos otorgados deben pagarse en el mismo ejercicio del\nfondo de ahorro.\nEl personal de nómina confidencial debe llenar y firmar en papel el\nformato de la solicitud en la forma acostumbrada y enviarlo al C.F.\nCrescencio Ríos R. ubicado en las Oficinas de Legaria.\nCondiciones del Fondo de Ahorro.",
+        "section": "pagina 16",
+        "page_or_sheet": "pagina 16",
+        "index": 15,
+        "sha256": "92282418100932c053488f51221e1a52e0ed26c497a94addf35dbabfa11f123d",
+        "sanitized_sha256": "92282418100932c053488f51221e1a52e0ed26c497a94addf35dbabfa11f123d"
+      },
+      {
+        "source_id": "data-alias/prestaciones/PLATICA DE PRESTACIONES JUNIO 2020.pdf#16",
+        "text": "17\nLos empleados que reciben del Fondo de Ahorro una aportación empresa\nmenor al 12.5% de su salario por la aplicación del tope máximo que\nestablece la Ley del Impuesto Sobre la Renta, reciben una\nBONIFICACION ESPECIAL por un monto equivalente a la diferencia\nentre la aportación empresa y el 12.5% de su salario mensual.\nEjemplo\nSueldo $ 50,000\n50,000 x 12.5% = $ 6,250.00\nTope máximo de aportación empresa - $ 3,433.50\nLa diferencia es la Bonificación Especial = $ 2,816.50 mensual\nEsta bonificación especial se entrega a los empleados en los meses de\ndiciembre y junio de cada año y es gravada de impuestos.\n$ 2,816.50 * 6 meses = $ 16,899 semestral.\nBonificación Especial.",
+        "section": "pagina 17",
+        "page_or_sheet": "pagina 17",
+        "index": 16,
+        "sha256": "b213c9acf9d458a2a19c9a93e0a0d0f2bc9571c2f32f4eae509b9cbd81d58d6f",
+        "sanitized_sha256": "b213c9acf9d458a2a19c9a93e0a0d0f2bc9571c2f32f4eae509b9cbd81d58d6f"
+      },
+      {
+        "source_id": "data-alias/prestaciones/PLATICA DE PRESTACIONES JUNIO 2020.pdf#17",
+        "text": "CUOTA OBRERO\nPATRONAL\n18",
+        "section": "pagina 18",
+        "page_or_sheet": "pagina 18",
+        "index": 17,
+        "sha256": "37ddddfc0a1182df31ef99ca8f9e58a71d77f455498689791599293bd28020d5",
+        "sanitized_sha256": "37ddddfc0a1182df31ef99ca8f9e58a71d77f455498689791599293bd28020d5"
+      },
+      {
+        "source_id": "data-alias/prestaciones/PLATICA DE PRESTACIONES JUNIO 2020.pdf#18",
+        "text": "19\nEsta prestación aplica para personal con contrato de planta y eventuales.\nDe acuerdo a la Ley del Seguro Social, la empresa está obligada a pagar\nsolamente la cuota patronal del IMSS y el trabajador está obligado a\npagar la cuota obrera correspondiente, sin embargo la empresa está\npagando ambas cuotas, por lo que no se ve este descuento en el recibo\nde nómina.\nEsta prestación aplica para todas las empresas del Grupo, excepto en las\nempresas Química del Rey, Industrias Magnelec y Cetlar.\nCuota Obrero Patronal.",
+        "section": "pagina 19",
+        "page_or_sheet": "pagina 19",
+        "index": 18,
+        "sha256": "6e3193283fa3d15e30817042ff2a208d2e7005c0d03f66cee18dbef9fbbea227",
+        "sanitized_sha256": "6e3193283fa3d15e30817042ff2a208d2e7005c0d03f66cee18dbef9fbbea227"
+      },
+      {
+        "source_id": "data-alias/prestaciones/PLATICA DE PRESTACIONES JUNIO 2020.pdf#19",
+        "text": "SISTEMA DE RECONOCIMIENTOS\nBONO POR DESEMPEÑO EXTRAORDINARIO\n20",
+        "section": "pagina 20",
+        "page_or_sheet": "pagina 20",
+        "index": 19,
+        "sha256": "4c7fec931d5ce09c1b89380c7d2a19563e2fc9e04c190b63fea1821225f8ef4f",
+        "sanitized_sha256": "4c7fec931d5ce09c1b89380c7d2a19563e2fc9e04c190b63fea1821225f8ef4f"
+      },
+      {
+        "source_id": "data-alias/prestaciones/PLATICA DE PRESTACIONES JUNIO 2020.pdf#20",
+        "text": "21\nBono que se otorga al personal que además de sus objetivos capturados\nen su planeación anual, realiza o participa en un proyecto o actividad que\ngenera valor agregado a los procesos de su área, División y/o Grupo.\nCriterios para ser acreedor al bono:\n\n• Ser empleado con contrato de planta.\n• Contar con 1 año de antigüedad en la Empresa.\n• Contar con CADE 3 o mayor.\n\nLos días pagados para este bono van desde 5 hasta 60 días del salario\nbase del empleado y puede ser una mezcla de varios reconocimientos en\nun año calendario.\nLos autorizadores para el bono son:\n\n• Jefe Inmediato\n• Director Divisional\n• Recursos Humanos Corporativo\n\n¿Qué es el Bono por Desempeño Extraordinario?",
+        "section": "pagina 21",
+        "page_or_sheet": "pagina 21",
+        "index": 20,
+        "sha256": "d35cb5547a24230338d00822d0b8ae47da2007f4a9de71f36156adda43a54c7c",
+        "sanitized_sha256": "d35cb5547a24230338d00822d0b8ae47da2007f4a9de71f36156adda43a54c7c"
+      },
+      {
+        "source_id": "data-alias/prestaciones/PLATICA DE PRESTACIONES JUNIO 2020.pdf#21",
+        "text": "22\nExiste el formato institucional de Reconocimiento por Desempeño\nExtraordinario, en donde el jefe directo evalúa lo siguiente:\n\n• Datos generales del proyecto o actividad a reconocer\n• Nombre del Proyecto\n• Objetivo\n• Justificación de su carácter de extraordinario\n• Logros alcanzados\n• Fecha del logro\n• Conceptos a evaluar:\n• Aplicación: Dimensión y tamaño del proyecto.\n• Impacto/Ahorro: $ ahorrado en su aplicación.\n• Esfuerzo/Actitud: habilidades con las que se logró cumplir con el\n\nproyecto.\n\n• Innovación: grado de modificación o mejora que impacta en los procesos\n\no proyecto.\nCaracterísticas a evaluar.",
+        "section": "pagina 22",
+        "page_or_sheet": "pagina 22",
+        "index": 21,
+        "sha256": "a182bfcfa0ff19e3dc238a92ce20d8c83e9717eba1d5bdb4128ca9cbe9cae415",
+        "sanitized_sha256": "a182bfcfa0ff19e3dc238a92ce20d8c83e9717eba1d5bdb4128ca9cbe9cae415"
+      }
+    ]
+  },
+  {
+    "file": "data/prestaciones/PLATICA DE PLAN DE PENSIONES POR JUBILACI#U00d3N DICIEMBRE 2022.pdf",
+    "sha256": "efb4894c8c3caf3bb42335bb342f2618a19cc6ea086692c69c99c97f9d4368b2",
+    "registered_sha256": "efb4894c8c3caf3bb42335bb342f2618a19cc6ea086692c69c99c97f9d4368b2",
+    "page_count": 11,
+    "chunk_count": 11,
+    "warnings": [],
+    "pages": [
+      {
+        "physical_page": 1,
+        "text": "Plan de Pensiones por Jubilación\nPlan Libre\n",
+        "layout_text": "Plan de Pensiones por Jubilación\nPlan Libre"
+      },
+      {
+        "physical_page": 5,
+        "text": "Plan Libre (componente de la contribución definida)\nLa empresa y el empleado realizan las siguientes aportaciones cada mes:\n1. Aportación Básica.- La empresa realiza para cada empleado una Aportación Básica equivalente al 5% de su\nsueldo (19.5 días de salario anuales).\nEj.: sueldo mensual de $20,000 x 13 meses = $260,000 x 5% = 13,000 / 12 = $1,083.33\n2. Aportación Básica Complementaria.- La empresa realiza una Aportación Básica Complementaria, equivalente al\n100% ó al 50% de la Aportación Básica, de acuerdo a la antigüedad del empleado.\nAntigüedad de 0 a 4.99 años = 50% = $6,500 / 12 = $541.66\nAntigüedad de 5 años o más = 100% = $13,000 / 12 = $1,083.33",
+        "layout_text": "Plan Libre (componente de la contribución definida)\n\n\n    La empresa   yel empleado  realizan lassiguientes aportaciones cada  mes:\n\n    1. Aportación   Básica.- La empresa   realizapara cada  empleado   una  Aportación  Básica equivalente  al5%  de  su\n       sueldo (19.5 días de salarioanuales).\n        Ej.:sueldo mensual   de $20,000 x 13 meses  = $260,000  x 5% = 13,000 / 12 = $1,083.33\n\n\n    2. Aportación  Básica Complementaria.-   La empresa  realiza una Aportación  Básica Complementaria,   equivalente al\n    100%   ó al50%  de laAportación  Básica,de acuerdo  a laantigüedad  del empleado.\n\n\n                                  Antigüedad   de 0a 4.99 años  = 50%     =  $6,500  /12   = $541.66\n                                  Antigüedad   de 5años  o más = 100%     =  $13,000  /12  = $1,083.33"
+      },
+      {
+        "physical_page": 6,
+        "text": "Plan Libre (componente de la contribución definida)\n3. Aportación Adicional.- La pueden realizar los empleados que tienen un sueldo superior a 25 salarios mínimos\nmensuales ($131,381.2). Pueden aportar 5% de la diferencia que resulte entre el salario (correspondiente a 13\nmeses), y 25 veces el salario mínimo elevado al año. Lo anterior sin que la suma de la Aportación Básica + la\nAportación Adicional rebase el 8% del salario del empleado. Esta aportación se ve reflejada en el recibo de nómina\ndel empleado.\nEjemplo:\nSueldo para efectos del Plan $130,000 x 13 (meses) = $1,690,000\n25 veces salario mínimo mensual elevado al año = $172.87 x 25 x 30.4 = $131,381.2 x 12 = $1,576,574.4\n$1,690,000.00 - $1,576,574.4 = $113,425.60 x 5% = $5,671.28 /12 = $472.60\nAportación adicional mensual = $472.60",
+        "layout_text": "Plan Libre (componente de la contribución definida)\n\n\n  3. Aportación  Adicional.- La  pueden  realizar losempleados    que tienen  un sueldo  superior a 25  salariosmínimos\n  mensuales   ($131,381.2).  Pueden   aportar 5%   de la diferencia que  resulte entre el salario (correspondiente   a 13\n  meses),  y 25  veces el salario mínimo   elevado  al año. Lo  anterior sin que  la suma  de  laAportación   Básica +  la\n  Aportación  Adicional rebase  el 8% del salario delempleado.   Esta aportación  se ve reflejadaen  elrecibo de nómina\n  del empleado.\n\n  Ejemplo:\n\n  Sueldo  para efectos  delPlan  $130,000   x13 (meses)  = $1,690,000\n\n  25 veces  salariomínimo   mensual  elevado  alaño  = $172.87  x 25 x30.4  =$131,381.2   x12  = $1,576,574.4\n\n  $1,690,000.00   -$1,576,574.4  = $113,425.60   x5%  = $5,671.28  /12 = $472.60\n\n  Aportación   adicional mensual  = $472.60"
+      },
+      {
+        "physical_page": 7,
+        "text": "Plan Libre (componente de la contribución definida)\n4. Aportación Adicional Complementaria.- La empresa realiza una Aportación Adicional Complementaria, para\naquellos empleados que hacen aportaciones adicionales, de acuerdo a la antigüedad del empleado.\nAntigüedad de 0 a 4.99 años = 50% = $236.30\nAntigüedad de 5 años o más = 100% = $472.60",
+        "layout_text": "Plan Libre (componente de la contribución definida)\n\n\n\n\n    4. Aportación AdicionalComplementaria.-  La empresa  realizauna Aportación Adicional Complementaria, para\n    aquellosempleados  que hacen aportaciones adicionales,deacuerdo a laantigüedad delempleado.\n\n\n                               Antigüedad de 0 a 4.99años  = 50%    = $236.30\n                               Antigüedad de 5 años o más = 100%    = $472.60"
+      },
+      {
+        "physical_page": 9,
+        "text": "Portabilidad del Plan Plan Libre \nSi un empleado que ingresó a Peñoles antes del 1 de abril de 2016 deja la Compañía antes de cumplir con los\nsupuestos de jubilación, tiene derecho al 100% de la Aportación Básica y para recibir la Aportación Básica\ncomplementaria y Adicional Complementaria, es de acuerdo a la tabla de antigüedad.\nLos empleados que ingresen a partir de 1 de Abril de 2016 tendrán derecho a la Aportación Básica, Aportación\nBásica Complementaria y Adicional Complementaria de acuerdo a la siguiente tabla de antigüedad:\nTABLA\nAntigüedad % \n0 – 4.99 0\n5 – 5.99 50\n6 – 6.99 60\n7 – 7.99 70\n8 – 8.99 80\n9 – 9.99 90\n10 en adelante 100",
+        "layout_text": "Portabilidad del Plan Plan Libre\n\n\n      Si un  empleado    que  ingresó   a Peñoles   antes  del 1 de  abril de  2016   deja la Compañía     antes  de  cumplir  con  los\n      supuestos    de  jubilación,  tiene  derecho   al  100%   de  la  Aportación   Básica   y para   recibir la Aportación    Básica\n      complementaria     y Adicional  Complementaria,     es  de acuerdo   a latabla  de  antigüedad.\n\n\n      Los  empleados    que  ingresen   a partir de  1 de  Abril de  2016   tendrán  derecho    a la Aportación   Básica,  Aportación\n      Básica  Complementaria     y Adicional  Complementaria      de acuerdo   a la siguiente  tabla de antigüedad:\n\n\n\n                                                            TABLA\n\n                                                Antigüedad                %\n                                                  0 –4.99                 0\n\n                                                  5 –5.99                 50\n                                                  6 –6.99                 60\n                                                  7 –7.99                 70\n\n                                                  8 –8.99                 80\n                                                  9 –9.99                 90\n                                               10 en adelante             100"
+      },
+      {
+        "physical_page": 10,
+        "text": "Portabilidad del Plan Plan Libre \nEn caso de que el empleado termine su relación laboral por Renuncia Voluntaria con Peñoles antes de la edad de\njubilación, los fondos de acuerdo a la ley podrán serán transferidos a:\n1. AFORE del empleado (Sólo Profuturo)\n2. Plan Personal de Retiro (PPR) del empleado.\nDe esta manera se busca asegurar que estos recursos se destinen para su retiro",
+        "layout_text": "Portabilidad del Plan Plan Libre\n\n\n     En  caso de que  elempleado    termine su relación laboral por Renuncia  Voluntaria  con Peñoles  antes de la edad  de\n     jubilación, losfondos  de acuerdo  a laley podrán  serán transferidos a:\n\n\n     1. AFORE  del empleado   (Sólo Profuturo)\n     2. Plan Personal de  Retiro(PPR)  delempleado.\n\n\n     De  esta manera  se busca  asegurar que  estos recursos se destinen para su retiro"
+      }
+    ],
+    "chunks": [
+      {
+        "source_id": "data-alias/prestaciones/PLATICA DE PLAN DE PENSIONES POR JUBILACI#U00d3N DICIEMBRE 2022.pdf#0",
+        "text": "Plan de Pensiones por Jubilación\nPlan Libre",
+        "section": "pagina 1",
+        "page_or_sheet": "pagina 1",
+        "index": 0,
+        "sha256": "86113acb3cc88a5f9b8c292366680c429315b95265453517d75cea602f4b04af",
+        "sanitized_sha256": "86113acb3cc88a5f9b8c292366680c429315b95265453517d75cea602f4b04af"
+      },
+      {
+        "source_id": "data-alias/prestaciones/PLATICA DE PLAN DE PENSIONES POR JUBILACI#U00d3N DICIEMBRE 2022.pdf#1",
+        "text": "Antecedentes\nEl Plan de Pensiones inició el 1 de enero de 1980, posteriormente con fecha 1 de\njulio de 2007 se modificó, convirtiéndose en un Plan Híbrido o Mixto, que se\ncomunicó a los empleados con el nombre de “Plan Libre”.\nAhora el beneficio proviene de sus 2 componentes del Plan, para los empleados que\ningresaron antes del 01/07/2007\nPara los empleados que ingresen posterior a esa fecha, solamente tienen un\ncomponente que es el Plan Libre.",
+        "section": "pagina 2",
+        "page_or_sheet": "pagina 2",
+        "index": 1,
+        "sha256": "9ec76a6c34738209f7d95454ee63fe022e3a39a865f9aaca8435e534cd72cd32",
+        "sanitized_sha256": "9ec76a6c34738209f7d95454ee63fe022e3a39a865f9aaca8435e534cd72cd32"
+      },
+      {
+        "source_id": "data-alias/prestaciones/PLATICA DE PLAN DE PENSIONES POR JUBILACI#U00d3N DICIEMBRE 2022.pdf#2",
+        "text": "Antecedentes Plan Libre - Transición\n\n• En julio de 2007:\n• A los empleados activos durante la vigencia del Plan “Antiguo”, se les reconoce un beneficio devengado.\n• El beneficio devengado se calcula de acuerdo a las reglas del Plan “Antiguo” y se congelo hasta que el\n\nempleado llegue a su fecha de jubilación.\n\n• Al llegar a la fecha de jubilación, el empleado recibe el beneficio congelado, actualizado de acuerdo a\n\ninflación.\n\n• El empleado tiene derecho a recibir su beneficio como pago único o pensión mensual vitalicia.\n• Dentro del texto del Plan “Libre” se incluye este beneficio, se le llama Beneficio Inicial.",
+        "section": "pagina 3",
+        "page_or_sheet": "pagina 3",
+        "index": 2,
+        "sha256": "54019530199f5e82c30132f3a4ef3b8fbd20bce2440e393fb8662cdd86fa077b",
+        "sanitized_sha256": "54019530199f5e82c30132f3a4ef3b8fbd20bce2440e393fb8662cdd86fa077b"
+      },
+      {
+        "source_id": "data-alias/prestaciones/PLATICA DE PLAN DE PENSIONES POR JUBILACI#U00d3N DICIEMBRE 2022.pdf#3",
+        "text": "Requisitos y reglas aplicables al Beneficio Inicial\nPara tener derecho a recibir el Beneficio Inicial, es indispensable cubrir\nlos siguientes requisitos:\n\n• Tener como mínimo una edad de 60 años (60 a 65 años).\n• Tener una antigüedad mínima de 10 años en las empresas del Grupo.\n• El empleado tiene la opción de decidir, si recibe el Beneficio Inicial\n\ncomo pago único o como pensión mensual.",
+        "section": "pagina 4",
+        "page_or_sheet": "pagina 4",
+        "index": 3,
+        "sha256": "b0b8cce1f0dc6d1e1a01fc78855016f3041915a884ea447369aaa869fa0838a2",
+        "sanitized_sha256": "b0b8cce1f0dc6d1e1a01fc78855016f3041915a884ea447369aaa869fa0838a2"
+      },
+      {
+        "source_id": "data-alias/prestaciones/PLATICA DE PLAN DE PENSIONES POR JUBILACI#U00d3N DICIEMBRE 2022.pdf#4",
+        "text": "Plan Libre (componente de la contribución definida)\nLa empresa y el empleado realizan las siguientes aportaciones cada mes:\n\n1. Aportación Básica.- La empresa realiza para cada empleado una Aportación Básica equivalente al 5% de su\n\nsueldo (19.5 días de salario anuales).\nEj.: sueldo mensual de $20,000 x 13 meses = $260,000 x 5% = 13,000 / 12 = $1,083.33\n\n2. Aportación Básica Complementaria.- La empresa realiza una Aportación Básica Complementaria, equivalente al\n\n100% ó al 50% de la Aportación Básica, de acuerdo a la antigüedad del empleado.\nAntigüedad de 0 a 4.99 años = 50% = $6,500 / 12 = $541.66\nAntigüedad de 5 años o más = 100% = $13,000 / 12 = $1,083.33",
+        "section": "pagina 5",
+        "page_or_sheet": "pagina 5",
+        "index": 4,
+        "sha256": "7e49a360ea88e7430adb48787bc05f9c8d2645a781f73f47599db2fbee32eaac",
+        "sanitized_sha256": "7e49a360ea88e7430adb48787bc05f9c8d2645a781f73f47599db2fbee32eaac"
+      },
+      {
+        "source_id": "data-alias/prestaciones/PLATICA DE PLAN DE PENSIONES POR JUBILACI#U00d3N DICIEMBRE 2022.pdf#5",
+        "text": "Plan Libre (componente de la contribución definida)\n\n3. Aportación Adicional.- La pueden realizar los empleados que tienen un sueldo superior a 25 salarios mínimos\n\nmensuales ($131,381.2). Pueden aportar 5% de la diferencia que resulte entre el salario (correspondiente a 13\nmeses), y 25 veces el salario mínimo elevado al año. Lo anterior sin que la suma de la Aportación Básica + la\nAportación Adicional rebase el 8% del salario del empleado. Esta aportación se ve reflejada en el recibo de nómina\ndel empleado.\nEjemplo:\nSueldo para efectos del Plan $130,000 x 13 (meses) = $1,690,000\n25 veces salario mínimo mensual elevado al año = $172.87 x 25 x 30.4 = $131,381.2 x 12 = $1,576,574.4\n$1,690,000.00 - $1,576,574.4 = $113,425.60 x 5% = $5,671.28 /12 = $472.60\nAportación adicional mensual = $472.60",
+        "section": "pagina 6",
+        "page_or_sheet": "pagina 6",
+        "index": 5,
+        "sha256": "3f4b5467e93b684a0a4c55da784bad4e42bbfbff352101c03604ae0b841ec77b",
+        "sanitized_sha256": "3f4b5467e93b684a0a4c55da784bad4e42bbfbff352101c03604ae0b841ec77b"
+      },
+      {
+        "source_id": "data-alias/prestaciones/PLATICA DE PLAN DE PENSIONES POR JUBILACI#U00d3N DICIEMBRE 2022.pdf#6",
+        "text": "Plan Libre (componente de la contribución definida)\n\n4. Aportación Adicional Complementaria.- La empresa realiza una Aportación Adicional Complementaria, para\n\naquellos empleados que hacen aportaciones adicionales, de acuerdo a la antigüedad del empleado.\nAntigüedad de 0 a 4.99 años = 50% = $236.30\nAntigüedad de 5 años o más = 100% = $472.60",
+        "section": "pagina 7",
+        "page_or_sheet": "pagina 7",
+        "index": 6,
+        "sha256": "11b580052692769ddf1cd3dfe7c658c86c946e0503e5eabe15ca546f79ea9aed",
+        "sanitized_sha256": "11b580052692769ddf1cd3dfe7c658c86c946e0503e5eabe15ca546f79ea9aed"
+      },
+      {
+        "source_id": "data-alias/prestaciones/PLATICA DE PLAN DE PENSIONES POR JUBILACI#U00d3N DICIEMBRE 2022.pdf#7",
+        "text": "Fondos Proviva\nLas aportaciones del empleado y de la empresa, se depositan mensualmente en Casa de Bolsa VALMEX, en\ncuentas individuales conocidos como Fondos Proviva.\nPueden solicitar su acceso para consultar su estado de cuenta con:\nSr. Mary de Anda para Personal ejecutivo o con\nLao-tse Alanís para personal de nómina general",
+        "section": "pagina 8",
+        "page_or_sheet": "pagina 8",
+        "index": 7,
+        "sha256": "dd04e0a9b376313d85b18e0dcb69d06d745e185ba1913bdfa0e399370b0d151f",
+        "sanitized_sha256": "dd04e0a9b376313d85b18e0dcb69d06d745e185ba1913bdfa0e399370b0d151f"
+      },
+      {
+        "source_id": "data-alias/prestaciones/PLATICA DE PLAN DE PENSIONES POR JUBILACI#U00d3N DICIEMBRE 2022.pdf#8",
+        "text": "Portabilidad del Plan Plan Libre\nSi un empleado que ingresó a Peñoles antes del 1 de abril de 2016 deja la Compañía antes de cumplir con los\nsupuestos de jubilación, tiene derecho al 100% de la Aportación Básica y para recibir la Aportación Básica\ncomplementaria y Adicional Complementaria, es de acuerdo a la tabla de antigüedad.\nLos empleados que ingresen a partir de 1 de Abril de 2016 tendrán derecho a la Aportación Básica, Aportación\nBásica Complementaria y Adicional Complementaria de acuerdo a la siguiente tabla de antigüedad:\nTABLA\nAntigüedad %\n0 – 4.99 0\n5 – 5.99 50\n6 – 6.99 60\n7 – 7.99 70\n8 – 8.99 80\n9 – 9.99 90\n10 en adelante 100",
+        "section": "pagina 9",
+        "page_or_sheet": "pagina 9",
+        "index": 8,
+        "sha256": "b3cfcc9e8f4c3ad3edac1a7b26abb64d557db0d65e6abe80c6300d11bee5f6df",
+        "sanitized_sha256": "b3cfcc9e8f4c3ad3edac1a7b26abb64d557db0d65e6abe80c6300d11bee5f6df"
+      },
+      {
+        "source_id": "data-alias/prestaciones/PLATICA DE PLAN DE PENSIONES POR JUBILACI#U00d3N DICIEMBRE 2022.pdf#9",
+        "text": "Portabilidad del Plan Plan Libre\nEn caso de que el empleado termine su relación laboral por Renuncia Voluntaria con Peñoles antes de la edad de\njubilación, los fondos de acuerdo a la ley podrán serán transferidos a:\n\n1. AFORE del empleado (Sólo Profuturo)\n2. Plan Personal de Retiro (PPR) del empleado.\n\nDe esta manera se busca asegurar que estos recursos se destinen para su retiro",
+        "section": "pagina 10",
+        "page_or_sheet": "pagina 10",
+        "index": 9,
+        "sha256": "1daaaeb68f706104f8fa25a256815af2983690e8f9e28d57ae16407e4bf21af4",
+        "sanitized_sha256": "1daaaeb68f706104f8fa25a256815af2983690e8f9e28d57ae16407e4bf21af4"
+      },
+      {
+        "source_id": "data-alias/prestaciones/PLATICA DE PLAN DE PENSIONES POR JUBILACI#U00d3N DICIEMBRE 2022.pdf#10",
+        "text": "Lao-tse Alanís Cuevas\nClaudia Castillo\nPuesto\nCorreo",
+        "section": "pagina 11",
+        "page_or_sheet": "pagina 11",
+        "index": 10,
+        "sha256": "148574f995b3148434f5c07cca6b7c64d07969a5412db74825e2dde836700316",
+        "sanitized_sha256": "148574f995b3148434f5c07cca6b7c64d07969a5412db74825e2dde836700316"
+      }
+    ]
+  },
+  {
+    "file": "data/prestaciones/prestaciones.pdf",
+    "sha256": "7bf24be83a7d771868293fc476f4a168ccc6d0556e8357b6be66ce97fec0aa6b",
+    "registered_sha256": "7bf24be83a7d771868293fc476f4a168ccc6d0556e8357b6be66ce97fec0aa6b",
+    "page_count": 6,
+    "chunk_count": 6,
+    "warnings": [],
+    "pages": [
+      {
+        "physical_page": 1,
+        "text": "🔹 METADATA \nTema: Prestaciones Peñoles \nTipo: Prestaciones laborales \nPoblación: Personal no sindicalizado / planta / eventual  \nIdioma: español \n \n🔹 CHUNK 1 — Introducción general \nEn Peñoles nos esforzamos por contribuir a la calidad de vida y la integridad de \ntodas y cada una de las personas que formamos parte de esta gran organización, \npor ello diseñamos un paquete de prestaciones altamente competitivo. Hola, estoy \naquí para hablarles sobre el paquete de prestaciones que otorga Peñoles. \nCompetitivo, atractivo, estratégico y que busca mejorar tu calidad de vida. El \npaquete de prestaciones es parte de la estrategia de recursos humanos y busca \nhacer atractiva nuestra oferta de trabajo, no sólo dando sueldos competitivos. sino \ntambién proporcionando prestaciones  y beneficios que contribuyan a mejorar la \ncalidad de vida de los trabajadores y sus familias.  \n \n🔹 CHUNK 2 — Prestaciones principales \nLas principales prestaciones que aplican para todo el personal no sindicalizado de \npeñoles son las siguientes: \nAguinaldo \nDías de vacaciones \nPrima vacacional \nFondo de ahorro \nBonificación especial \nReconocimiento a la lealtad \n \n🔹 CHUNK 3 — Aguinaldo \nEl aguinaldo es de 15 días de sueldo nominal vigente, se paga a más tardar el 20 \nde diciembre y para los empleados que no trabaja ron el año completo, se les paga \nproporcionalmente el periodo laborado. Tiene una exención de 30 UMAS de \nimpuesto. \n \n🔹 CHUNK 4 — Vacaciones ",
+        "layout_text": "🔹 METADATA\n\nTema: Prestaciones Peñoles\nTipo: Prestaciones laborales\nPoblación: Personal no sindicalizado / planta / eventual\nIdioma: español\n\n\n🔹 CHUNK 1 — Introducción general\n\nEn Peñoles nos esforzamos por contribuir a la calidad de vida y la integridad                 de\ntodas y cada una de las personas que formamos parte de esta gran organización,\npor ello diseñamos un paquete de prestaciones altamente competitivo. Hola, estoy\naquí para hablarles sobre el paquete de prestaciones que otorga Peñoles.\nCompetitivo, atractivo, estratégico y que busca mejorar tu calidad de vida. El\npaquete de prestaciones es parte de la estrategia de recursos humanos y busca\nhacer atractiva nuestra oferta de trabajo, no sólo dando sueldos competitivos. sino\ntambién proporcionando prestaciones            y beneficios que contribuyan a mejorar la\ncalidad de vida de los trabajadores y sus familias.\n\n\n🔹 CHUNK 2 — Prestaciones principales\n\nLas principales prestaciones que aplican para todo el personal no sindicalizado de\npeñoles son las siguientes:\nAguinaldo\nDías de vacaciones\nPrima vacacional\nFondo de ahorro\nBonificación especial\nReconocimiento a la lealtad\n\n\n🔹 CHUNK 3 — Aguinaldo\n\nEl aguinaldo es de 15 días de sueldo nominal vigente, se paga a más tardar el 20\nde diciembre y para los empleados que no trabaja            ron el año completo, se les paga\nproporcionalmente el periodo laborado. Tiene una exención de 30 UMAS de\nimpuesto.\n\n\n🔹 CHUNK 4 — Vacaciones"
+      },
+      {
+        "physical_page": 5,
+        "text": " \nPLAN LIBRE \n🔹 METADATA \nTema: Plan Libre \nTipo: Componente del plan de jubilación  \n \n🔹 CHUNK 1 — Origen \nEl primero de julio de 2007, el Plan de Pensiones por Jubilación evolucionó y fue \nrenombrado como Plan Libre. \n \n🔹 CHUNK 2 — Tipos de aportaciones \nEl Plan Libre puede integrar hasta cuatro aportaciones:  \nAportación básica realizada por la empresa,  \nAportación básica complementaria realizada por la empresa,  \nAportación adicional es realizada por el empleado y es obligatoria para quienes \nganan más de 25 salarios mínimos  \ny la aportación adicional complementaria realizada por la empresa.  \nEstas aportaciones se ahorran mensualmente en el fideicomiso administrado por \nla aseguradora GNP, cada una con características particulares y no se pueden \nutilizar por el colaborador mientras se encuentre como empleado activo.  \n \n🔹 CHUNK 3 — Aportación básica \nEn la aportación básica, la empresa aporta el 5% del sueldo nominal del \nempleado, considerando 13 meses de sueldo por año.  \n \n🔹 CHUNK 4 — Aportación básica complementaria  \nEn la aportación básica complementaria, la empresa realiza una aportación \ndependiendo de la antigüedad del empleado.  \nSi esta es menor a 5 años, la aportación básica complem entaria es del 50% de la \naportación básica. \nSi la antigüedad es igual o mayor a 5 años, la aportación básica complementaria \nes del 100% de la aportación básica.  ",
+        "layout_text": "PLAN LIBRE\n\n🔹 METADATA\n\nTema: Plan Libre\nTipo: Componente del plan de jubilación\n\n\n🔹 CHUNK 1 — Origen\n\nEl primero de julio de 2007, el Plan de Pensiones por Jubilación             evolucionó y fue\nrenombrado como Plan Libre.\n\n\n🔹 CHUNK 2 — Tipos de aportaciones\n\nEl Plan Libre puede integrar hasta cuatro aportaciones:\nAportación básica realizada por la empresa,\nAportación básica complementaria realizada por la empresa,\nAportación adicional es realizada por el empleado y es obligatoria para quienes\nganan más de 25 salarios mínimos\ny la aportación adicional complementaria realizada por la empresa.\n\nEstas aportaciones se ahorran mensualmente en el fideicomiso administrado por\nla aseguradora GNP, cada una con características particulares y no se pueden\nutilizar por el colaborador mientras se encuentre como empleado activo.\n\n\n🔹 CHUNK 3 — Aportación básica\n\nEn la aportación básica, la empresa aporta el 5% del sueldo nominal del\nempleado, considerando 13 meses de sueldo por año.\n\n\n🔹 CHUNK 4 — Aportación básica complementaria\n\nEn la aportación básica complementaria, la empresa realiza una aportación\ndependiendo de la antigüedad del empleado.\nSi esta es menor a 5 años, la aportación básica complem              entaria es del 50% de la\naportación básica.\nSi la antigüedad es igual o mayor a 5 años, la aportación básica complementaria\nes del 100% de la aportación básica."
+      }
+    ],
+    "chunks": [
+      {
+        "source_id": "data-alias/prestaciones/prestaciones.pdf#0",
+        "text": "🔹 METADATA\nTema: Prestaciones Peñoles\nTipo: Prestaciones laborales\nPoblación: Personal no sindicalizado / planta / eventual\nIdioma: español\n\n🔹 CHUNK 1 — Introducción general\nEn Peñoles nos esforzamos por contribuir a la calidad de vida y la integridad de\ntodas y cada una de las personas que formamos parte de esta gran organización,\npor ello diseñamos un paquete de prestaciones altamente competitivo. Hola, estoy\naquí para hablarles sobre el paquete de prestaciones que otorga Peñoles.\nCompetitivo, atractivo, estratégico y que busca mejorar tu calidad de vida. El\npaquete de prestaciones es parte de la estrategia de recursos humanos y busca\nhacer atractiva nuestra oferta de trabajo, no sólo dando sueldos competitivos. sino\ntambién proporcionando prestaciones  y beneficios que contribuyan a mejorar la\ncalidad de vida de los trabajadores y sus familias.\n\n🔹 CHUNK 2 — Prestaciones principales\nLas principales prestaciones que aplican para todo el personal no sindicalizado de\npeñoles son las siguientes:\nAguinaldo\nDías de vacaciones\nPrima vacacional\nFondo de ahorro\nBonificación especial\nReconocimiento a la lealtad\n\n🔹 CHUNK 3 — Aguinaldo\nEl aguinaldo es de 15 días de sueldo nominal vigente, se paga a más tardar el 20\nde diciembre y para los empleados que no trabaja ron el año completo, se les paga\nproporcionalmente el periodo laborado. Tiene una exención de 30 UMAS de\nimpuesto.\n\n🔹 CHUNK 4 — Vacaciones",
+        "section": "pagina 1",
+        "page_or_sheet": "pagina 1",
+        "index": 0,
+        "sha256": "c7198b43a6cc82eb7a98980d09c6346598a9b98d6e4f2ea34a44a22c16ab43fa",
+        "sanitized_sha256": "c7198b43a6cc82eb7a98980d09c6346598a9b98d6e4f2ea34a44a22c16ab43fa"
+      },
+      {
+        "source_id": "data-alias/prestaciones/prestaciones.pdf#1",
+        "text": "Los días de vacaciones por aniversario trabajado se muestran en la tabla que\naparece en pantalla. De acuerdo a la t abla al cumplir el primer año de trabajo le\ncorresponden 12 días de vacaciones y se van incrementando como se muestra en\nla tabla. Los puestos ejecutivos desde el primer año cuentan con un periodo\nvacacional de 26 días.\n\n🔹 CHUNK 5 — Prima vacacional\nLa prima vacacional corresponde a los días de vacaciones menos 4.5 como se\nmuestra en la tabla. La prima vacacional se paga automáticamente en el mes que\nse cumple el aniversario de antigüedad en el grupo. Los puestos ejecutivos desde\nel primer año cuentan con una prima vacacional de 21.5 días. Tiene una exención\nde 15 UMAS de impuestos.\n\n🔹 CHUNK 6 — Fondo de ahorro\nEl fondo de ahorro es una prestación que incentiva a los empleados a ahorrar,\nrecompensándolos al duplicar su ahorro. El empleado ahorra el 12.5%  de su\nsueldo mensual por un periodo de 12 meses, iniciando en el mes de julio y\nterminando en el mes de junio del año siguiente. Existe un tope para el ahorro, el\ncual se calcula multiplicando una UMA por 30.4 días por 1.3 veces. Si el 12.5% del\nahorro mensual del empleado es mayor al tope, el empleado solo podrá ahorrar\nhasta el tope.\nEl empleado puede solicitar un préstamo sobre el ahorrado en el fondo, tanto de\nsu parte como de la empresa. Este préstamo solo puede ejercerse una vez\ndurante los 12 meses del ejercicio del Fondo de Ahorro. Está exento de impuestos.\n\n🔹 CHUNK 7 — Bonificación especial\nSolamente los empleados que tienen topada su aportación al Fondo de Ahorro\nreciben la bonificación especial. Se calcula como la diferencia entre el 12.5% del\nsueldo del empleado menos la aportación de la empresa, es decir, 45 días de\nsueldo menos el tope del Fondo de Ahorro. La bonificación especial sólo\ncompensa la parte de la empresa y no la del empleado. Se entrega en dos\nexhibiciones, una en el mes de dicie mbre y otra en el mes de junio. No tiene\nexención de impuestos.",
+        "section": "pagina 2",
+        "page_or_sheet": "pagina 2",
+        "index": 1,
+        "sha256": "653565a06aa7608fdc25be36b6904643a08385e7ad422c166e4adb022b53dc5d",
+        "sanitized_sha256": "653565a06aa7608fdc25be36b6904643a08385e7ad422c166e4adb022b53dc5d"
+      },
+      {
+        "source_id": "data-alias/prestaciones/prestaciones.pdf#2",
+        "text": "🔹 CHUNK 8 — Reconocimiento a la lealtad\nA los colaboradores de Peñoles se les entrega un reconocimiento a la lealtad cada\nquinquenio de antigüedad. En la tabla que se muestra en pantalla se  pueden\napreciar los diferentes distintivos que se otorgan. Estos distintivos se entregan en\nlos eventos de fin de año, están exentos de impuestos.\n\n🔹 CHUNK 9 — Prestaciones adicionales\nAdicionalmente, el personal de planta cuenta con:\nGastos médicos mayores.\nPlan de pensiones por jubilación, plan libre.\nPlan de pensiones por fallecimiento e invalidez.\nY el personal eventual cuenta con un seguro de vida que equivale al plan de\npensiones por fallecimiento e invalidez.\n\n🔹 CHUNK 10 — Cierre\nPara que estas prestaciones las aproveches al máximo, visita la sección de\nprestaciones en el portal de Peñoles, donde se explica con detalle cada una de\nellas. A través de este paquete de prestaciones, Peñoles se mantiene competitivo\ncomo una gran opción de empleo. H asta la próxima.\n\nPLAN DE JUBILACIÓN\n🔹 METADATA\nTema: Plan de pensiones por jubilación\nTipo: Prestación estratégica\nPoblación: Empleados de planta no sindicalizados\n\n🔹 CHUNK 1 — Introducción\nEn Peñoles nos esforzamos por contribuir a la calidad de vida  y la integridad de\ntoda y cada una de las personas que formamos parte de esta gran organización.\nPor ello, contamos con un paquete de prestaciones altamente competitivo. Una de\nlas gemas más valiosas de este paquete de prestaciones es nuestro plan de\npensión por jubilación. Hola, estoy aquí para hablarles sobre una de nuestras",
+        "section": "pagina 3",
+        "page_or_sheet": "pagina 3",
+        "index": 2,
+        "sha256": "083e2e6321c599324e4d147b89cad74186b9eefbec416de604f407e30b900696",
+        "sanitized_sha256": "083e2e6321c599324e4d147b89cad74186b9eefbec416de604f407e30b900696"
+      },
+      {
+        "source_id": "data-alias/prestaciones/prestaciones.pdf#3",
+        "text": "prestaciones más valiosas, que muestra el compromiso que tiene Peñoles con su\npersonal y que además resulta que es poco común, pues solo el 7.4% de los\nderechohabientes del Instituto Mexicano del Seguro Social tienen esta prestación.\n\n🔹 CHUNK 2 — Definición del plan\nEl plan de pensiones por jubilación es un acuerdo establecido entre Peñoles y sus\nempleados de planta no sindicalizados. para que al momento de su retiro\nobtengan una pensión adicional a la que otorga el IMSS.\n\n🔹 CHUNK 3 — Componentes del plan\nEn Peñoles, este plan tiene dos componentes que dependen de la fecha de\ncontratación del empleado.\nBeneficio inicial, aplica a los empleados que hayan sido contratados hasta el 30 de\njunio de 2007.\nPlan libre, beneficia a todos los empleados e inicia el primero de julio del 2007.\n\n🔹 CHUNK 4 — Administración del plan\nEn ambos casos se trata de un plan financieramente sustentable y que es\nadministrado a través de un fideicomiso p or la aseguradora Grupo Nacional\nProvincial y la Casa de Bolsa Palmex.\n\n🔹 CHUNK 5 — Objetivo\nA través de este plan, Peñoles recompensa tu trayectoria laboral y lealtad\ninstitucional, brindándote una mayor tranquilidad y seguridad financiera durante tu\njubilación, para que en tu retiro puedas disfrutar plenamente a tus seres queridos y\nhacer lo que más te guste.\n\n🔹 CHUNK 6 — Cierre\nPara terminar, En un par de cápsulas explicaremos las características de los\ncomponentes de tu plan de jubilación según la f echa de tu ingreso a peñoles.\nPuedes verlas ahora mismo o en el momento que tú desees.",
+        "section": "pagina 4",
+        "page_or_sheet": "pagina 4",
+        "index": 3,
+        "sha256": "a17ab20c415afde4918a871f82312c3effad6fa5f4a115c8ec90f13067cc6586",
+        "sanitized_sha256": "a17ab20c415afde4918a871f82312c3effad6fa5f4a115c8ec90f13067cc6586"
+      },
+      {
+        "source_id": "data-alias/prestaciones/prestaciones.pdf#4",
+        "text": "PLAN LIBRE\n🔹 METADATA\nTema: Plan Libre\nTipo: Componente del plan de jubilación\n\n🔹 CHUNK 1 — Origen\nEl primero de julio de 2007, el Plan de Pensiones por Jubilación evolucionó y fue\nrenombrado como Plan Libre.\n\n🔹 CHUNK 2 — Tipos de aportaciones\nEl Plan Libre puede integrar hasta cuatro aportaciones:\nAportación básica realizada por la empresa,\nAportación básica complementaria realizada por la empresa,\nAportación adicional es realizada por el empleado y es obligatoria para quienes\nganan más de 25 salarios mínimos\ny la aportación adicional complementaria realizada por la empresa.\nEstas aportaciones se ahorran mensualmente en el fideicomiso administrado por\nla aseguradora GNP, cada una con características particulares y no se pueden\nutilizar por el colaborador mientras se encuentre como empleado activo.\n\n🔹 CHUNK 3 — Aportación básica\nEn la aportación básica, la empresa aporta el 5% del sueldo nominal del\nempleado, considerando 13 meses de sueldo por año.\n\n🔹 CHUNK 4 — Aportación básica complementaria\nEn la aportación básica complementaria, la empresa realiza una aportación\ndependiendo de la antigüedad del empleado.\nSi esta es menor a 5 años, la aportación básica complem entaria es del 50% de la\naportación básica.\nSi la antigüedad es igual o mayor a 5 años, la aportación básica complementaria\nes del 100% de la aportación básica.",
+        "section": "pagina 5",
+        "page_or_sheet": "pagina 5",
+        "index": 4,
+        "sha256": "a77ed029362a4df812d0a055b2456cfe7501be191892e3d3295e744f9c8c07e8",
+        "sanitized_sha256": "a77ed029362a4df812d0a055b2456cfe7501be191892e3d3295e744f9c8c07e8"
+      },
+      {
+        "source_id": "data-alias/prestaciones/prestaciones.pdf#5",
+        "text": "🔹 CHUNK 5 — Aportación adicional\nLa aportación adicional solo pueden realizarla los empleado s con sueldos\nsuperiores a los 25 salarios mínimos mensuales. El empleado realiza esta\naportación que equivale al 5% de la diferencia de 13 meses de sueldo y 25\nsalarios mínimos anuales.\n[Ejemplo completo conservado íntegramente …]\n\n🔹 CHUNK 6 — Aportación adicional complementaria\nEn la Aportación Adicional Complementaria, la empresa realiza una aportación\ndependiendo de la antigüedad del empleado.\nSi este es menor a 5 años, la Aportación Adicional Complementaria es del 50% de\nla aportación adicional.\nSi es igual o mayor a 5 años, la Aportación Adicional Complementaria es del 100%\nde la aportación adicional.\nVale la pena mencionar en ningún momento la suma de la aportación básica más\nla aportación adicional podrá ser mayor al 8% del sueldo del empleado,\nconsiderando 13 meses.",
+        "section": "pagina 6",
+        "page_or_sheet": "pagina 6",
+        "index": 5,
+        "sha256": "ecac179f94c6a89bb373ebe7cdbbaffb94cdd678c06d2d24076148a481fe5363",
+        "sanitized_sha256": "ecac179f94c6a89bb373ebe7cdbbaffb94cdd678c06d2d24076148a481fe5363"
+      }
+    ]
+  }
+]

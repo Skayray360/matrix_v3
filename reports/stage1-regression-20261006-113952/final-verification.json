@@ -1,0 +1,61 @@
+{
+  "changed_manifest_entries": [
+    "backend/app/agents/prompts.py"
+  ],
+  "all_other_manifest_lines_identical": true,
+  "remaining_discrepancies": [
+    {
+      "file": ".github/README.md",
+      "expected": "2a08891729c7d3e93ca437360a4b85b06419ad64c85df7e88a95373c1b9141d5",
+      "obtained": "0f1d02a037ff073d4a43bea2d4f892aa10d83cfb6bb735eeb6e00822d5874a52"
+    },
+    {
+      "file": "README.md",
+      "expected": "6320e78b9b9263137bab10b79c05aecd9704648711dc855876fc056c8f3d9658",
+      "obtained": "cd611f0dcac11bccd3916e3f7fc4251a8b764181e380f6728b92f9233ced8396"
+    },
+    {
+      "file": "backend/README.md",
+      "expected": "35b3130f97dcb7ef574af4a93a848739d78ab48cd648ec2c1dbd96ad1e823d55",
+      "obtained": "d0ee681669fed7640f8ec55d8ce552368b515a97b8ea49ca1091e7816b8a9f58"
+    },
+    {
+      "file": "data/knowledge/README.md",
+      "expected": "612759bd50e2ffdc61f220f1b542b9bd9084aea7da9478efe9d2ba321949f85d",
+      "obtained": "ad794c99e356ceb496b9e11c8cad65a1a8c25ca85136272b6ae2d038497386d5"
+    },
+    {
+      "file": "data/knowledge/especializadas/README.md",
+      "expected": "7d8e720977de8b3285cf0c5d6e1c267952835d9922f928ff80ab3ccd0fd8e070",
+      "obtained": "625cb3d3fdfc6b5593100661dd549d2d7c72bb207b7e89915166c2e9ce2f4538"
+    },
+    {
+      "file": "docs/README.md",
+      "expected": "ee588f9381eed9a2d4e8f4d6875b021e4dd37a7a466f8cb81690aa53afd85906",
+      "obtained": "06ecc325b2c0745244e8eb9a48eb09d601cafa80551ab46afa1a273b0eaecbfe"
+    },
+    {
+      "file": "infrastructure/README.md",
+      "expected": "e23c113f873b98c2fa3e231c69069956df34fad3e7e5ee90e4dfb3ac46905030",
+      "obtained": "b1f60f9ba06d7df2ad4eb456b680b0b43dded2628c132ed875b7f0988ae0924b"
+    },
+    {
+      "file": "var/README.md",
+      "expected": "090bc94b143e0ea95b78677ea76aba15407d52d86a38781509caebf85404bc0a",
+      "obtained": "8a69b357360589f9596b4a1ea4e97fc117e8a47d99d8ffef2d58026cc946bd0e"
+    }
+  ],
+  "new_unrelated_discrepancies": [],
+  "protected_files_unchanged": [
+    ".env",
+    "backend/pyproject.toml",
+    "backend/uv.lock"
+  ],
+  "source_files_outside_scope_unchanged": true,
+  "final_sha256": {
+    "SHA256SUMS.txt": "6e89d62a7a2da8d274ace82137323b4e66b2b4fa4ee373faa588892b3f1e18f8",
+    "backend/app/agents/prompts.py": "b5c56aa2eb505b202101c66d420a1d20474090b8a98b411bed5446cd7c13dc8d",
+    "backend/tests/conftest.py": "a51835a5d178b83eabc1f991220d8f1459de8b9bcd72a917718c57e335433abc",
+    "frontend/playwright.visual.config.ts": "b53a34a84531422eb699836b0b1441a868f8eda7f7ae9c249f0d82c8a73e1c01"
+  }
+}

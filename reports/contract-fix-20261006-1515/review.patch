@@ -1,0 +1,797 @@
+--- before/backend/app/agents/knowledge_agent.py
++++ after/backend/app/agents/knowledge_agent.py
+@@ -19,7 +19,7 @@
+     build_summary_reduce_messages,
+ )
+ from app.common import answer_diagnostics
+-from app.common.answers import GENERAL_HEADING, AnswerBasis
++from app.common.answers import APPLICATION_LIMIT_ANSWER, GENERAL_HEADING, AnswerBasis
+ from app.common.answers import answer_basis as classify_answer_basis
+ from app.common.errors import OllamaUnavailableError
+ from app.common.inference_errors import InferenceFailureError, InferenceFailureKind
+@@ -141,12 +141,14 @@
+         )
+ 
+     @staticmethod
+-    def _verify_answer(answer: str, evidences: tuple[Evidence, ...], structured: tuple) -> GroundingReport:
++    def _verify_answer(answer: str, evidences: tuple[Evidence, ...], structured: tuple,
++                       *, question: str = "") -> GroundingReport:
+         settings = get_settings()
+         return verify_grounding(
+             answer, evidences, structured=structured, require_citation=True,
+             mode=settings.answer_evidence_mode,
+             allow_general_knowledge=settings.answer_allow_general_knowledge,
++            question=question,
+         )
+ 
+     @staticmethod
+@@ -258,7 +260,7 @@
+         result = replace(result, content=expand_citation_aliases(
+             result.content, citation_aliases(evidences, structured),
+         ))
+-        report = self._verify_answer(result.content, evidences, structured)
++        report = self._verify_answer(result.content, evidences, structured, question=question)
+         answer_diagnostics.validated(result.content, report, retry=False)
+         coverage = coverage_ratio(result.content, evidences)
+ 
+@@ -349,12 +351,18 @@
+             "orientacion general atribuida a fuentes documentales",
+             "secciones de procedencia mezcladas",
+             "capacidad general deshabilitada",
++            "aplicacion documental en orientacion general",
++            "afirmacion numerica sin respaldo en sus fuentes citadas",
+         }
++        # El mapa de transporte se conserva aun si hay menos fuentes tras el
++        # presupuesto: E3 no pasa a designar el antiguo E4 en el reintento.
++        source_aliases = citation_aliases(evidences, structured)
+         evidences, structured, memory, context_limited = self._pack_answer_context(
+             question=question, evidences=evidences, structured=structured,
+             memory=memory, model_name=retry_model, scope_note=scope_note,
+             intent=intent, retry_note=retry_note,
+             choice=retry_choice, documentary_only=documentary_only,
++            source_aliases=source_aliases,
+         )
+         evidence_truncated = evidence_truncated or context_limited
+         if not evidences and not structured:
+@@ -385,6 +393,7 @@
+             retry_note=retry_note,
+             document_summary=summary_mode,
+             documentary_only=documentary_only,
++            source_aliases=source_aliases,
+         )
+         answer_diagnostics.emit("retry_plan", {
+             "retry_note": retry_note, "documentary_only": documentary_only,
+@@ -407,9 +416,10 @@
+             )
+         result_choice = self._policy.resolve_choice(retry_result.model) if retry_fallback else retry_choice
+         retry_result = replace(retry_result, content=expand_citation_aliases(
+-            retry_result.content, citation_aliases(evidences, structured),
++            retry_result.content, {alias: source for alias, source in source_aliases.items()
++                                   if source in {e.source_id for e in (*evidences, *structured)}},
+         ))
+-        retry_report = self._verify_answer(retry_result.content, evidences, structured)
++        retry_report = self._verify_answer(retry_result.content, evidences, structured, question=question)
+         answer_diagnostics.validated(retry_result.content, retry_report, retry=True)
+         retry_false_insufficiency = summary_mode and bool(evidences) and (
+             retry_report.declares_insufficiency or not retry_report.cited_source_ids
+@@ -465,10 +475,15 @@
+                 "cited_source_count": len(retry_report.cited_source_ids),
+                 "invalid_source_count": len(retry_report.invalid_source_ids),
+                 "selected_model": retry_result.model,
++                "validation_detail": retry_report.validation_detail,
++                "claim_index": retry_report.claim_index,
+             },
+         )
+         return SynthesisResult(
+-            answer=UNVERIFIED_ANSWER,
++            answer=(APPLICATION_LIMIT_ANSWER if retry_report.validation_detail in {
++                "tabla o regla incompleta, ambigua o fuera de intervalo",
++                "porcentaje no corresponde a la fila y conceptos aplicables",
++            } else UNVERIFIED_ANSWER),
+             model=retry_result.model,
+             latency_ms=total_latency,
+             grounding=retry_report,
+@@ -576,6 +591,7 @@
+         model_name: str, scope_note: str, intent: Intent, retry_note: str = "",
+         choice: ModelChoice | None = None,
+         documentary_only: bool = False,
++        source_aliases: dict[str, str] | None = None,
+     ) -> tuple[tuple[Evidence, ...], tuple[StructuredEvidence, ...], ConversationContext | None, bool]:
+         """Presupuesto agregado estimado; ninguna fuente se incluye parcialmente.
+ 
+@@ -591,6 +607,7 @@
+                 memory=memory, scope_note=scope_note, retry_note=retry_note,
+                 document_summary=intent is Intent.DOCUMENT_SUMMARY,
+                 documentary_only=documentary_only,
++                source_aliases=source_aliases,
+             )
+             return self._messages_chars(messages) <= budget
+ 
+@@ -893,6 +910,7 @@
+             "orientacion general atribuida a fuentes documentales",
+             "secciones de procedencia mezcladas",
+             "capacidad general deshabilitada",
++            "aplicacion documental en orientacion general",
+         }:
+             return (
+                 "La respuesta anterior mezclo la procedencia del contenido. Responde solo "
+@@ -908,11 +926,30 @@
+             )
+         if report.reason == "afirmacion numerica sin respaldo en sus fuentes citadas":
+             return (
+-                "La respuesta anterior incluyo una cifra cuya representacion no pudo validarse. "
+-                "Conserva los valores tal como aparecen en las fuentes (palabras o cifras), "
+-                "sus unidades y condiciones. No inventes cantidades ni presentes los datos "
+-                "de la pregunta como hechos confirmados por el documento. Cita cada afirmacion."
+-            )
++                f"Causa de rechazo: {report.validation_detail or report.reason}. "
++                "Separa datos declarados, regla citada y aplicacion condicional. Usa solo "
++                "la fila y los conceptos comprobados en APLICACION_CONDICIONAL; no basta "
++                "que el porcentaje aparezca en otra fila. No presentes supuestos como "
++                "hechos del documento ni los traslades a orientacion general. Conserva "
++                "encabezados y condiciones. Si la estructura no permite comprobarlo, "
++                "responde: '" + APPLICATION_LIMIT_ANSWER + "'"
++            )
++        if report.reason == "beneficio y fuente citada no corresponden":
++            return ("El encabezado del beneficio no corresponde a la fuente citada. "
++                    "Conserva el titulo, la poblacion y las condiciones de la misma fuente; "
++                    "no mezcles beneficios que compartan cifras. Resume solo lo solicitado.")
++        if report.reason == "vigencia actual no acreditada":
++            return ("La fecha o nombre de un documento no acredita vigencia actual. "
++                    "Describe lo documentado en su periodo; evita 'actual' o 'vigente' "
++                    "y aclara: 'No puedo confirmar la vigencia actual de esta información.'")
++        if report.reason == "elegibilidad personal no acreditada":
++            return ("Los datos declarados y el acceso a fuentes no acreditan elegibilidad personal. "
++                    "Describe solo el calculo condicional bajo la regla citada; no confirmes "
++                    "un derecho, pago o perfil individual.")
++        if report.reason == "abstencion mezclada con afirmaciones documentales":
++            return ("Una abstencion no acredita la afirmacion que la acompana. Separa cada "
++                    "afirmacion respaldada con su cita y elimina lo no acreditado. Si no "
++                    "puedes responder, usa una abstencion completa o una pregunta de precision.")
+         if coverage < MIN_COVERAGE_WITH_RICH_EVIDENCE:
+             return (
+                 "La respuesta anterior ignoro parte de la evidencia disponible. Revisa toda la "
+--- before/backend/app/agents/prompts.py
++++ after/backend/app/agents/prompts.py
+@@ -18,6 +18,7 @@
+ from app.config import get_settings
+ from app.memory.service import ConversationContext
+ from app.rag.citation_aliases import citation_aliases
++from app.rag.claim_context import application_hints, requests_application
+ from app.rag.schemas import Evidence
+ from app.security.prompt_guard import sanitize_untrusted_text
+ from app.structured_data.tool import StructuredEvidence
+@@ -32,6 +33,9 @@
+ No repitas 'Soy Matrix RH' ni antepongas una presentacion a las respuestas de
+ contenido. Puedes presentarte en saludos y consultas de identidad o capacidades.
+ Si solo preguntan quien eres o como te llamas, responde: 'Soy Matrix RH.'
++En una definicion, explica directamente el termino sin repetir su origen ni
++enumerar todas sus condiciones economicas. Para ampliar, espera una pregunta
++o incluye solo una condicion indispensable para no inducir a error.
+ """
+ 
+ SYSTEM_POLICY = RESPONSE_STYLE_POLICY + """\
+@@ -148,6 +152,9 @@
+   condiciones y excepciones. No combines beneficios de distintos anios o
+   poblaciones en una unica politica. Si faltan datos de vigencia o hay
+   contradicciones no resueltas por las fuentes, declara esa incertidumbre.
++- Mantén vinculado cada beneficio con el encabezado, poblacion, condiciones y
++  cita de SU fuente. Nunca uses el titulo de un beneficio para condiciones de
++  otro, aunque compartan cifras. No renombres encabezados para hacerlos coincidir.
+ - Distingue condicion sindical, tipo de contratacion y empresa/division.
+   'No sindicalizado' describe condicion sindical; 'planta' y 'eventual'
+   describen tipos de contratacion. No los agrupes como equivalentes ni infieras
+@@ -160,6 +167,18 @@
+   manera condicional. Los permisos de acceso no acreditan elegibilidad.
+ Estas aclaraciones y preguntas pueden expresarse sin cita; toda afirmacion
+ sobre una politica o beneficio requiere evidencia autorizada y su cita.
++Para aclarar sin hacer afirmaciones usa una pregunta concreta, por ejemplo:
++'¿Cuál es el documento de referencia?', '¿Cuál es su condición sindical?',
++'¿Su contratación es de planta o eventual?' o '¿A qué empresa o división pertenece?'.
++Para incertidumbre temporal: 'No puedo confirmar la vigencia actual de esta información.'
++Al aplicar tablas, distingue supuestos, regla y aplicacion condicional. Puedes
++usar una linea 'Datos declarados: ingreso en ...; antigüedad ...' sin cita.
++La aplicacion comienza 'Si esos datos declarados son correctos, ...' y lleva
++la cita de la regla. Una linea de datos no confirma elegibilidad. Usa solo
++derivaciones comprobadas del bloque APLICACION_CONDICIONAL, conservando su fila,
++conceptos y condiciones. No elijas un porcentaje de otra fila ni redondees huecos.
++No conviertas el caso declarado en Orientacion general. La fecha del archivo
++identifica el documento; no acredita vigencia. Atribuyela como 'documento de ...'.
+ """
+ 
+ SYSTEM_POLICY += DOCUMENT_SCOPE_POLICY
+@@ -277,10 +296,11 @@
+     retry_note: str = "",
+     document_summary: bool = False,
+     documentary_only: bool = False,
++    source_aliases: dict[str, str] | None = None,
+ ) -> list[dict[str, str]]:
+     """Ensambla los mensajes finales para el modelo."""
+     sections: list[str] = []
+-    aliases = citation_aliases(evidences, structured)
++    aliases = citation_aliases(evidences, structured) if source_aliases is None else source_aliases
+     if memory is not None:
+         memory_block = format_memory_block(memory)
+         if memory_block:
+@@ -288,6 +308,9 @@
+     # El agente aplica el presupuesto a unidades completas tanto en chat como
+     # en resumen. No recortar el final: alli pueden estar condiciones decisivas.
+     sections.append(format_evidence_block(evidences, aliases=aliases))
++    application = application_hints(question, evidences, aliases)
++    if application:
++        sections.append(sanitize_untrusted_text(application, source_label="aplicacion condicional").text)
+     structured_block = format_structured_block(structured, aliases=aliases)
+     if structured_block:
+         sections.append(structured_block)
+@@ -315,7 +338,9 @@
+         )
+ 
+     return [
+-        {"role": "system", "content": answer_system_policy(documentary_only=documentary_only)},
++        {"role": "system", "content": answer_system_policy(
++            documentary_only=documentary_only or requests_application(question),
++        )},
+         {"role": "user", "content": "\n\n".join(sections)},
+     ]
+ 
+--- before/backend/app/common/answers.py
++++ after/backend/app/common/answers.py
+@@ -4,11 +4,46 @@
+ from __future__ import annotations
+ 
+ import re
++import unicodedata
+ from typing import Literal
+ 
+ AnswerBasis = Literal["documented", "general", "mixed", "insufficient"]
+ DOCUMENTED_HEADING = "### Información documentada"
+ GENERAL_HEADING = "### Orientación general"
++
++APPLICATION_LIMIT_ANSWER = (
++    "La evidencia disponible no permite comprobar la aplicación de la tabla a los datos declarados. "
++    "Necesito una regla y una tabla completas, o precisar los datos del caso."
++)
++
++_SAFE_CLARIFICATIONS = (
++    "¿Cuál es el documento de referencia?",
++    "¿Puede indicar el nombre completo del beneficio o el documento de referencia?",
++    "¿Cuál es su fecha de ingreso y su antigüedad?",
++    "¿Cuál es su condición sindical?",
++    "¿Su contratación es de planta o eventual?",
++    "¿A qué empresa o división pertenece?",
++    "No puedo confirmar la vigencia actual de esta información.",
++    "No cuento con información documental suficiente para indicar el importe.",
++    "No cuento con información documental suficiente.",
++    APPLICATION_LIMIT_ANSWER,
++)
++
++
++def safe_nonfactual_text(text: str) -> bool:
++    """Frases completas acotadas, no un marcador que habilite texto arbitrario."""
++    def normalize(value: str) -> str:
++        value = unicodedata.normalize("NFKD", value.casefold())
++        return " ".join("".join(c for c in value if not unicodedata.combining(c)).split())
++    remaining = normalize(text).strip()
++    if not remaining:
++        return False
++    for phrase in sorted(_SAFE_CLARIFICATIONS, key=len, reverse=True):
++        remaining = remaining.replace(normalize(phrase), "")
++        # La misma abstencion seguida de una pregunta puede usar punto y coma.
++        if phrase.endswith('.'):
++            remaining = remaining.replace(normalize(phrase[:-1]) + ';', '')
++    return not remaining.strip()
+ 
+ _GENERAL_SECTION = re.compile(
+     r"^[ \t]*(?:#{1,6}[ \t]+)?(?:orientaci[oó]n general|conocimiento general)"
+--- before/backend/app/llm/model_policy.py
++++ after/backend/app/llm/model_policy.py
+@@ -138,7 +138,7 @@
+ _ELLIPTICAL_FOLLOWUP = re.compile(
+     r"(?:y |pero )?(?:en ese caso|en esa situacion|entonces|"
+     r"con .+|para .+|cuanto(?:s|a|as)?(?: (?:es|seria|son|cuesta|recibo|"
+-    r"me (?:dan|toca|corresponde)|dias))?|que requisitos(?: .+)?|"
++    r"me (?:dan|toca|corresponde)|dias))?|que requisitos(?: tiene| hay| necesita| requiere)?|"
+     r"como (?:lo |se )?(?:solicito|tramito|aplica)|desde cuando|hasta cuando)"
+ )
+ 
+@@ -335,6 +335,7 @@
+             or (_BENEFIT_AMOUNT.search(text) and _contains_phrase(text, _BENEFIT_NAMES))
+             or _AMBIGUOUS_FOLLOWUP.fullmatch(text.strip(" ¿?¡!.,;:"))
+             or _NAMED_BENEFIT_REFERENCE.search(text)
++            or _DEFINITE_BENEFIT_REFERENCE.search(text)
+             or _CONTEXT_REFERENCE.search(text)
+         )
+ 
+@@ -353,10 +354,7 @@
+         for turn in prior_questions:
+             if self.classify_intent(turn) in (Intent.CONVERSATIONAL, Intent.IDENTITY, Intent.CAPABILITIES):
+                 continue
+-            if self._uses_previous_topic(turn, previous):
+-                previous = f"{previous}\n{turn}"[-1200:]
+-            else:
+-                previous = turn
++            previous = f"{previous}\n{turn}"[-1200:] if self._uses_previous_topic(turn, previous) else turn
+         return previous if self._uses_previous_topic(question, previous) else ""
+ 
+     def _uses_previous_topic(self, question: str, previous: str) -> bool:
+@@ -365,13 +363,26 @@
+         ):
+             return False
+         text = _complete_request(question)
++        # Una repeticion no necesita su propio texto como antecedente. Tampoco
++        # una pregunta que ya identifica una fuente, fecha o beneficio distinto.
++        if text in {_complete_request(turn) for turn in previous.splitlines()}:
++            return False
+         if re.match(r"^(?:por cierto|cambiando de tema|otra pregunta)\b", _normalized(question).lstrip("¿ ")):
++            return False
++        if re.search(r"\b(?:segun|de acuerdo con|que dice|documento|archivo|reglamento|manual)\b", text):
++            return False
++        if _NAMED_BENEFIT_REFERENCE.search(text):
++            return False
++        # El articulo definido no demuestra elipsis: 'el plan de ahorro' tiene
++        # tema propio; 'ese plan' y 'sus requisitos' si necesitan antecedente.
++        if re.search(
++            r"\b(?:el|la|los|las|del|al) (?:plan(?:es)?|programas?|beneficios?|"
++            r"prestaciones?|apoyos?|seguros?|fondos?|esquemas?)\s+(?:de|del|para)\s+\w+", text,
++        ):
+             return False
+         if _CONTEXT_REFERENCE.search(text):
+             return True
+-        if self.is_benefit_reference(question) and _contains_phrase(
+-            _normalized(previous), (*_DOCUMENTAL_MARKERS, "prestaciones", "beneficios", "plan", "programa"),
+-        ):
++        if re.fullmatch(r"(?:y )?(?:que es|como funciona) (?:el|la) (?:plan|beneficio|prestacion|programa)", text):
+             return True
+         # Una explicacion completa prevalece sobre el prefijo "y".
+         if _GENERAL_REQUEST.fullmatch(text):
+--- before/backend/app/rag/grounding.py
++++ after/backend/app/rag/grounding.py
+@@ -18,9 +18,16 @@
+ from dataclasses import dataclass, field
+ from typing import Literal
+ 
+-from app.common.answers import split_answer_sections
++from app.common.answers import safe_nonfactual_text, split_answer_sections
+ from app.common.logging import get_logger
+-from app.rag.numeric_grounding import numeric_claim_supported
++from app.rag.claim_context import (
++    check_numeric_claim,
++    claim_context,
++    personal_eligibility_claim,
++    strip_declared_lines,
++    topic_mismatch,
++    unverified_current_claim,
++)
+ from app.rag.schemas import Evidence
+ 
+ logger = get_logger(__name__)
+@@ -65,6 +72,8 @@
+     citations_valid: bool = False
+     factual_verified: bool = False
+     extractive_verified: bool = False
++    validation_detail: str = ""
++    claim_index: int | None = None
+ 
+     @property
+     def has_invalid_citations(self) -> bool:
+@@ -115,6 +124,7 @@
+     structured: tuple = (),
+     mode: Literal["extractive", "cited"] = "extractive",
+     allow_general_knowledge: bool = False,
++    question: str = "",
+ ) -> GroundingReport:
+     """Valida citas y unidades completas sin atribuirles verificacion semantica."""
+     sources = {e.source_id: e.text for e in evidences}
+@@ -155,6 +165,7 @@
+         return _verify_cited_answer(
+             answer, sources, cited=cited, require_citation=require_citation,
+             allow_general_knowledge=allow_general_knowledge,
++            evidences=evidences, question=question,
+         )
+ 
+     # Un marcador dentro de una afirmacion no acredita una abstencion.
+@@ -245,6 +256,7 @@
+ def _verify_cited_answer(
+     answer: str, sources: dict[str, str], *, cited: tuple[str, ...],
+     require_citation: bool, allow_general_knowledge: bool,
++    evidences: tuple[Evidence, ...] = (), question: str = "",
+ ) -> GroundingReport:
+     """Permite sintesis con procedencia controlada; no simula una prueba de verdad.
+ 
+@@ -256,6 +268,11 @@
+     from app.agents.prompts import DENIED_ANSWER, INSUFFICIENT_ANSWER
+ 
+     documented, general = split_answer_sections(answer)
++    context = claim_context(question, evidences)
++    documented, declared_lines = strip_declared_lines(documented, context)
++    if general and context.application_requested and not safe_nonfactual_text(general):
++        return GroundingReport(grounded=False, cited_source_ids=cited,
++                               reason="aplicacion documental en orientacion general")
+     if general and not allow_general_knowledge:
+         return GroundingReport(grounded=False, cited_source_ids=cited, reason="capacidad general deshabilitada")
+     if extract_citations(general):
+@@ -269,7 +286,7 @@
+         "No cuento con informacion documental suficiente.",
+         "No tiene acceso a esa informacion.",
+     }
+-    if documented in safe_refusals or (not documented and general):
++    if documented in safe_refusals or safe_nonfactual_text(documented) or (not documented and general):
+         return GroundingReport(
+             grounded=True, cited_source_ids=(), citations_valid=True,
+             declares_insufficiency=bool(documented),
+@@ -284,20 +301,42 @@
+         )
+     citation_groups = re.compile(r"(?:\[\[[^\]]{1,240}\]\][ \t]*)+")
+     cursor = 0
+-    for match in citation_groups.finditer(documented):
++    heading = ""
++    for index, match in enumerate(citation_groups.finditer(documented), 1):
+         claim = documented[cursor:match.start()].strip()
+         claim = re.sub(r"^\.\s+", "", claim, count=1)
+         if not claim:
+             return GroundingReport(grounded=False, cited_source_ids=cited, reason="cita sin afirmacion documental")
+         ids = extract_citations(match.group())
+-        if not numeric_claim_supported(claim, tuple(sources[sid] for sid in ids)):
++        current_evidence = tuple(e for e in evidences if e.source_id in ids)
++        titles = re.findall(r"(?m)^\s*(?:[-*]\s+)?(?:\*\*([^*]+)\*\*|#{1,6}\s+([^\n]+))", claim)
++        if titles:
++            heading = next((a or b for a, b in reversed(titles)), "")
++        if topic_mismatch(heading, current_evidence, evidences):
++            return GroundingReport(grounded=False, cited_source_ids=cited, citations_valid=True,
++                                   reason="beneficio y fuente citada no corresponden", claim_index=index)
++        if unverified_current_claim(claim):
++            return GroundingReport(grounded=False, cited_source_ids=cited, citations_valid=True,
++                                   reason="vigencia actual no acreditada", claim_index=index)
++        if personal_eligibility_claim(claim):
++            return GroundingReport(grounded=False, cited_source_ids=cited, citations_valid=True,
++                                   reason="elegibilidad personal no acreditada", claim_index=index)
++        if declares_insufficiency(claim):
++            return GroundingReport(grounded=False, cited_source_ids=cited, citations_valid=True,
++                                   reason="abstencion mezclada con afirmaciones documentales", claim_index=index)
++        detail = check_numeric_claim(
++            claim, current_evidence, context, declared_lines=declared_lines,
++            extra_sources=tuple(sources[sid] for sid in ids if sid not in {e.source_id for e in evidences}),
++        )
++        if detail:
+             return GroundingReport(
+                 grounded=False, cited_source_ids=cited, citations_valid=True,
+                 reason="afirmacion numerica sin respaldo en sus fuentes citadas",
++                validation_detail=detail, claim_index=index,
+             )
+         cursor = match.end()
+     tail = documented[cursor:].strip().strip(". ")
+-    if tail:
++    if tail and not safe_nonfactual_text(tail):
+         return GroundingReport(
+             grounded=False, cited_source_ids=cited, citations_valid=True, reason="afirmacion documental final sin cita",
+         )
+--- before/backend/app/rag/numeric_grounding.py
++++ after/backend/app/rag/numeric_grounding.py
+@@ -13,6 +13,7 @@
+ import unicodedata
+ from dataclasses import dataclass, field
+ from decimal import Decimal, InvalidOperation
++from fractions import Fraction
+ 
+ _NUMBER = r"[+-]?(?:\d+(?:[.,]\d+)?|[.,]\d+)"
+ _NUMBER_RE = re.compile(rf"(?<![\w.,]){_NUMBER}(?!\d|[.,]\d)")
+@@ -145,6 +146,98 @@
+     return values
+ 
+ 
++@dataclass(frozen=True, slots=True)
++class IntervalRow:
++    low: Fraction
++    high: Fraction | None
++    percent: Decimal
++    text: str
++
++    def contains(self, value: Fraction) -> bool:
++        return self.low <= value and (self.high is None or value <= self.high)
++
++
++@dataclass(frozen=True, slots=True)
++class TenureTable:
++    header: str
++    rows: tuple[IntervalRow, ...]
++    prefix: str
++    suffix: str = ''
++
++    def select(self, value: Fraction) -> IntervalRow | None:
++        matches = [row for row in self.rows if row.contains(value)]
++        return matches[0] if len(matches) == 1 else None
++
++
++def tenure_tables(text: str) -> tuple[TenureTable, ...]:
++    """Contrato acotado: dos columnas, intervalos explicitos, sin redondeos.
++
++    Una fila mal formada invalida esa tabla completa, no deja un prefijo que
++    pueda parecer una regla completa. Los huecos se conservan; los solapes se
++    rechazan. No se mezclan encabezados y filas de fuentes distintas.
++    """
++    lines = _plain(text).splitlines()
++    result = []
++    for index, raw in enumerate(lines):
++        header = " ".join(cell.strip() for cell in raw.strip().strip("|").split("|"))
++        if not _TENURE_HEADER.fullmatch(header):
++            continue
++        rows = []
++        invalid = False
++        end = index + 1
++        for position, original in enumerate(lines[index + 1:], index + 1):
++            end = position
++            line = original.strip()
++            if not line:
++                break
++            if "|" in line:
++                cells = [cell.strip() for cell in line.strip("|").split("|")]
++                if len(cells) != 2:
++                    invalid = True
++                    break
++                if all(re.fullmatch(r":?-{3,}:?", cell) for cell in cells):
++                    continue
++                line = " ".join(cells)
++            match = _TABLE_ROW.fullmatch(line)
++            if match is None:
++                # Texto posterior no constituye otra fila. Una linea numerica
++                # incompleta/tercera columna no se ignora silenciosamente.
++                invalid = bool(re.match(r"[+\-\d.,]", line))
++                break
++            low = Fraction(match['low'].replace(',', '.'))
++            high = (Fraction(match['high'].replace(',', '.')) if match['high'] else
++                    None if 'en adelante' in line else low)
++            percent = Decimal(match['percent'].replace(',', '.'))
++            if low < 0 or (high is not None and high < low) or not 0 <= percent <= 100:
++                invalid = True
++                break
++            if rows and (rows[-1].high is None or low <= rows[-1].high):
++                invalid = True
++                break
++            rows.append(IntervalRow(low, high, percent, original.strip()))
++        else:
++            end = len(lines)
++        if rows and not invalid:
++            result.append(TenureTable(header, tuple(rows), '\n'.join(lines[:index]), '\n'.join(lines[end:])))
++    return tuple(result)
++
++
++def _row_claim_supported(claim: str, table: TenureTable) -> bool:
++    """Una cifra de la columna % necesita su fila, no una pertenencia global."""
++    spans = list(re.finditer(rf"({_NUMBER})\s*[-–—]\s*({_NUMBER})", claim))
++    open_spans = list(re.finditer(rf"({_NUMBER})\s+en adelante", claim))
++    percentages = [Decimal(m['value'].replace(',', '.')) for m in _QUANTITY_RE.finditer(claim)
++                   if m['unit'] in ('%', 'por ciento') and m['value'] not in _WORD_VALUES]
++    if not percentages or len(spans) + len(open_spans) != 1:
++        return False
++    if spans:
++        low, high = (Fraction(value.replace(',', '.')) for value in spans[0].groups())
++    else:
++        low, high = Fraction(open_spans[0][1].replace(',', '.')), None
++    return any(row.low == low and row.high == high and all(p == row.percent for p in percentages)
++               for row in table.rows)
++
++
+ def numeric_claim_supported(claim: str, source_texts: tuple[str, ...]) -> bool:
+     """Compara cifras y equivalencias tipadas solo con las fuentes citadas.
+ 
+@@ -156,14 +249,30 @@
+     claim_facts = _facts(plain_claim)
+     if claim_facts.unsupported_compound:
+         return False
++    tables_in_sources = tuple(table for source in source_texts for table in tenure_tables(source))
++    if (tables_in_sources and re.search(rf'{_NUMBER}(?:\s*[-–—]\s*{_NUMBER}|\s+en adelante)', plain_claim)
++            and any(unit == 'percent' for _, unit in claim_facts.quantities)
++            and not any(_row_claim_supported(plain_claim, table) for table in tables_in_sources)):
++        return False
+     raw_supported: set[str] = set()
+     quantities_supported: set[tuple[str, str]] = set()
+     for source in source_texts:
+         text = _plain(source)
+         facts = _facts(text)
++        tables = tenure_tables(text)
++        if tables and re.search(rf'{_NUMBER}\s*[-–—]\s*{_NUMBER}', plain_claim) and any(
++            unit == 'percent' for _, unit in claim_facts.quantities
++        ) and not any(_row_claim_supported(plain_claim, table) for table in tables):
++            continue
+         raw_supported.update(facts.raw)
+         quantities_supported.update(facts.quantities)
+-        quantities_supported.update(_table_percentages(text))
++        # Solo se tipifica la fila expresamente descrita. La aplicacion al caso
++        # se verifica por separado con entradas y reglas identificadas.
++        for table in tables:
++            if _row_claim_supported(plain_claim, table):
++                quantities_supported.update(
++                    (value, unit) for value, unit in claim_facts.quantities if unit == "percent"
++                )
+     if not claim_facts.quantities.issubset(quantities_supported):
+         return False
+     for match in _NUMBER_RE.finditer(plain_claim):
+--- before/backend/tests/unit/test_answer_diagnostics.py
++++ after/backend/tests/unit/test_answer_diagnostics.py
+@@ -104,7 +104,8 @@
+         assert request.url.path == "/api/chat"
+         payload = json.loads(request.content)
+         payloads.append(payload)
+-        answer = "Respuesta sin citas" if len(payloads) == 1 else "### Información documentada\nLa tasa es 70% [[E1]]"
++        answer = ("Respuesta sin citas" if len(payloads) == 1 else
++                  "### Información documentada\nPara el tramo 7 – 7.99 la tasa es 70% [[E1]]")
+         return httpx.Response(200, json={"model": settings.ollama_fast_model,
+             "message": {"role": "assistant", "content": answer}, "done": True, "done_reason": "stop"})
+ 
+@@ -176,9 +177,10 @@
+     assert diag._trace.get() is None
+ 
+ 
+-def test_synthetic_table_works_but_metadata_year_and_user_age_do_not():
++def test_synthetic_table_requires_a_row_and_unscoped_year_stays_rejected():
+     source = evidence()
+-    assert numeric_claim_supported("La tasa es 70%", (source.text,))
++    assert numeric_claim_supported("Para el tramo 7 – 7.99 la tasa es 70%", (source.text,))
++    assert not numeric_claim_supported("La tasa es 70%", (source.text,))
+     assert not numeric_claim_supported("En 2041 la tasa es 70%", (source.text,))
+     assert not numeric_claim_supported("Si declara 7 años y 6 meses, la tasa es 70%", (source.text,))
+     report = verify_grounding(f"### Información documentada\nEn 2041 la tasa es 70% [[{SOURCE}]]",
+@@ -186,7 +188,9 @@
+     assert report.reason == "afirmacion numerica sin respaldo en sus fuentes citadas"
+ 
+ 
+-def test_synthetic_safe_clarification_has_exact_string_limitation():
++def test_synthetic_safe_clarification_is_accepted_without_a_citation():
+     report = verify_grounding("No cuento con información documental suficiente para indicar el importe; "
+                               "¿cuál es el documento de referencia?", (evidence(),), mode="cited")
+-    assert report.reason == "respuesta documental sin fuentes citadas"
++    assert report.grounded
++    assert report.declares_insufficiency
++    assert report.reason == "abstencion documental"
+--- before/backend/tests/unit/test_conversation_policy_stage1.py
++++ after/backend/tests/unit/test_conversation_policy_stage1.py
+@@ -108,10 +108,10 @@
+                 self.assertTrue(self.policy.requires_internal_evidence(question))
+                 self.assertFalse(Orchestrator._allow_general_fallback(question, Intent.DOCUMENTAL, frozenset({"rh"})))
+ 
+-    def test_context_resolves_definite_benefit_reference(self):
++    def test_named_benefit_is_documental_without_inheriting_previous_topic(self):
+         question = "¿Qué es el plan de ahorro?"
+         reference = self.policy.contextual_reference(question, prior_questions=("Explica nuestras prestaciones",))
+-        self.assertEqual(reference, "Explica nuestras prestaciones")
++        self.assertEqual(reference, "")
+         self.assertIs(self.policy.classify_intent(question, previous_question=reference), Intent.DOCUMENTAL)
+ 
+     def test_independent_general_topics_do_not_inherit_benefits(self):
+@@ -254,8 +254,7 @@
+         self.append("Cuáles son nuestras prestaciones")
+         result = self.chat("Qué es el plan libre")
+         args = self.retriever.retrieve.call_args.kwargs
+-        self.assertIn("nuestras prestaciones", args["question"])
+-        self.assertIn("Seguimiento: Qué es el plan libre", args["question"])
++        self.assertEqual(args["question"], "Qué es el plan libre")
+         self.assertEqual(args["authorized_categories"], self.ctx.allowed_categories)
+         self.assertEqual(args["conversation_id"], self.conversation.id)
+         self.assertIs(args["ctx"], self.ctx)
+@@ -271,6 +270,14 @@
+         self.assertEqual(result.intent, "documental")
+         self.assertEqual(result.answer, UNKNOWN_BENEFIT_ANSWER)
+         self.assertEqual(self.llm.calls, [])
++
++    def test_elliptical_followup_still_uses_authorized_anchor(self):
++        self.append("Cuáles son nuestras prestaciones")
++        self.chat("¿Qué requisitos tiene?")
++        args = self.retriever.retrieve.call_args.kwargs
++        self.assertEqual(args["question"], "Cuáles son nuestras prestaciones\nSeguimiento: ¿Qué requisitos tiene?")
++        self.assertEqual(args["authorized_categories"], self.ctx.allowed_categories)
++        self.assertEqual(args["conversation_id"], self.conversation.id)
+ 
+     def test_unknown_names_request_precision_without_inventing(self):
+         for name in ("plan flexible", "programa Horizonte", "beneficio Aurora"):
+--- before/backend/tests/unit/test_grounding_numeric_rag_hotfix.py
++++ after/backend/tests/unit/test_grounding_numeric_rag_hotfix.py
+@@ -38,12 +38,12 @@
+     ("Puede solicitar dos préstamos.", "Puede solicitar 2 préstamos."),
+     ("Puede solicitar un préstamo.", "Puede solicitar **1 préstamo**."),
+     ("Puede solicitar un préstamo.", "Puede solicitar 1 **préstamo**."),
+-    (TABLE, "Corresponde el 70%."),
+-    (TABLE, "Corresponde el **70 %**."),
+-    (TABLE, "Corresponde el 70 por ciento."),
++    (TABLE, "Para el tramo 7 – 7.99 corresponde el 70%."),
++    (TABLE, "Para el tramo 7 – 7.99 corresponde el **70 %**."),
++    (TABLE, "Para el tramo 7 – 7.99 corresponde el 70 por ciento."),
+     ("El porcentaje es 70 %.", "Corresponde el 70%."),
+     ("El porcentaje es 70%.", "Corresponde el 70 por ciento."),
+-    ("| Antigüedad | % |\n| --- | ---: |\n| 7 – 7.99 | 70 |", "Corresponde el 70%."),
++    ("| Antigüedad | % |\n| --- | ---: |\n| 7 – 7.99 | 70 |", "Para el tramo 7 – 7.99 corresponde el 70%."),
+     ("Puede solicitar un préstamo.", "1. Puede solicitar un préstamo."),
+     ("Puede solicitar un préstamo.", "27) Puede solicitar un préstamo."),
+     ("Corresponden 20 días hábiles.", "Corresponden veinte días hábiles."),
+@@ -74,6 +74,8 @@
+     ("Puede solicitar 1 préstamo.", "Corresponde 1 peso."),
+     ("CHUNK 5: reconocimiento a la lealtad.", "Se entrega cada 5 años."),
+     (TABLE, "Corresponde el 71%."),
++    (TABLE, "Corresponde el 70%."),
++    (TABLE, "Para el tramo 5 – 5.99 corresponde el 70%."),
+     (TABLE, "Corresponde el 7%."),
+     (TABLE, "Corresponde el 4.99%."),
+     (TABLE, "Corresponden 70 años."),
+@@ -135,7 +137,7 @@
+      "Se entrega cada 5 años en los eventos de cierre anual."),
+     ("Puede solicitar un préstamo por ejercicio, sin intereses.",
+      "Puede solicitar 1 préstamo por ejercicio, sin intereses."),
+-    (TABLE, "Corresponde el 70%."),
++    (TABLE, "Para el tramo 7 – 7.99 corresponde el 70%."),
+ ])
+ def test_valid_generation_is_not_replaced_by_insufficient_answer(monkeypatch, source, answer):
+     monkeypatch.setattr(get_settings(), "answer_evidence_mode", "cited")
+--- before/frontend/src/components/MessageList.tsx
++++ after/frontend/src/components/MessageList.tsx
+@@ -80,6 +80,10 @@
+           const known = new Set(message.sources.map((source) => source.source_id));
+           // Los mensajes de entregas anteriores pueden no tener answer_basis.
+           const basis = message.answer_basis ?? (message.intent === "general" ? "general" : null);
++          const introductory =
++            basis === "general" &&
++            message.sources.length === 0 &&
++            ["identity", "capabilities", "conversational"].includes(message.intent ?? "");
+           const basisNotice =
+             basis === "general"
+               ? "Respuesta general: no basada en documentación de la empresa"
+@@ -88,7 +92,7 @@
+                   ? "Respuesta mixta: combina las fuentes citadas con conocimiento general del modelo"
+                   : "Respuesta mixta: incluye conocimiento general; las fuentes documentales no están disponibles en esta respuesta"
+                 : basis === "insufficient"
+-                  ? "Documentación insuficiente para confirmar la información solicitada"
++                  ? "No se pudo confirmar la información solicitada"
+                   : null;
+           // La cita en el texto pasa a ser el numero de la fuente en este
+           // mensaje. Antes se imprimia el `source_id` completo entre corchetes
+@@ -131,7 +135,7 @@
+                   ) : null}
+                 </div>
+ 
+-                {basisNotice ? (
++                {basisNotice && !introductory ? (
+                   <p
+                     className="general-notice"
+                     data-testid={basis === "general" ? "general-notice" : "answer-basis-notice"}
+--- before/frontend/tests/MessageList.test.tsx
++++ after/frontend/tests/MessageList.test.tsx
+@@ -27,6 +27,32 @@
+ });
+ 
+ describe("Origen de las respuestas", () => {
++  it.each(["identity", "capabilities", "conversational"])(
++    "omite el aviso documental en la intención introductoria %s",
++    (intent) => {
++      render(
++        <MessageList
++          messages={[{ ...message, intent, answer_basis: "general" }]}
++          pending={false}
++          displayName="Prueba"
++        />,
++      );
++      expect(screen.queryByTestId("general-notice")).not.toBeInTheDocument();
++      expect(screen.getByText(message.content)).toBeInTheDocument();
++    },
++  );
++
++  it("conserva el aviso sustantivo aunque el intent sea introductorio", () => {
++    render(
++      <MessageList
++        messages={[{ ...message, intent: "capabilities", answer_basis: "mixed", sources: [source] }]}
++        pending={false}
++        displayName="Prueba"
++      />,
++    );
++    expect(screen.getByTestId("answer-basis-notice")).toBeInTheDocument();
++    expect(screen.getByTestId("sources")).toHaveTextContent(source.label);
++  });
+   it("identifica claramente una respuesta general", () => {
+     render(
+       <MessageList
+@@ -106,7 +132,7 @@
+       />,
+     );
+     expect(screen.getByTestId("answer-basis-notice")).toHaveTextContent(
+-      "Documentación insuficiente",
++      "No se pudo confirmar",
+     );
+     expect(screen.queryByTestId("general-notice")).not.toBeInTheDocument();
+   });

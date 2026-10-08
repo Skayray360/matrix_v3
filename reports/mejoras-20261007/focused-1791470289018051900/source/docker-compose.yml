@@ -1,0 +1,145 @@
+# Creado por Aldo Garcia.
+# ---------------------------------------------------------------------------
+# Despliegue contenerizado de Matrix RH.
+#
+# La ejecucion predeterminada incluye docker-compose.ollama.yml: Ollama local
+# permanece en su propio contenedor NVIDIA sin puertos publicados en el host,
+# con pesos persistentes fuera de la imagen y una red exclusiva con el backend.
+# Ver docs/README.md antes de activar ese perfil.
+#
+# Sólo Nginx se expone. MySQL, Qdrant y el backend viven en la red interna.
+# ---------------------------------------------------------------------------
+
+name: matrix-rh
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: matrixrh-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: matrix_rh_131
+      MYSQL_USER: matrixrh
+      # Los valores reales llegan del entorno del host o del gestor de secretos.
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?defina MYSQL_PASSWORD en el entorno}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?defina MYSQL_ROOT_PASSWORD en el entorno}
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./infrastructure/database/init:/docker-entrypoint-initdb.d:ro
+    networks: [matrixrh]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  qdrant:
+    image: qdrant/qdrant:v1.12.4
+    container_name: matrixrh-qdrant
+    restart: unless-stopped
+    environment:
+      QDRANT__SERVICE__API_KEY: ${QDRANT_API_KEY:?defina QDRANT_API_KEY en el entorno}
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks: [matrixrh]
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: matrixrh-backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      mysql:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+    environment:
+      APP_ENV: ${APP_ENV:-staging}
+      APP_HOST: 0.0.0.0
+      APP_PORT: "8000"
+      APP_SECRET_KEY: ${APP_SECRET_KEY:?defina APP_SECRET_KEY en el entorno}
+      DATABASE_URL: mysql+pymysql://matrixrh:${MYSQL_PASSWORD}@mysql:3306/matrix_rh_131?charset=utf8mb4
+      # MySQL crea esta base del mismo perfil antes del primer migrate.
+      # La adopcion explicita de una base vacia no omite la guardia de tablas
+      # ajenas ni la comprobacion de versiones/checksums ya registrados.
+      MATRIX_ADOPT_EXISTING_DATABASE: "true"
+      QDRANT_MODE: server
+      QDRANT_URL: http://qdrant:6333
+      QDRANT_API_KEY: ${QDRANT_API_KEY}
+      # Incluya el overlay Ollama para este default. Host bridge es opt-in de TI:
+      # exige endpoint y allowlist explicitos, no OLLAMA_HOST=0.0.0.0 en el host.
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      OLLAMA_FAST_MODEL: gemma4:latest
+      OLLAMA_DEEP_MODEL: gemma4:latest
+      OLLAMA_EMBEDDING_MODEL: embeddinggemma:latest
+      LLM_LOCAL_ONLY: "true"
+      LLM_LOCAL_HOSTS: ${LLM_LOCAL_HOSTS:-127.0.0.1,localhost,::1,ollama}
+      LLM_FAST_DIGEST: ${LLM_FAST_DIGEST:?fije el digest SHA-256 Gemma aprobado}
+      LLM_DEEP_DIGEST: ${LLM_FAST_DIGEST:?fije el digest SHA-256 Gemma aprobado}
+      LLM_EMBEDDING_DIGEST: ${LLM_EMBEDDING_DIGEST:?fije el digest SHA-256 EmbeddingGemma aprobado}
+      AUTH_PROVIDER: ${AUTH_PROVIDER:?defina AUTH_PROVIDER segun el entorno}
+      LOCAL_TEST_AUTH_ENABLED: "false"
+      LOCAL_TEST_SEED_USERS_ENABLED: "false"
+      MATRIX_SEED_PASSWORD: ""
+      SESSION_COOKIE_SECURE: "true"
+      # Solo Nginx en su direccion declarada puede afirmar la IP del cliente.
+      FORWARDED_ALLOW_IPS: 127.0.0.1,::1,${MATRIX_NGINX_IP:-172.30.0.10}
+      STORAGE_ENCRYPTION_ATTESTED: ${STORAGE_ENCRYPTION_ATTESTED:?declaracion TI requerida}
+      DATABASE_ENCRYPTION_ATTESTED: ${DATABASE_ENCRYPTION_ATTESTED:?declaracion TI requerida}
+      BACKUP_ENCRYPTION_ATTESTED: ${BACKUP_ENCRYPTION_ATTESTED:?declaracion TI requerida}
+      ENCRYPTION_ATTESTATION_REFERENCE: /app/config/encryption-attestation.md
+    volumes:
+      # Publicacion administrativa e ingesta comparten conocimiento persistente.
+      - ./data/knowledge:/app/data/knowledge:rw
+      - backend_var:/app/var
+      # Documento de TI que acredita el cifrado de volumenes y respaldos; el
+      # proceso valida su existencia, no acredita por si mismo dicha evidencia.
+      - ${ENCRYPTION_ATTESTATION_REFERENCE:?archivo local de evidencia TI}:/app/config/encryption-attestation.md:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks: [matrixrh, matrix_proxy]
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import httpx,sys; sys.exit(0 if httpx.get('http://127.0.0.1:8000/ready', timeout=5).status_code==200 else 1)\""]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: matrixrh-nginx
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    # Publicacion local por defecto. Una IP LAN requiere configuracion de TI.
+    ports:
+      - "${MATRIX_BIND_HOST:-127.0.0.1}:80:80"
+      - "${MATRIX_BIND_HOST:-127.0.0.1}:443:443"
+    volumes:
+      - ./infrastructure/nginx/matrixrh.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./infrastructure/nginx/certs:/etc/nginx/certs:ro
+    networks:
+      matrix_proxy:
+        ipv4_address: ${MATRIX_NGINX_IP:-172.30.0.10}
+
+networks:
+  matrixrh:
+    driver: bridge
+    internal: true
+  matrix_proxy:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${MATRIX_PROXY_SUBNET:-172.30.0.0/24}
+
+volumes:
+  mysql_data:
+  qdrant_data:
+  backend_var:

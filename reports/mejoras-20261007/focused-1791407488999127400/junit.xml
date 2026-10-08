@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="3.693" timestamp="2026-10-07T15:11:37.436327-06:00" hostname="MET-AH015398-02"><testcase classname="tests.unit.test_local_model_diagnostics" name="test_total_deadline_cancels_trickling_metadata" time="1.934"><failure message="TimeoutError">tests\unit\test_local_model_diagnostics.py:134: in test_total_deadline_cancels_trickling_metadata
+    report = await diagnostic.collect_report(client=client, timeout=0.03)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts\local_model_diagnostics.py:230: in collect_report
+    data, error = await _metadata(client, settings.ollama_base_url, f"/api/{endpoint}", timeout=timeout)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts\local_model_diagnostics.py:151: in _metadata
+    async for chunk in response.aiter_bytes():
+..\..\..\..\stage1-regression-20261006-113952\test-env\Lib\site-packages\httpx\_models.py:997: in aiter_bytes
+    async for raw_bytes in self.aiter_raw():
+..\..\..\..\stage1-regression-20261006-113952\test-env\Lib\site-packages\httpx\_models.py:1055: in aiter_raw
+    async for raw_stream_bytes in self.stream:
+..\..\..\..\stage1-regression-20261006-113952\test-env\Lib\site-packages\httpx\_client.py:176: in __aiter__
+    async for chunk in self._stream:
+tests\unit\test_local_model_diagnostics.py:127: in __aiter__
+    await asyncio.sleep(0.01)
+C:\Users\AH015398\AppData\Local\Programs\Python\Python312\Lib\asyncio\tasks.py:665: in sleep
+    return await future
+           ^^^^^^^^^^^^
+E   asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+tests\unit\test_local_model_diagnostics.py:133: in test_total_deadline_cancels_trickling_metadata
+    async with asyncio.timeout(1):
+               ^^^^^^^^^^^^^^^^^^
+C:\Users\AH015398\AppData\Local\Programs\Python\Python312\Lib\asyncio\timeouts.py:115: in __aexit__
+    raise TimeoutError from exc_val
+E   TimeoutError</failure></testcase></testsuite></testsuites>

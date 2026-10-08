@@ -1,0 +1,24 @@
+{
+  "ok": false,
+  "checked_packages": 275,
+  "checks": {
+    "lockfile": "OK (package-lock.json)",
+    "ignore_scripts": "FAIL",
+    "gestor_fijado": "OK (con hash de integridad)",
+    "arbol_instalado": "OK (275 manifiestos)",
+    "lista_de_bloqueo": "OK",
+    "scripts_de_instalacion": "OK (ninguno)",
+    "indicadores_de_compromiso": "OK",
+    "lista_de_bloqueo_lock": "OK",
+    "lock_contenido": "OK (300 paquetes)"
+  },
+  "blocking": [
+    {
+      "severity": "critical",
+      "kind": "scripts_de_instalacion_habilitados",
+      "detail": "frontend/.npmrc no declara ignore-scripts=true",
+      "location": ""
+    }
+  ],
+  "warnings": []
+}

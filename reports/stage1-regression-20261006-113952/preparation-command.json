@@ -1,0 +1,23 @@
+{
+  "command": "uv",
+  "environment": {
+    "UV_PROJECT_ENVIRONMENT": "C:\\wamp64\\www\\matrix-rh-1.3.0\\reports\\stage1-regression-20261006-113952\\test-env",
+    "UV_CACHE_DIR": "C:\\wamp64\\www\\matrix-rh-1.3.0\\reports\\stage1-regression-20261006-113952\\uv-cache",
+    "UV_PYTHON_DOWNLOADS": "never"
+  },
+  "arguments": [
+    "sync",
+    "--project",
+    "C:\\wamp64\\www\\matrix-rh-1.3.0\\backend",
+    "--frozen",
+    "--extra",
+    "dev",
+    "--no-install-project",
+    "--python",
+    "C:\\Users\\AH015398\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+    "--no-python-downloads",
+    "--link-mode",
+    "copy",
+    "--no-progress"
+  ]
+}

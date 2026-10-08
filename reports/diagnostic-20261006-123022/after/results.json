@@ -1,0 +1,12 @@
+{
+  "exit_code": 0,
+  "collected": 14,
+  "passed": 14,
+  "failed": 0,
+  "subtest_reports": 0,
+  "errors": 0,
+  "skipped": 0,
+  "duration_seconds": 15.883,
+  "isolation_violations": [],
+  "failures": []
+}

@@ -1,0 +1,125 @@
+{
+  "exit_code": 1,
+  "collected": 24,
+  "passed": 8,
+  "failed": 16,
+  "errors": 0,
+  "skipped": 0,
+  "duration_seconds": 2.067,
+  "isolation_violations": [],
+  "isolation_violation_events": [],
+  "failures": [
+    {
+      "nodeid": "tests/unit/test_calendar_date_grounding.py::test_first_day_spellings_preserve_the_complete_calendar_date[de-1]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.000234499999351101,
+      "detail": "tests\\unit\\test_calendar_date_grounding.py:19: in test_first_day_spellings_preserve_the_complete_calendar_date\n    assert numeric_claim_supported(claim, (SOURCE,))\nE   AssertionError: assert False\nE    +  where False = numeric_claim_supported('El programa inicia el 1 de julio de 2041.', ('El programa flexible inicia el primero de julio del 2041.',))"
+    },
+    {
+      "nodeid": "tests/unit/test_calendar_date_grounding.py::test_first_day_spellings_preserve_the_complete_calendar_date[de-01]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.0004501000003074296,
+      "detail": "tests\\unit\\test_calendar_date_grounding.py:19: in test_first_day_spellings_preserve_the_complete_calendar_date\n    assert numeric_claim_supported(claim, (SOURCE,))\nE   AssertionError: assert False\nE    +  where False = numeric_claim_supported('El programa inicia el 01 de julio de 2041.', ('El programa flexible inicia el primero de julio del 2041.',))"
+    },
+    {
+      "nodeid": "tests/unit/test_calendar_date_grounding.py::test_first_day_spellings_preserve_the_complete_calendar_date[del-1]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.0004864999973506201,
+      "detail": "tests\\unit\\test_calendar_date_grounding.py:19: in test_first_day_spellings_preserve_the_complete_calendar_date\n    assert numeric_claim_supported(claim, (SOURCE,))\nE   AssertionError: assert False\nE    +  where False = numeric_claim_supported('El programa inicia el 1 de julio del 2041.', ('El programa flexible inicia el primero de julio del 2041.',))"
+    },
+    {
+      "nodeid": "tests/unit/test_calendar_date_grounding.py::test_first_day_spellings_preserve_the_complete_calendar_date[del-01]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.00048120000064955093,
+      "detail": "tests\\unit\\test_calendar_date_grounding.py:19: in test_first_day_spellings_preserve_the_complete_calendar_date\n    assert numeric_claim_supported(claim, (SOURCE,))\nE   AssertionError: assert False\nE    +  where False = numeric_claim_supported('El programa inicia el 01 de julio del 2041.', ('El programa flexible inicia el primero de julio del 2041.',))"
+    },
+    {
+      "nodeid": "tests/unit/test_calendar_date_grounding.py::test_date_whitespace_and_markdown_preserve_the_same_date",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.0004939999998896383,
+      "detail": "tests\\unit\\test_calendar_date_grounding.py:24: in test_date_whitespace_and_markdown_preserve_the_same_date\n    assert numeric_claim_supported(\"Inicia el **1** de\\njulio del 2041.\", (SOURCE,))\nE   AssertionError: assert False\nE    +  where False = numeric_claim_supported('Inicia el **1** de\\njulio del 2041.', ('El programa flexible inicia el primero de julio del 2041.',))"
+    },
+    {
+      "nodeid": "tests/unit/test_calendar_date_grounding.py::test_changed_date_cannot_use_other_numbers_or_calendar_components[Inicia el 2 de julio de 2041.]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.00024900000062189065,
+      "detail": "tests\\unit\\test_calendar_date_grounding.py:39: in test_changed_date_cannot_use_other_numbers_or_calendar_components\n    assert not numeric_claim_supported(claim, (SOURCE + \" \" + additions,))\nE   AssertionError: assert not True\nE    +  where True = numeric_claim_supported('Inicia el 2 de julio de 2041.', ('El programa flexible inicia el primero de julio del 2041. Se admiten 2 pagos. Otro programa inicia el primero de agosto de 2042.',))"
+    },
+    {
+      "nodeid": "tests/unit/test_calendar_date_grounding.py::test_date_requires_all_components_in_one_source",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.00022330000138026662,
+      "detail": "tests\\unit\\test_calendar_date_grounding.py:44: in test_date_requires_all_components_in_one_source\n    assert not numeric_claim_supported(\"Inicia el 1 de julio de 2041.\", (\"Inicia el 1 de julio.\", \"Edici\u00f3n de 2041.\"))\nE   AssertionError: assert not True\nE    +  where True = numeric_claim_supported('Inicia el 1 de julio de 2041.', ('Inicia el 1 de julio.', 'Edici\u00f3n de 2041.'))"
+    },
+    {
+      "nodeid": "tests/unit/test_calendar_date_grounding.py::test_impossible_or_noninteger_calendar_dates_are_rejected_even_if_copied[31 de abril de 2041]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.00019179999799234793,
+      "detail": "tests\\unit\\test_calendar_date_grounding.py:53: in test_impossible_or_noninteger_calendar_dates_are_rejected_even_if_copied\n    assert not numeric_claim_supported(text, (text,))\nE   AssertionError: assert not True\nE    +  where True = numeric_claim_supported('Inicia el 31 de abril de 2041.', ('Inicia el 31 de abril de 2041.',))"
+    },
+    {
+      "nodeid": "tests/unit/test_calendar_date_grounding.py::test_impossible_or_noninteger_calendar_dates_are_rejected_even_if_copied[29 de febrero de 2041]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.00018980000095325522,
+      "detail": "tests\\unit\\test_calendar_date_grounding.py:53: in test_impossible_or_noninteger_calendar_dates_are_rejected_even_if_copied\n    assert not numeric_claim_supported(text, (text,))\nE   AssertionError: assert not True\nE    +  where True = numeric_claim_supported('Inicia el 29 de febrero de 2041.', ('Inicia el 29 de febrero de 2041.',))"
+    },
+    {
+      "nodeid": "tests/unit/test_calendar_date_grounding.py::test_impossible_or_noninteger_calendar_dates_are_rejected_even_if_copied[0 de julio de 2041]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.00018450000061420724,
+      "detail": "tests\\unit\\test_calendar_date_grounding.py:53: in test_impossible_or_noninteger_calendar_dates_are_rejected_even_if_copied\n    assert not numeric_claim_supported(text, (text,))\nE   AssertionError: assert not True\nE    +  where True = numeric_claim_supported('Inicia el 0 de julio de 2041.', ('Inicia el 0 de julio de 2041.',))"
+    },
+    {
+      "nodeid": "tests/unit/test_calendar_date_grounding.py::test_impossible_or_noninteger_calendar_dates_are_rejected_even_if_copied[32 de julio de 2041]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.00018199999976786785,
+      "detail": "tests\\unit\\test_calendar_date_grounding.py:53: in test_impossible_or_noninteger_calendar_dates_are_rejected_even_if_copied\n    assert not numeric_claim_supported(text, (text,))\nE   AssertionError: assert not True\nE    +  where True = numeric_claim_supported('Inicia el 32 de julio de 2041.', ('Inicia el 32 de julio de 2041.',))"
+    },
+    {
+      "nodeid": "tests/unit/test_calendar_date_grounding.py::test_impossible_or_noninteger_calendar_dates_are_rejected_even_if_copied[1 de julio de 0000]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.00021049999850220047,
+      "detail": "tests\\unit\\test_calendar_date_grounding.py:53: in test_impossible_or_noninteger_calendar_dates_are_rejected_even_if_copied\n    assert not numeric_claim_supported(text, (text,))\nE   AssertionError: assert not True\nE    +  where True = numeric_claim_supported('Inicia el 1 de julio de 0000.', ('Inicia el 1 de julio de 0000.',))"
+    },
+    {
+      "nodeid": "tests/unit/test_calendar_date_grounding.py::test_impossible_or_noninteger_calendar_dates_are_rejected_even_if_copied[1.5 de julio de 2041]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.00023540000256616622,
+      "detail": "tests\\unit\\test_calendar_date_grounding.py:53: in test_impossible_or_noninteger_calendar_dates_are_rejected_even_if_copied\n    assert not numeric_claim_supported(text, (text,))\nE   AssertionError: assert not True\nE    +  where True = numeric_claim_supported('Inicia el 1.5 de julio de 2041.', ('Inicia el 1.5 de julio de 2041.',))"
+    },
+    {
+      "nodeid": "tests/unit/test_calendar_date_grounding.py::test_impossible_or_noninteger_calendar_dates_are_rejected_even_if_copied[-1 de julio de 2041]",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.00019070000053034164,
+      "detail": "tests\\unit\\test_calendar_date_grounding.py:53: in test_impossible_or_noninteger_calendar_dates_are_rejected_even_if_copied\n    assert not numeric_claim_supported(text, (text,))\nE   AssertionError: assert not True\nE    +  where True = numeric_claim_supported('Inicia el -1 de julio de 2041.', ('Inicia el -1 de julio de 2041.',))"
+    },
+    {
+      "nodeid": "tests/unit/test_calendar_date_grounding.py::test_valid_leap_day_and_multiple_complete_dates_keep_exact_matching",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.00021330000163288787,
+      "detail": "tests\\unit\\test_calendar_date_grounding.py:58: in test_valid_leap_day_and_multiple_complete_dates_keep_exact_matching\n    assert numeric_claim_supported(\"Inicia el 29 de febrero de 2040 y termina el 1 de julio de 2041.\", (source,))\nE   AssertionError: assert False\nE    +  where False = numeric_claim_supported('Inicia el 29 de febrero de 2040 y termina el 1 de julio de 2041.', ('Inicia el 29 de febrero del 2040 y termina el primero de julio del 2041.',))"
+    },
+    {
+      "nodeid": "tests/unit/test_calendar_date_grounding.py::test_cited_claim_accepts_only_the_date_in_its_cited_document",
+      "when": "call",
+      "outcome": "failed",
+      "duration": 0.002312199998414144,
+      "detail": "tests\\unit\\test_calendar_date_grounding.py:68: in test_cited_claim_accepts_only_the_date_in_its_cited_document\n    assert result.grounded, result.validation_detail\nE   AssertionError: afirmacion numerica sin respaldo en sus fuentes citadas\nE   assert False\nE    +  where False = GroundingReport(grounded=False, cited_source_ids=('synthetic#0',), invalid_source_ids=(), declares_insufficiency=False... extractive_verified=False, validation_detail='afirmacion numerica sin respaldo en sus fuentes citadas', claim_index=1).grounded"
+    }
+  ]
+}

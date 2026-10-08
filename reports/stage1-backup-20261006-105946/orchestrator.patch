@@ -1,0 +1,202 @@
+--- before/backend/app/agents/orchestrator.py
++++ after/backend/app/agents/orchestrator.py
+@@ -9,8 +9,8 @@
+ 
+ La autenticacion la resuelve la capa API; el orquestador **empieza** por la
+ autorizacion: resuelve las categorias efectivas ANTES de tocar el vector store y
+-antes de construir cualquier prompt. Si el conjunto autorizado esta vacio, no se
+-llama al modelo en absoluto.
++antes de construir cualquier prompt. Una consulta documental sin evidencia
++autorizada no llama al modelo; las preguntas generales conservan su ruta propia.
+ 
+ El orquestador no consulta fuentes directamente: delega en la tool RAG y en la
+ tool de datos estructurados, y entrega la evidencia ya autorizada al Agente
+@@ -32,6 +32,8 @@
+     DENIED_ANSWER,
+     IDENTITY_ANSWER,
+     INSUFFICIENT_ANSWER,
++    UNKNOWN_BENEFIT_ANSWER,
++    capabilities_answer,
+ )
+ from app.agents.query_planner import build_query_plan
+ from app.audit.service import AuditRecord, AuditService, get_audit_service
+@@ -158,28 +160,18 @@
+         if not question:
+             raise ForbiddenError("El mensaje esta vacio.")
+ 
+-        intent = self._model_policy.classify_intent(question)
+-        if intent is Intent.IDENTITY:
+-            self._memory.rename_if_untitled(db, conversation, question)
+-            self._memory.append_message(db, conversation, role="user", content=question)
+-            return self._finish_identity(db, ctx=ctx, conversation=conversation, started=started)
+-
+         authorized_categories = self._policies.effective_categories(ctx)
+         db.info["authorization_scope"] = authorization_fingerprint(db, ctx, authorized_categories)
+         memory_context = self._memory.build_context(db, ctx, conversation, authorized_categories=authorized_categories)
+-        # Seguimientos elipticos conservan la intencion documental de los turnos
+-        # autorizados. Una pregunta independiente no hereda el tema por defecto.
+-        followup = (
+-            question.casefold()
+-            .lstrip("¿ ")
+-            .startswith(("y ", "entonces ", "en ese caso", "eso ", "cuanto ", "cuánto "))
+-        )
+-        if intent is Intent.DOCUMENTAL and followup and any(
+-            self._model_policy.classify_intent(t.content) in (Intent.DOCUMENTAL, Intent.STRUCTURED, Intent.MIXED)
+-            for t in memory_context.turns
+-        ):
+-            previous = next((t.content for t in reversed(memory_context.turns) if t.role == "user"), "")
+-            question = f"{previous}\nSeguimiento: {question}"
++        if self._policies.effective_categories(ctx) != authorized_categories:
++            raise ForbiddenError("Sus permisos cambiaron durante la consulta. Vuelva a consultar.")
++        # Clasificar despues de autorizar la memoria. Las respuestas anteriores
++        # no son evidencia ni pueden inventar un antecedente para la busqueda.
++        reference = self._model_policy.contextual_reference(
++            question, prior_questions=tuple(t.content for t in memory_context.turns if t.role == "user"),
++        )
++        intent = self._model_policy.classify_intent(question, previous_question=reference)
++        retrieval_question = f"{reference}\nSeguimiento: {question}" if reference else question
+         self._memory.rename_if_untitled(db, conversation, sanitized.text)
+         self._memory.append_message(
+             db,
+@@ -188,10 +180,13 @@
+             content=sanitized.text,
+             authorized_categories=tuple(sorted(authorized_categories)),
+         )
++        if intent in (Intent.IDENTITY, Intent.CAPABILITIES):
++            return self._finish_identity(
++                db, ctx=ctx, conversation=conversation, started=started, intent=intent,
++            )
+         # GENERAL admite conceptos sin referencias internas. Las solicitudes
+         # internas/personales conservan RAG; el fallback general posterior
+         # necesita permiso de configuracion y la misma guardia de privacidad.
+-        authorized_categories = self._policies.effective_categories(ctx)
+         if intent in (Intent.GENERAL, Intent.CONVERSATIONAL):
+             return self._finish_general(
+                 db,
+@@ -211,7 +206,7 @@
+         retrieval, structured_results, tools_used = self._gather_evidence(
+             ctx=ctx,
+             conversation=conversation,
+-            question=question,
++            question=retrieval_question,
+             intent=intent,
+             authorized_categories=authorized_categories,
+             comparative=comparative,
+@@ -219,7 +214,7 @@
+ 
+         # --- 6. suficiencia --------------------------------------------------
+         if not retrieval.has_evidence and not structured_results:
+-            if self._allow_general_fallback(question, intent, authorized_categories):
++            if not reference and self._allow_general_fallback(question, intent, authorized_categories):
+                 return self._finish_general(
+                     db, ctx=ctx, conversation=conversation, question=question,
+                     intent=intent, authorized_categories=authorized_categories, started=started,
+@@ -231,6 +226,7 @@
+                 intent=intent,
+                 started=started,
+                 authorized_categories=authorized_categories,
++                question=retrieval_question,
+             )
+ 
+         # --- 7. seleccion de modelo -----------------------------------------
+@@ -423,36 +419,41 @@
+         ctx: UserContext,
+         conversation: Conversation,
+         started: float,
++        intent: Intent = Intent.IDENTITY,
+     ) -> ChatOutcome:
+-        """Contrato inmutable de identidad, independiente del modelo activo."""
++        """Identidad y capacidades reales, sin inferir datos ni integraciones."""
++        answer = capabilities_answer() if intent is Intent.CAPABILITIES else IDENTITY_ANSWER
+         latency_ms = int((time.perf_counter() - started) * 1000)
+         stored = self._memory.append_message(
+             db,
+             conversation,
+             role="assistant",
+-            content=IDENTITY_ANSWER,
+-            intent=str(Intent.IDENTITY),
++            content=answer,
++            intent=str(intent),
++            answer_basis="general",
+         )
+         self._audit.record(
+             db,
+             AuditRecord(
+                 request_id=ctx.request_id,
+-                event_type="chat.identity",
++                event_type=f"chat.{intent}",
+                 user_opaque_id=ctx.user_id,
+                 role_set_hash=ctx.role_set_hash,
+                 conversation_id=conversation.id,
+-                intent=str(Intent.IDENTITY),
++                intent=str(intent),
+                 authorization_decision="ALLOW",
+                 latency_ms=latency_ms,
+             ),
+         )
+         return ChatOutcome(
+-            answer=IDENTITY_ANSWER,
++            answer=answer,
+             conversation_id=conversation.id,
+             message_id=stored.id,
+             model="",
+-            intent=str(Intent.IDENTITY),
++            intent=str(intent),
+             latency_ms=latency_ms,
++            grounded=False,
++            answer_basis="general",
+         )
+ 
+     def _finish_general(
+@@ -474,6 +475,10 @@
+             )
+         routing = self._model_policy.route(question, intent=intent)
+         memory_context = self._memory.build_context(db, ctx, conversation, authorized_categories=authorized_categories)
++        if intent in (Intent.GENERAL, Intent.DOCUMENTAL):
++            # Una consulta general independiente (incluido el fallback sin
++            # referencias internas) no necesita hechos del tema anterior.
++            memory_context = None
+         db.commit()  # No retener SQL durante la generacion general.
+         synthesis = self._agent.answer_general(
+             question=question,
+@@ -600,6 +605,7 @@
+         intent: Intent,
+         started: float,
+         authorized_categories: frozenset[str],
++        question: str = "",
+     ) -> ChatOutcome:
+         """Fase 6 sin evidencia: distingue adjunto vacio, denegacion e insuficiencia.
+ 
+@@ -629,6 +635,7 @@
+             intent=intent,
+             started=started,
+             authorized_categories=authorized_categories,
++            answer=UNKNOWN_BENEFIT_ANSWER if self._model_policy.is_benefit_reference(question) else INSUFFICIENT_ANSWER,
+         )
+ 
+     def _finish_denied(
+@@ -671,13 +678,14 @@
+         intent: Intent,
+         started: float,
+         authorized_categories: frozenset[str],
++        answer: str = INSUFFICIENT_ANSWER,
+     ) -> ChatOutcome:
+         latency_ms = int((time.perf_counter() - started) * 1000)
+         stored = self._memory.append_message(
+             db,
+             conversation,
+             role="assistant",
+-            content=INSUFFICIENT_ANSWER,
++            content=answer,
+             answer_basis="insufficient",
+             intent=str(intent),
+             authorized_categories=tuple(sorted(authorized_categories)),
+@@ -697,7 +705,7 @@
+             ),
+         )
+         return ChatOutcome(
+-            answer=INSUFFICIENT_ANSWER,
++            answer=answer,
+             conversation_id=conversation.id,
+             message_id=stored.id,
+             model="",

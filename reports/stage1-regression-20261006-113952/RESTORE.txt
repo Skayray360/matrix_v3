@@ -1,0 +1,33 @@
+RESPALDO PARCIAL DE ESTA INTERVENCION
+
+Raiz: C:\wamp64\www\matrix-rh-1.3.0
+Respaldo: reports\stage1-regression-20261006-113952\backup
+
+El respaldo contiene los bytes previos de:
+- backend/app/agents/prompts.py (incluye los cambios aprobados de etapa 1)
+- backend/tests/conftest.py (version discrepante anterior a la restauracion)
+- SHA256SUMS.txt (incluye los hashes aprobados de etapa 1)
+
+frontend/playwright.visual.config.ts no existia al comenzar; baseline.json
+registra esa ausencia. No hay una copia completa del proyecto ni un ZIP nuevo.
+
+Para revertir solamente el ajuste de instrucciones:
+1. Revisar final-verification.json y comprobar que no hay cambios posteriores.
+2. Copiar backup/backend/app/agents/prompts.py sobre la misma ruta en la raiz.
+3. Restaurar solo la entrada anterior de prompts.py desde backup/SHA256SUMS.txt.
+   Se pueden conservar conftest.py y Playwright restaurados: sus entradas nunca
+   se cambiaron y ya coinciden con el manifiesto anterior.
+
+Para revertir TODA esta intervencion:
+1. Revisar final-verification.json; conservar aparte cualquier cambio posterior.
+2. Copiar los tres archivos de backup a sus mismas rutas relativas en la raiz.
+3. Retirar exclusivamente frontend/playwright.visual.config.ts, que estaba ausente.
+   Esto reintroduce deliberadamente las dos discrepancias de pruebas anteriores.
+4. Verificar los hashes original_sha256 de baseline.json y la ausencia anterior.
+
+Desde backend, comprobar la integridad con:
+..\.venv\Scripts\python.exe -B -S -m scripts.preflight --integrity-only --require-manifest
+
+El entorno de pruebas y la cache de uv se encuentran solo en este directorio
+de informes. No requieren reemplazar ni modificar el .venv operativo.
+Ninguna instruccion de recuperacion se ejecuto durante esta intervencion.

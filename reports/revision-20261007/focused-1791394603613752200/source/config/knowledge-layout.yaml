@@ -1,0 +1,14 @@
+# Creado por Aldo Garcia.
+# Solo las carpetas directas declaradas aqui se incorporan desde data/.
+# Este mapeo clasifica documentos; NO concede permisos a usuarios o roles.
+# Las categorias destino deben existir en authorization/categories.yaml.
+version: 1
+data_aliases:
+  Prestaciones: prestaciones
+  Nomina: nomina
+  Compensaciones: compensaciones
+  Seguridad: salud_ambiental
+  # Incluye prestaciones de seguro; no archivos clinicos personales.
+  Gastos medicos: prestaciones
+  # La sigla ACR no determina una categoria ni un permiso: definirla antes.
+  ACR: null

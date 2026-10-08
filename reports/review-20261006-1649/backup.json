@@ -1,0 +1,122 @@
+[
+  {
+    "path": "backend/app/agents/orchestrator.py",
+    "sha256": "c6f65ee523c15544d5c215521b9344c03e23f311cf3fde93a30cc6076b846661"
+  },
+  {
+    "path": "backend/app/agents/knowledge_agent.py",
+    "sha256": "05520fb0848f2bb99c886cbb09ffe814c1f136d892046519f203d406ca498867"
+  },
+  {
+    "path": "backend/app/agents/prompts.py",
+    "sha256": "348e816cac309d1c4d99a6c3e37e7ceca11c528c510046928d715ba1fdbe9013"
+  },
+  {
+    "path": "backend/app/llm/model_policy.py",
+    "sha256": "18b75d0a5e3fb5e81e3eade83755311cb9bc61d477aaa12adcc312283a914b3c"
+  },
+  {
+    "path": "backend/app/common/answers.py",
+    "sha256": "0b1c57119141db3c1ef4e09246a11b029c37c79ed1fa250ff3e49df5b37b2d17"
+  },
+  {
+    "path": "backend/app/common/errors.py",
+    "sha256": "8593c4a8baea6d9f00b489c336eb6556cc207197c60730876ceef20c07f48312"
+  },
+  {
+    "path": "backend/app/common/chat_failures.py",
+    "sha256": "5e28c6ba412f59c0883da18c4d5d658f7d7b6082e6f2cba6b44c3c311e6842f7"
+  },
+  {
+    "path": "backend/app/rag/grounding.py",
+    "sha256": "375a99d51f24d6272bec5fc4ec2730f058313b160b06cb50fa9508da0ec8414f"
+  },
+  {
+    "path": "backend/app/rag/claim_context.py",
+    "sha256": "00f6109c4ebe0fc921e46eba2e56d560df302f3c2b91eadacdbd7223ab844685"
+  },
+  {
+    "path": "frontend/src/security/Markdown.tsx",
+    "sha256": "63be520db8dbafa9c0e277dc8565b230ceda0d08f8d1c71954ae34cb1dd3a4ef"
+  },
+  {
+    "path": "frontend/src/styles.css",
+    "sha256": "5b64ef4028ec392633ead5d969ba04a134a260f1a6c347319da3167893d77691"
+  },
+  {
+    "path": "frontend/tests/Markdown.test.tsx",
+    "sha256": "f5f17d6063ecad34451179d9b98216d81781891c5e09834be34f5c42115ec8d2"
+  },
+  {
+    "path": "frontend/tests/MessageList.test.tsx",
+    "sha256": "e2cf5cfe44c66980fd7850c33de311ff8bbdb1babc2ea9f79618a7a0149a46de"
+  },
+  {
+    "path": "SHA256SUMS.txt",
+    "sha256": "1e10d8c2afadf86f652d915777a0ee1c346310eb2119302179d5f8d96e106e79"
+  },
+  {
+    "path": "backend/tests/unit/test_ai_runtime_contracts.py",
+    "sha256": "810c66b222577dce738425c0e9f6a981ebd6c7480f576e60e78b3c01897457d1"
+  },
+  {
+    "path": "backend/tests/unit/test_chat_failure_codes_127.py",
+    "sha256": "8705f5a2f07515e8c964c8f0357d39f009d59d0d627d00652e7c61e96f9b7892"
+  },
+  {
+    "path": "backend/tests/unit/test_conditional_contract.py",
+    "sha256": "8af8f89a84f637df929310a65ccedd1b66cf31b90e017e08e43865e02bf9d1fe"
+  },
+  {
+    "path": "backend/tests/unit/test_conversation_policy_stage1.py",
+    "sha256": "537fbb6913eba71ca17d964a878e730df3b40bbaa78aa526945de07b85c48296"
+  },
+  {
+    "path": "backend/tests/unit/test_memory_and_agent.py",
+    "sha256": "319fe18b19ab509c7d947f8bd899c87f624b0b3d837a55ae92895d494292e91f"
+  },
+  {
+    "path": "backend/tests/unit/test_rag_citation_transport.py",
+    "sha256": "204a0c7416f1212ac9198e53766d684eac9ac9b515f507131194100816f6b3c3"
+  },
+  {
+    "path": "backend/tests/unit/test_rag_eval_annotations.py",
+    "sha256": "f93c743d8b69d9075b3df63e3b57054bbbcd3da88391f3570c50aa27beee1261"
+  },
+  {
+    "path": "backend/tests/unit/test_rag_integrity_final.py",
+    "sha256": "d3f2010692688286b315b33ed99b0daa72eca71c42951797da74108a686dab3e"
+  },
+  {
+    "path": "backend/tests/unit/test_rag_validation_diagnostics_hotfix.py",
+    "sha256": "508e45f68cfe448c8084bbefc7060c938e4e6becd352e0430ff05277aa39b764"
+  },
+  {
+    "path": "backend/tests/unit/test_rh_routing.py",
+    "sha256": "e653490dcf4d44269519e9475634389ff74c498ae84634e9625f2a0381219bee"
+  },
+  {
+    "path": "frontend/src/pages/ChatPage.tsx",
+    "sha256": "ca4d5b1dbc24b69fbcd3a1f8936673ce58ad277eaa162f482e127ca1327224c1"
+  },
+  {
+    "path": "frontend/tests/ChatPage.test.tsx",
+    "sha256": "c1832268a51b42be89f912df5a4472aea22cb750fbad9c4286d5f91e1bd4ec84"
+  },
+  {
+    "path": "backend/scripts/rag_eval.py",
+    "sha256": "b29303786e56c6907e07a2fcb74f48ab8c5a97ef370a8b9778a9b0371e7c60df"
+  },
+  {
+    "path": "backend/tests/unit/test_local_context_budget.py",
+    "sha256": "152606594af5eee36c9ff189d29f5ecaed219107e2a312a15141171d4e0b99ca"
+  },
+  {
+    "path": "frontend/dist/index.html",
+    "sha256": "5b38033e055890e3fa520078338eab484dcfe65a9ee10ee3801679731deb2c07"
+  },
+  {
+    "path": "backend/app/memory/service.py",
+    "sha256": "8f0510ca917b5a960c6a6806ef4a6c467239b49c5562867c00bb16f54a834fc4"
+  }
+]
