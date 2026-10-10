@@ -18,7 +18,9 @@ from app.agents import chat_service
 from app.agents.orchestrator import Orchestrator
 from app.agents.prompts import answer_system_policy
 from app.api.routes import conversations
-from app.common.errors import AnswerValidationError, ForbiddenError
+from app.common.answers import UNVERIFIED_ANSWER_NOTICE, safe_nonfactual_text
+from app.common.errors import ForbiddenError
+from app.config import get_settings
 from app.database.models import ConversationMessage
 from app.llm.model_policy import Intent, ModelPolicy
 from app.llm.ollama_client import ChatResult
@@ -32,6 +34,11 @@ from tests.unit.test_rag_pipeline_isolated import DIMENSION, make_chunk
 
 pytestmark = pytest.mark.unit
 sql = test_implementation_v2.sql
+
+
+@pytest.fixture(autouse=True)
+def markdown_transport(monkeypatch):
+    monkeypatch.setattr(get_settings(), "answer_structured_output", False)
 
 RH_QUESTIONS = (
     "¿Cuántos días me dan si me caso?",
@@ -240,10 +247,12 @@ def test_weak_retrieval_never_enables_unverified_general_fallback(sql):
     orchestrator, conversation, _, _ = services(
         db, context, categories=context.allowed_categories, retriever=retriever, llm=llm,
     )
-    with pytest.raises(AnswerValidationError):
-        orchestrator.handle_chat(
-            db, ctx=context, conversation=conversation, message="¿Cuántos días me dan si me caso?",
-        )
+    result = orchestrator.handle_chat(
+        db, ctx=context, conversation=conversation, message="¿Cuántos días me dan si me caso?",
+    )
+    assert result.answer.startswith(UNVERIFIED_ANSWER_NOTICE) and safe_nonfactual_text(result.answer)
+    assert result.public_sources() == [] and result.answer_basis == "insufficient"
+    assert "INVENTADO" not in result.answer and "99" not in result.answer
     assert len(llm.calls) == 2
     assert all(messages[0]["content"] == answer_system_policy(documentary_only=True) for messages in llm.calls)
 

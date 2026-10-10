@@ -34,6 +34,7 @@ from app.common.logging import get_logger
 from app.config import get_settings
 
 if TYPE_CHECKING:
+    from app.config import Settings
     from app.llm.provider import ModelClient
 
 logger = get_logger(__name__)
@@ -98,11 +99,15 @@ class OllamaClient:
         base_url: str | None = None,
         timeout: float | None = None,
         client: httpx.Client | None = None,
+        settings: Settings | None = None,
     ) -> None:
-        settings = get_settings()
+        settings = settings or get_settings()
         self.base_url = (base_url or settings.ollama_base_url).rstrip("/")
         self.timeout = timeout if timeout is not None else settings.ollama_timeout_seconds
         self.keep_alive = settings.ollama_keep_alive
+        self._sampling_top_p = settings.llm_top_p
+        self._sampling_top_k = settings.ollama_top_k
+        self._repeat_penalty = settings.ollama_repeat_penalty
         self.embedding_model = settings.ollama_embedding_model
         self.expected_dimension = settings.ollama_embedding_dimension
         self.embedding_cache_size = settings.ollama_embedding_cache_size
@@ -188,15 +193,21 @@ class OllamaClient:
         La temperatura por defecto es baja a proposito: Matrix RH responde sobre
         politicas de RH y debe ceñirse a la evidencia, no producir variedad.
         """
-        options: dict[str, Any] = {"temperature": temperature, "top_p": get_settings().llm_top_p}
+        # No depender de los defaults del Modelfile: quedan fijados tanto el
+        # muestreo como la repeticion. 1.0 conserva cifras y citas repetidas que
+        # pueden ser necesarias al explicar una misma regla documental.
+        options: dict[str, Any] = {
+            "temperature": temperature,
+            "top_p": self._sampling_top_p,
+            "top_k": self._sampling_top_k if top_k is None else top_k,
+            "repeat_penalty": self._repeat_penalty,
+        }
         if num_ctx is not None:
             options["num_ctx"] = num_ctx
         if max_tokens is not None:
             options["num_predict"] = max_tokens
         if stop:
             options["stop"] = stop
-        if top_k is not None:
-            options["top_k"] = top_k
 
         payload = {
             "model": model,

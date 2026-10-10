@@ -50,6 +50,7 @@ logger = get_logger(__name__)
 #: v3 hace de los encabezados una frontera estructural del chunking.
 #: v6 rechaza el truncamiento silencioso al calcular embeddings.
 #: v7 corrige el presupuesto del solape y la procedencia por pagina/hoja.
+#: v8 conserva localizadores Word/PPTX y permite OCR local optativo.
 INGESTION_VERSION = str(PIPELINE_VERSION)
 
 #: Lote de textos por llamada a /api/embed. Equilibra memoria y numero de viajes.
@@ -168,11 +169,13 @@ class IngestionService:
             document is not None
             and not force
             and document.sha256 == digest
-            and document.status == "indexed"
+            and document.status in {"indexed", "empty"}
             and document.deleted_at is None
             and document.ingestion_version == INGESTION_VERSION
             and document.index_fingerprint == indexing_fingerprint(self._llm)
             and document.category == safe_category
+            and self._access_policy_matches(db, document, category=safe_category)
+            and self._document_index_is_complete(document)
         ):
             # Conservar el ID, los chunks y la version al mover todo el proyecto.
             # Solo se actualiza la ubicacion operativa de sus mismos bytes.
@@ -384,9 +387,10 @@ class IngestionService:
         document.storage_path = portable_path
         if (
             not force
-            and document.status == "indexed"
+            and document.status in {"indexed", "empty"}
             and document.ingestion_version == INGESTION_VERSION
             and document.index_fingerprint == indexing_fingerprint(self._llm)
+            and self._document_index_is_complete(document)
         ):
             return IngestionOutcome(
                 document_id=document.id, chunk_count=document.chunk_count, status="unchanged", skipped=True
@@ -394,6 +398,27 @@ class IngestionService:
 
         document.ingestion_version = INGESTION_VERSION
         return self._index_document(db, document=document, data=data, category=None)
+
+    def _document_index_is_complete(self, document: Document) -> bool:
+        """Los bytes/manifest sin cambios no prueban que exista la evidencia.
+
+        Un vacio ya extraido es un estado valido sin generacion. Un documento
+        indexed requiere todos sus puntos activos; un fallo de consulta se
+        propaga y nunca dispara una reconstruccion por supuesta ausencia.
+        """
+        if document.status == "empty":
+            return document.chunk_count == 0 and not document.active_generation
+        if document.status != "indexed" or not document.active_generation or not document.index_fingerprint:
+            return False
+        policy = get_registry().get(document.category or "") if document.scope == SCOPE_CORPORATE else None
+        return self._store.has_complete_generation(
+            document_id=document.id, generation=document.active_generation, scope=document.scope,
+            index_fingerprint=document.index_fingerprint, expected_chunks=document.chunk_count,
+            document_sha256=document.sha256, category=document.category,
+            owner_user_id=document.owner_user_id, conversation_id=document.conversation_id,
+            allowed_groups=tuple(policy.allowed_groups) if policy else (),
+            sensitivity=policy.sensitivity if policy else "private",
+        )
 
     # ------------------------------------------------------------------------
     # Núcleo comun
@@ -422,7 +447,9 @@ class IngestionService:
             db.flush()
             # El commit SQL retira la evidencia; un rollback conserva la anterior.
             document.active_generation = None
+            document.index_fingerprint = indexing_fingerprint(self._llm)
             document.index_cleanup_pending = True
+            self._record_version(db, document, chunk_count=0)
             return IngestionOutcome(
                 document_id=document.id,
                 chunk_count=0,
@@ -439,7 +466,9 @@ class IngestionService:
             document.status = "empty"
             document.chunk_count = 0
             document.active_generation = None
+            document.index_fingerprint = indexing_fingerprint(self._llm)
             document.index_cleanup_pending = True
+            self._record_version(db, document, chunk_count=0)
             db.flush()
             return IngestionOutcome(document_id=document.id, chunk_count=0, status="empty")
 
@@ -494,15 +523,7 @@ class IngestionService:
         document.chunk_count = len(chunks)
         document.error_message = "; ".join(extracted.warnings)[:500] or None
         document.updated_at = utcnow_naive()
-        db.add(
-            DocumentVersion(
-                id=new_id(),
-                document_id=document.id,
-                sha256=document.sha256,
-                chunk_count=len(chunks),
-                ingested_at=utcnow_naive(),
-            )
-        )
+        self._record_version(db, document, chunk_count=len(chunks))
         db.flush()
         if verify_source is not None:
             try:
@@ -615,6 +636,28 @@ class IngestionService:
             existing.sensitivity = policy.sensitivity
             existing.source_owner = policy.source_owner
         db.flush()
+
+    @staticmethod
+    def _record_version(db: Session, document: Document, *, chunk_count: int) -> None:
+        db.add(DocumentVersion(
+            id=new_id(), document_id=document.id, sha256=document.sha256,
+            chunk_count=chunk_count, ingested_at=utcnow_naive(),
+        ))
+        db.flush()
+
+    @staticmethod
+    def _access_policy_matches(db: Session, document: Document, *, category: str) -> bool:
+        """Los mismos bytes no prueban que su politica de acceso siga vigente."""
+        policy = get_registry().get(category)
+        current = db.execute(select(DocumentAccessPolicy).where(
+            DocumentAccessPolicy.document_id == document.id,
+        )).scalar_one_or_none()
+        return (
+            current is not None
+            and set(current.allowed_groups or []) == set(policy.allowed_groups)
+            and current.sensitivity == policy.sensitivity
+            and current.source_owner == policy.source_owner
+        )
 
     # ------------------------------------------------------------------------
     # Borrado

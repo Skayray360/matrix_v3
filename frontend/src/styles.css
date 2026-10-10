@@ -571,7 +571,7 @@ img { display: block; max-width: 100%; }
 }
 .source-chip {
   max-width: 100%;
-  display: inline-flex; align-items: center; gap: 7px;
+  display: inline-flex; flex-wrap: wrap; align-items: center; gap: 7px;
   background: var(--surface); border: 1px solid var(--border); border-radius: 999px;
   padding: 4px 11px 4px 5px; font-size: .74rem; box-shadow: var(--shadow-sm);
 }
@@ -582,7 +582,7 @@ img { display: block; max-width: 100%; }
   font-size: .66rem; font-weight: 800;
 }
 .source-chip .name { font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
-.source-chip .category { color: var(--muted); }
+.source-chip .category, .source-chip .location { color: var(--muted); overflow-wrap: anywhere; }
 
 .typing-indicator { display: flex; align-items: center; gap: 5px; color: var(--muted); }
 .typing-indicator > span {
@@ -750,7 +750,7 @@ img { display: block; max-width: 100%; }
 
 /* ---------------------------------------------------------------------------
    ACCESO
-   Acceso corporativo OIDC/Entra y formulario local de pruebas conservados.
+   Acceso corporativo OIDC/Entra y formulario local conservados.
    Solo cambia la presentacion: fondo industrial y tarjeta translucida.
    --------------------------------------------------------------------------- */
 
@@ -813,6 +813,24 @@ a { color: var(--accent); }
 a:hover { color: var(--accent); }
 
 .scrim { display: none; }
+
+.password-dialog {
+  width: min(440px, calc(100% - 32px)); max-height: calc(100dvh - 32px);
+  padding: 24px; color: var(--text); background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow);
+  overflow: auto;
+}
+.password-dialog::backdrop { background: rgb(0 0 0 / 48%); }
+.password-dialog-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.password-dialog h2 { margin: 0; font-size: 1.15rem; }
+.password-dialog > p { color: var(--muted); font-size: .86rem; }
+.password-dialog .banner { margin: 0 0 16px; }
+.password-dialog .field input {
+  padding: 8px 10px; color: var(--text); background: var(--surface-alt);
+  border: 1px solid var(--border); border-radius: 8px;
+}
+.password-dialog .field input:focus-visible { border-color: var(--accent); }
+.password-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; flex-wrap: wrap; }
 
 /* ---------------------------------------------------------------------------
    ADAPTACION

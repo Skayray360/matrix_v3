@@ -22,6 +22,7 @@ formato de estos mensajes se prueba igual que cualquier otra funcionalidad.
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from pathlib import Path
 
@@ -33,13 +34,19 @@ from scripts.bootstrap import main
 
 pytestmark = pytest.mark.unit
 
-WINDOWS_DIR = PROJECT_ROOT / "windows"
+WINDOWS_DIR = PROJECT_ROOT / "backend/scripts/windows"
 
 
-def _leer(nombre: str) -> str:
-    ruta = WINDOWS_DIR / nombre
+def _leer() -> str:
+    ruta = WINDOWS_DIR / "MatrixRH.ps1"
     assert ruta.is_file(), f"Falta {ruta}"
     return ruta.read_text(encoding="utf-8")
+
+
+def _funcion(nombre: str) -> str:
+    match = re.search(rf"(?ms)^function {re.escape(nombre)}\b.*?(?=^function |^try \{{|\Z)", _leer())
+    assert match, f"Falta la funcion operativa {nombre}"
+    return match.group(0)
 
 
 def _forzar(monkeypatch: pytest.MonkeyPatch, excepcion: BaseException) -> None:
@@ -48,6 +55,10 @@ def _forzar(monkeypatch: pytest.MonkeyPatch, excepcion: BaseException) -> None:
     def explotar(_: argparse.Namespace) -> int:
         raise excepcion
 
+    # La entrega verificada es una precondicion de estas pruebas de mensajes;
+    # la integridad real y su rechazo tienen sus propios fixtures aislados.
+    monkeypatch.setattr("scripts.bootstrap.check_integrity",
+                        lambda report: report.add("integridad_codigo", "PASS", "Entrega sintetica verificada."))
     monkeypatch.setattr("scripts.bootstrap.cmd_status", explotar)
 
 
@@ -97,53 +108,62 @@ class TestSalidaDelBootstrap:
 
 class TestScriptsDeWindows:
     def test_no_se_invoca_python_sin_entorno_virtual(self):
-        """Sin `.venv` cualquier `python -m scripts...` es un ModuleNotFoundError."""
-        contenido = _leer("Common-MatrixRH.ps1")
-        invoke = contenido.split("function Invoke-MatrixPython", 1)[-1]
+        """El controlador explica que falta su Python antes de ejecutar modulos."""
+        contenido = _leer()
+        invoke = _funcion("Invoke-Python")
 
-        assert "Test-MatrixVenv" in invoke
-        assert "INSTALAR_MATRIX_RH.bat" in invoke
+        assert "'venv\\Scripts\\python.exe'" in contenido
+        assert "No existe el Python propio. Ejecute instalar.bat." in invoke
+        assert invoke.index("Test-Path -LiteralPath $script:Python") < invoke.index("Invoke-Checked $script:Python")
 
-    def test_la_salida_nativa_no_se_convierte_en_excepcion_de_powershell(self):
-        """`$ErrorActionPreference = 'Stop'` envuelve stderr en NativeCommandError."""
-        contenido = _leer("Common-MatrixRH.ps1")
+    def test_la_salida_nativa_se_conserva_y_el_error_indica_su_codigo(self):
+        """El helper transmite stdout/stderr sin capturarlos como objetos PowerShell."""
+        invoke = _funcion("Invoke-Checked")
 
-        assert contenido.count("$ErrorActionPreference = 'Continue'") >= 2
+        assert "& $Executable @Arguments" in invoke
+        assert "2>&1" not in invoke and "Out-Null" not in invoke
+        assert "$LASTEXITCODE -ne 0" in invoke
+        assert "(codigo " in invoke and "Consulte el mensaje anterior." in invoke
 
-    def test_la_sonda_de_base_sobrevive_a_la_falta_de_dependencias(self):
-        """La sonda corre antes de que el venv este completo en algunos flujos."""
-        contenido = _leer("Common-MatrixRH.ps1")
+    def test_la_guardia_de_base_solo_corre_tras_instalar_dependencias(self):
+        """Una dependencia faltante detiene uv antes de consultar la base propia."""
+        install = _funcion("Install-Stack")
 
-        assert "DESCONOCIDO:SinDependencias" in contenido
-        # Los imports deben estar dentro del try, no en el nivel del modulo:
-        # de lo contrario el ImportError sale como traceback y no como veredicto.
-        assert "except ImportError:" in contenido
+        assert "Invoke-Checked $uv @('sync'" in install
+        assert "dependencias fijadas por uv.lock" in install
+        assert install.index("Invoke-Checked $uv @('sync'") < install.index("'--guard-install'")
 
-    def test_un_veredicto_inesperado_no_se_interpreta_como_ocupada(self):
-        """Antes, cualquier salida rara marcaba la base como ocupada."""
-        contenido = _leer("Common-MatrixRH.ps1")
+    def test_base_propia_sin_respuesta_se_distingue_del_puerto_ajeno(self):
+        """Los mensajes distinguen un proceso propio caido de una colision ajena."""
+        start = _funcion("Start-MySql")
+        complete = _funcion("Complete-MySqlBootstrap")
 
-        assert "$veredictos = @('LIBRE', 'PROPIA', 'EXISTE_VACIA')" in contenido
-        assert "EXISTE_VACIA" in contenido
+        assert "Complete-MySqlBootstrap" in start
+        assert "MySQL propio no responde al control autenticado." in complete
+        assert "Se conserva el bootstrap pendiente para reintentar." in complete
+        assert "ocupado por otro proceso. No se detiene." in start
+        assert "El datadir MySQL no esta vacio pero tampoco completo. No se reinicializa." in start
+        assert start.index("Owned-Process 'mysql'") < start.index("Port-Free $port")
 
     def test_la_comprobacion_de_base_va_despues_de_instalar_dependencias(self):
-        """El orden es el defecto: la sonda usa SQLAlchemy y necesita el venv."""
-        contenido = _leer("Install-MatrixRH.ps1")
-
-        dependencias = contenido.index("Dependencias de Python")
-        base = contenido.index("Base de datos destino")
-
-        assert dependencias < base
+        """Nunca anunciar instalacion completa antes de la guardia y migraciones."""
+        install = _funcion("Install-Stack")
+        dependencies = install.index("Instalando Python propio")
+        guard = install.index("'--guard-install'")
+        migrate = install.index("'scripts.bootstrap','migrate'")
+        complete = install.index("INSTALACION TERMINADA")
+        assert dependencies < guard < migrate < complete
 
     def test_el_diagnostico_sin_venv_lo_dice_en_lugar_de_reventar(self):
-        contenido = _leer("Diagnose-MatrixRH.ps1")
-
-        assert "DIAGNOSTICO INCOMPLETO" in contenido
-        assert "no esta instalado en este equipo" in contenido
-        # La guardia debe ir antes de la primera llamada a Python.
-        guardia = contenido.index("Test-MatrixVenv")
-        primera_llamada = contenido.index("Invoke-MatrixPython")
-        assert guardia < primera_llamada
+        diagnose = _funcion("Diagnose")
+        check = _funcion("Check")
+        invoke = _funcion("Invoke-Python")
+        assert "Check 'Python propio' { Invoke-Python" in diagnose
+        assert "No existe el Python propio. Ejecute instalar.bat." in invoke
+        assert "catch" in check and "$script:CheckFailures++" in check
+        assert "'[FALLA] ' + $Name + ': ' + $_.Exception.Message" in check
+        assert "'Resultado: ' + $script:CheckFailures + ' FALLA(S).'" in diagnose
+        assert "Diagnostico con fallos. Compare los componentes anteriores." in diagnose
 
 
 class TestQualityGate:

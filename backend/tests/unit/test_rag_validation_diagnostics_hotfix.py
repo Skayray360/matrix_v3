@@ -7,6 +7,7 @@ import pytest
 
 from app.agents.knowledge_agent import KnowledgeAgent, SynthesisResult
 from app.agents.orchestrator import Orchestrator
+from app.common.answers import UNVERIFIED_ANSWER_NOTICE, safe_nonfactual_text
 from app.common.errors import AnswerValidationError
 from app.config import get_settings
 from app.llm.model_policy import Intent, ModelPolicy
@@ -18,14 +19,17 @@ from tests.unit.test_memory_and_agent import EVIDENCIAS, FakeLlm
 
 def test_unverifiable_answer_does_not_claim_no_documents(caplog, monkeypatch):
     monkeypatch.setattr(get_settings(), "answer_evidence_mode", "cited")
+    monkeypatch.setattr(get_settings(), "answer_structured_output", False)
     llm = FakeLlm(respuestas=[
         "Son 999 dias [[prestaciones/inventado.md#9]].",
         "Son 999 dias [[prestaciones/inventado.md#9]].",
     ])
-    with pytest.raises(AnswerValidationError):
-        KnowledgeAgent(llm=llm, policy=ModelPolicy()).synthesize(
-            question="Cuantos dias?", evidences=EVIDENCIAS, model_name="gemma4:latest",
-        )
+    result = KnowledgeAgent(llm=llm, policy=ModelPolicy()).synthesize(
+        question="Cuantos dias?", evidences=EVIDENCIAS, model_name="gemma4:latest",
+    )
+    assert result.answer.startswith(UNVERIFIED_ANSWER_NOTICE) and safe_nonfactual_text(result.answer)
+    assert result.answer_basis == "insufficient" and not result.cited_source_ids
+    assert "999" not in result.answer and "inventado.md" not in result.answer
     assert len(llm.llamadas) == 2
     event = next(r for r in caplog.records if r.message == "agent.answer_validation_failed")
     assert event.evidence_count == 2 and event.invalid_source_count == 1

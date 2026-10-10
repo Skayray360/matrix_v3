@@ -12,15 +12,18 @@ import { useCallback, useEffect, useState } from "react";
 
 import { ChatPage } from "./pages/ChatPage";
 import { LoginPage } from "./pages/LoginPage";
-import { api, ApiError, type Me } from "./services/api";
+import { api, ApiError, setCsrfToken, type Me } from "./services/api";
 
-type SessionState = "checking" | "anonymous" | "authenticated";
+type SessionState = "checking" | "anonymous" | "authenticated" | "unavailable";
 
 export function App(): JSX.Element {
   const [state, setState] = useState<SessionState>("checking");
   const [me, setMe] = useState<Me | null>(null);
+  const [sessionError, setSessionError] = useState("");
 
   const loadSession = useCallback(async () => {
+    setState("checking");
+    setSessionError("");
     try {
       const profile = await api.me();
       setMe(profile);
@@ -31,10 +34,15 @@ export function App(): JSX.Element {
         setMe(null);
         return;
       }
-      // Un fallo distinto de 401 (backend caido) tambien deja al usuario en la
-      // pantalla de acceso, pero con el mensaje de error visible.
-      setState("anonymous");
+      // Un fallo de transporte/servidor no demuestra que la sesion haya
+      // vencido. Permite consultar de nuevo sin pedir otra vez credenciales.
+      setState("unavailable");
       setMe(null);
+      setSessionError(
+        error instanceof ApiError
+          ? `${error.message}${error.requestId ? ` (referencia: ${error.requestId})` : ""}`
+          : "No fue posible contactar al servidor de Matrix RH. Compruebe la conexión e inténtelo nuevamente.",
+      );
     }
   }, []);
 
@@ -51,6 +59,15 @@ export function App(): JSX.Element {
       if (!(caught instanceof ApiError && caught.status === 401)) throw caught;
     }
     setMe(null);
+    setCsrfToken("");
+    setSessionError("");
+    setState("anonymous");
+  }, []);
+
+  const handleSessionExpired = useCallback(() => {
+    setCsrfToken("");
+    setMe(null);
+    setSessionError("Su sesión expiró. Inicie sesión nuevamente.");
     setState("anonymous");
   }, []);
 
@@ -65,8 +82,29 @@ export function App(): JSX.Element {
   }
 
   if (state === "anonymous" || !me) {
-    return <LoginPage onAuthenticated={loadSession} />;
+    if (state === "unavailable") {
+      return (
+        <main className="recovery-shell">
+          <section className="recovery-card" role="alert">
+            <h1>No se pudo verificar su sesión</h1>
+            <p>{sessionError}</p>
+            <button className="secondary-button" type="button" onClick={() => void loadSession()}>
+              Reintentar conexión
+            </button>
+          </section>
+        </main>
+      );
+    }
+    return <LoginPage onAuthenticated={loadSession} notice={sessionError} />;
   }
 
-  return <ChatPage key={me.user_id} me={me} onLogout={handleLogout} />;
+  return (
+    <ChatPage
+      key={me.user_id}
+      me={me}
+      onLogout={handleLogout}
+      onProfileUpdated={setMe}
+      onSessionExpired={handleSessionExpired}
+    />
+  );
 }

@@ -17,7 +17,10 @@ from decimal import Decimal, InvalidOperation
 from fractions import Fraction
 
 _NUMBER = r"[+-]?(?:\d+(?:[.,]\d+)?|[.,]\d+)"
-_NUMBER_RE = re.compile(rf"(?<![\w.,]){_NUMBER}(?!\d|[.,]\d)")
+# Capturar la cifra completa antes de validar sus separadores evita omitir
+# 1,000,000 y aceptar un importe no respaldado por una comparacion vacia.
+_NUMERIC_LITERAL = r"[+-]?(?:\d+(?:[.,]+\d+)*|[.,]\d+)"
+_NUMBER_RE = re.compile(rf"(?<![\w.,]){_NUMERIC_LITERAL}(?!\d|[.,]\d)")
 _WORD_VALUES = {
     "cero": "0", "un": "1", "uno": "1", "una": "1", "dos": "2",
     "tres": "3", "cuatro": "4", "cinco": "5", "seis": "6", "siete": "7",
@@ -35,14 +38,14 @@ _UNITS = {
 _UNIT_PATTERN = "|".join(sorted(_UNITS, key=len, reverse=True))
 _WORD_PATTERN = "|".join(sorted(_WORD_VALUES, key=len, reverse=True))
 _QUANTITY_RE = re.compile(
-    rf"(?<![\w.,])(?P<value>{_NUMBER}|{_WORD_PATTERN})\s*"
+    rf"(?<![\w.,])(?P<value>{_NUMERIC_LITERAL}|{_WORD_PATTERN})\s*"
     rf"(?P<unit>%|por\s+ciento\b|(?:{_UNIT_PATTERN})\b)"
 )
 # No extraer el ultimo cardinal de una cantidad compuesta como 'treinta y dos'.
 _COMPOUND_PREFIX = re.compile(r"\b(?:y|cien|ciento|\w+cientos|mil|millon|millones)\s+$")
 _QUINQUENNIUM_RE = re.compile(r"\bquinquenio\b")
 _FRACTION_PREFIX = re.compile(
-    r"\b(?:medio|media|mitad|tercio|cuarto|fraccion|parte)\b(?:\W+\w+){0,3}\W*$"
+    r"\b(?:medio|media|mitad|tercio|cuarto|fraccion|parte|doble|triple|cuadruple)\b(?:\W+\w+){0,3}\W*$"
 )
 _QUINQUENNIUM_SUFFIX = re.compile(
     rf"\s+(?:(?:y|mas|menos)\s+)?(?:medio|media|doble|triple|{_WORD_PATTERN}|{_NUMBER})\b"
@@ -66,6 +69,27 @@ _CALENDAR_DATE_RE = re.compile(
     r"(?P<month>" + "|".join(_MONTH_NUMBERS) + r")\s+(?:de|del)\s+"
     r"(?P<year>\d{4})(?!\w|[.,]\d)"
 )
+_ISO_DATE_RE = re.compile(r"(?<![\w-])\d{4}-\d{2}-\d{2}(?!\w|-\d)")
+# Estos valores son identificadores, no cantidades. Se cotejan completos:
+# ADC01 no respalda ADC02; una version tampoco aporta cifras para un pago.
+_PATH_LITERAL_RE = re.compile(
+    r"(?<!\w)(?:[a-z][a-z0-9+.-]*://|[a-z]:[\\/]|\\\\|/)"
+    r"[^\s`<>\[\]{}\"'|]+"
+)
+_ALPHANUMERIC_LITERAL_RE = re.compile(
+    r"(?<![\w.-])(?=[\w.-]*[a-z])(?=[\w.-]*\d)"
+    r"\w+(?:[.-]\w+)*(?!\w)"
+)
+_DOTTED_LITERAL_RE = re.compile(
+    r"(?<![\w.,])(?:0|[1-9]\d*)(?:\.(?:0|[1-9]\d*)){2,}(?!\w|\.\d)"
+)
+_ROW_RANGE_RE = re.compile(
+    rf"(?<![\w.,])(?P<low>{_NUMBER})\s*(?:[-–—]|\b(?:a|y)\b)\s*"
+    rf"(?P<high>{_NUMBER})(?:\s+(?:anos|anios)\b)?"
+)
+_OPEN_ROW_RANGE_RE = re.compile(
+    rf"(?<![\w.,])(?P<low>{_NUMBER})\s+(?:(?:anos|anios)\s+)?en adelante\b"
+)
 
 
 def _is_percent(unit: str) -> bool:
@@ -88,6 +112,7 @@ class _Facts:
     typed_spans: list[tuple[int, int]] = field(default_factory=list)
     unsupported_compound: bool = False
     invalid_calendar_date: bool = False
+    invalid_number: bool = False
 
 
 def _quantity_value(value: str) -> Decimal | str:
@@ -96,11 +121,80 @@ def _quantity_value(value: str) -> Decimal | str:
     # convertir mil pesos en uno. 0.500, .5 y 0,50 no tienen esa ambiguedad.
     if re.fullmatch(r"[+-]?[1-9]\d{0,2}[.,]\d{3}", value):
         return "literal:" + value
-    return Decimal(value.replace(",", "."))
+    if re.fullmatch(_NUMBER, value):
+        return Decimal(value.replace(",", "."))
+    # Varios grupos completos o agrupacion mas separador decimal diferente
+    # son inequívocos. Nunca eliminar puntuacion arbitraria.
+    for group, decimal in ((",", "."), (".", ",")):
+        grouped = rf"[+-]?[1-9]\d{{0,2}}(?:{re.escape(group)}\d{{3}})"
+        if re.fullmatch(grouped + rf"{{2,}}(?:{re.escape(decimal)}\d+)?", value) or re.fullmatch(
+            grouped + rf"+(?:{re.escape(decimal)}\d+)", value,
+        ):
+            return Decimal(value.replace(group, "").replace(decimal, "."))
+    raise InvalidOperation("unsupported numeric representation")
+
+
+def _document_literals(text: str) -> tuple[str, frozenset[str]]:
+    """Aisla sintaxis tecnica sin convertir una cifra mal formada en importe.
+
+    Solo se retiran literales completos y con digitos. Los separadores de
+    miles reconocibles conservan su contrato de cantidad, y una version con
+    unidad monetaria/temporal sigue siendo una cantidad invalida.
+    """
+    spans: list[tuple[int, int]] = []
+    values: set[str] = set()
+    numbers = tuple(_NUMBER_RE.finditer(text))
+    for pattern in (_PATH_LITERAL_RE, _ALPHANUMERIC_LITERAL_RE, _DOTTED_LITERAL_RE):
+        for match in pattern.finditer(text):
+            value = match.group().rstrip(".,;:!?)")
+            if not value or not re.search(r"\d", value):
+                continue
+            if pattern in (_PATH_LITERAL_RE, _ALPHANUMERIC_LITERAL_RE) and not re.search(r"[a-z]", value):
+                continue
+            if pattern is _ALPHANUMERIC_LITERAL_RE and any(
+                number.start() < match.start() < number.end() for number in numbers
+            ):
+                # No rescatar el sufijo "000dias" de "1,,000dias".
+                continue
+            # "13dias" conserva la misma unidad que "13 dias". Un sufijo
+            # de unidad no convierte cantidades invalidas en identificadores.
+            if pattern is not _PATH_LITERAL_RE and _QUANTITY_RE.match(text, match.start()):
+                continue
+            if any(start < match.end() and match.start() < end for start, end in spans):
+                if pattern is _ALPHANUMERIC_LITERAL_RE:
+                    # Un nombre de archivo/host completo puede explicarse
+                    # separado de la ruta que lo contiene; no recombinar rutas.
+                    values.add(value)
+                continue
+            if pattern is _DOTTED_LITERAL_RE:
+                try:
+                    _quantity_value(value)
+                except InvalidOperation:
+                    pass
+                else:
+                    continue
+            spans.append((match.start(), match.start() + len(value)))
+            values.add(value)
+    for start, end in sorted(spans, reverse=True):
+        text = text[:start] + " " * (end - start) + text[end:]
+    return text, frozenset(values)
 
 
 def _facts(text: str) -> _Facts:
     result = _Facts(raw={m.group() for m in _NUMBER_RE.finditer(text)})
+    for token in result.raw:
+        try:
+            _quantity_value(token)
+        except InvalidOperation:
+            result.invalid_number = True
+    for match in _ISO_DATE_RE.finditer(text):
+        try:
+            calendar_value = date.fromisoformat(match.group())
+        except ValueError:
+            result.invalid_calendar_date = True
+            continue
+        result.quantities.add((calendar_value.isoformat(), "calendar_date"))
+        result.typed_spans.append(match.span())
     for match in _CALENDAR_DATE_RE.finditer(text):
         # "Primero de julio del 2041" y "1 de julio de 2041" son la misma
         # fecha completa. El dia no acredita importes, plazos ni otra fecha
@@ -125,7 +219,12 @@ def _facts(text: str) -> _Facts:
         unit = "percent" if _is_percent(unit) else _UNITS[unit]
         # Decimal conserva signo y valor exacto: 0,50%, .5% y 0.500% son
         # representaciones de la misma cantidad, sin convertir unidades.
-        result.quantities.add((_quantity_value(value), unit))
+        try:
+            numeric_value = _quantity_value(value)
+        except InvalidOperation:
+            result.invalid_number = True
+            continue
+        result.quantities.add((numeric_value, unit))
         result.typed_spans.append(match.span())
     for match in _QUINQUENNIUM_RE.finditer(text):
         # Singular significa cinco anios. No multiplicar 'dos quinquenios'.
@@ -263,20 +362,37 @@ def tenure_tables(text: str) -> tuple[TenureTable, ...]:
     return tuple(result)
 
 
-def _row_claim_supported(claim: str, table: TenureTable) -> bool:
-    """Una cifra de la columna % necesita su fila, no una pertenencia global."""
-    spans = list(re.finditer(rf"({_NUMBER})\s*[-–—]\s*({_NUMBER})", claim))
-    open_spans = list(re.finditer(rf"({_NUMBER})\s+en adelante", claim))
-    percentages = [Decimal(m['value'].replace(',', '.')) for m in _QUANTITY_RE.finditer(claim)
-                   if _is_percent(m['unit']) and m['value'] not in _WORD_VALUES]
-    if not percentages or len(spans) + len(open_spans) != 1:
-        return False
-    if spans:
-        low, high = (Fraction(value.replace(',', '.')) for value in spans[0].groups())
-    else:
-        low, high = Fraction(open_spans[0][1].replace(',', '.')), None
-    return any(row.low == low and row.high == high and all(p == row.percent for p in percentages)
-               for row in table.rows)
+def _verified_table_rows(claim: str, tables: tuple[TenureTable, ...]) -> tuple[str, bool]:
+    """Liga cada porcentaje a su intervalo dentro de la misma clausula.
+
+    Una cita puede respaldar varias filas. Se comprueba cada fila antes de
+    retirar SOLO su intervalo y porcentaje del cotejo de cantidades; nunca
+    se acredita globalmente un porcentaje por aparecer en otra fila.
+    """
+    if not tables:
+        return claim, True
+    parts = re.split(r"([;\n]|(?<=[.!?])\s+)", claim)
+    for index, part in enumerate(parts):
+        ranges = list(_ROW_RANGE_RE.finditer(part)) + list(_OPEN_ROW_RANGE_RE.finditer(part))
+        percentages = [m for m in _QUANTITY_RE.finditer(part) if _is_percent(m["unit"])]
+        if not ranges or not percentages:
+            continue
+        if len(ranges) != 1:
+            return claim, False
+        span = ranges[0]
+        low = Fraction(span["low"].replace(",", "."))
+        high = (Fraction(span["high"].replace(",", ".")) if "high" in span.groupdict() else None)
+        try:
+            values = {_quantity_value(_WORD_VALUES.get(m["value"], m["value"])) for m in percentages}
+        except InvalidOperation:
+            return claim, False
+        if not any(row.low == low and row.high == high and values == {row.percent}
+                   for table in tables for row in table.rows):
+            return claim, False
+        for start, end in sorted([span.span(), *(m.span() for m in percentages)], reverse=True):
+            part = part[:start] + " " * (end - start) + part[end:]
+        parts[index] = part
+    return "".join(parts), True
 
 
 def numeric_claim_supported(claim: str, source_texts: tuple[str, ...]) -> bool:
@@ -286,11 +402,14 @@ def numeric_claim_supported(claim: str, source_texts: tuple[str, ...]) -> bool:
     Nunca se transforma globalmente '70' en '70%'. Las fuentes se analizan por
     separado para impedir que un encabezado de un documento tipifique otro.
     """
-    plain_claim = _plain(claim)
-    claim_facts = _facts(plain_claim)
-    if claim_facts.unsupported_compound or claim_facts.invalid_calendar_date:
+    plain_claim, literals = _document_literals(_plain(claim))
+    source_parts = tuple(_document_literals(_plain(source)) for source in source_texts)
+    if not literals.issubset({value for _, values in source_parts for value in values}):
         return False
-    if any(unit == 'percent' for _, unit in claim_facts.quantities):
+    initial_facts = _facts(plain_claim)
+    if initial_facts.unsupported_compound or initial_facts.invalid_calendar_date or initial_facts.invalid_number:
+        return False
+    if any(_is_percent(m["unit"]) for m in _QUANTITY_RE.finditer(plain_claim)):
         for source in source_texts:
             text = _plain(source)
             headers = sum(bool(_TENURE_HEADER.fullmatch(
@@ -301,29 +420,18 @@ def numeric_claim_supported(claim: str, source_texts: tuple[str, ...]) -> bool:
                 # prosa libre cuyos porcentajes se admiten por coincidencia.
                 return False
     tables_in_sources = tuple(table for source in source_texts for table in tenure_tables(source))
-    if (tables_in_sources and re.search(rf'{_NUMBER}(?:\s*[-–—]\s*{_NUMBER}|\s+en adelante)', plain_claim)
-            and any(unit == 'percent' for _, unit in claim_facts.quantities)
-            and not any(_row_claim_supported(plain_claim, table) for table in tables_in_sources)):
+    plain_claim, rows_valid = _verified_table_rows(plain_claim, tables_in_sources)
+    if not rows_valid:
+        return False
+    claim_facts = _facts(plain_claim)
+    if claim_facts.unsupported_compound or claim_facts.invalid_calendar_date or claim_facts.invalid_number:
         return False
     raw_supported: set[str] = set()
     quantities_supported: set[tuple[Decimal | str, str]] = set()
-    for source in source_texts:
-        text = _plain(source)
+    for text, _ in source_parts:
         facts = _facts(text)
-        tables = tenure_tables(text)
-        if tables and re.search(rf'{_NUMBER}\s*[-–—]\s*{_NUMBER}', plain_claim) and any(
-            unit == 'percent' for _, unit in claim_facts.quantities
-        ) and not any(_row_claim_supported(plain_claim, table) for table in tables):
-            continue
         raw_supported.update(facts.raw)
         quantities_supported.update(facts.quantities)
-        # Solo se tipifica la fila expresamente descrita. La aplicacion al caso
-        # se verifica por separado con entradas y reglas identificadas.
-        for table in tables:
-            if _row_claim_supported(plain_claim, table):
-                quantities_supported.update(
-                    (value, unit) for value, unit in claim_facts.quantities if unit == "percent"
-                )
     if not claim_facts.quantities.issubset(quantities_supported):
         return False
     for match in _NUMBER_RE.finditer(plain_claim):

@@ -101,11 +101,12 @@ def chat(
         except Exception:
             resources.close()
             raise
-    with resources:
+    with resources, queue.request_control(operation_id) as cancel_event:
         result = execute_chat(
             db, ctx=ctx, conversation=conversation, message=payload.message,
             expected_scope=expected_scope, operation_id=operation_id,
             reauthorize=lambda check_db: get_user_context(request, check_db),
+            cancel_event=cancel_event,
         )
         return ChatResponse.model_validate(result.model_dump())
 
@@ -173,4 +174,5 @@ def cancel_chat(
         .values(status="cancelled", message=None, session_id=None)
     )
     db.commit()
+    get_chat_queue().cancel(operation_id)
     return {"ok": True}

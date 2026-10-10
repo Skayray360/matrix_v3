@@ -1,3 +1,4 @@
+# Creado por Aldo Garcia.
 """Regresiones sinteticas de filas, columnas, condiciones y procedencia."""
 
 from collections import Counter
@@ -97,7 +98,9 @@ def test_noncomparative_retrieval_keeps_requested_source_when_older_source_match
         calls.append(kwargs)
         return items
 
-    store = SimpleNamespace(collection_for=lambda scope: scope, search=search)
+    store = SimpleNamespace(
+        collection_for=lambda scope: scope, search=search, list_authorized_documents=lambda **kwargs: [],
+    )
     llm = SimpleNamespace(embed_one=lambda text: [1.0, 0.0])
     monkeypatch.setattr(module, "indexing_fingerprint", lambda client: "synthetic-fingerprint")
     result = Retriever(store=store, llm=llm).retrieve(

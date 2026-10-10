@@ -58,6 +58,9 @@ def test_no_se_aprobaran_cifras_o_citas_sin_respaldo(answer):
 def test_prompt_permite_sintesis_y_distingue_datos_internos(monkeypatch):
     monkeypatch.setattr(get_settings(), "answer_evidence_mode", "cited")
     monkeypatch.setattr(get_settings(), "answer_allow_general_knowledge", True)
+    # La orientacion mixta es un contrato del transporte Markdown compatible;
+    # el transporte JSON documental se prueba por separado y no la habilita.
+    monkeypatch.setattr(get_settings(), "answer_structured_output", False)
     messages = build_answer_messages(question="Como puedo solicitar vacaciones?", evidences=evidence())
     assert "Puedes complementar" in messages[0]["content"]
     assert "unica fuente" in messages[0]["content"]
@@ -80,20 +83,18 @@ class FailingDeepClient:
 
 
 @pytest.mark.parametrize("kind", [InferenceFailureKind.TIMEOUT, InferenceFailureKind.INCOMPLETE])
-def test_modelo_distinto_fallido_tiene_un_intento_gemma_con_evidencia_autorizada(monkeypatch, kind):
+def test_modelo_distinto_fallido_conserva_error_y_no_activa_gemma(monkeypatch, kind):
     monkeypatch.setattr(get_settings(), "answer_evidence_mode", "cited")
     monkeypatch.setattr(get_settings(), "ollama_deep_model", "synthetic-deep-generator")
     policy = ModelPolicy()
     client = FailingDeepClient(kind)
-    answer = KnowledgeAgent(llm=client, policy=policy).synthesize(
-        question="Compara en profundidad las condiciones", evidences=evidence(),
-        model_name=policy.deep_model, choice=ModelChoice.DEEP,
-    )
-    assert [call[0] for call in client.calls] == [policy.deep_model, policy.fast_model]
-    assert answer.model == policy.fast_model
-    assert answer.cited_source_ids == (SOURCE,)
-    assert answer.answer_basis == "documented"
-    assert client.calls[1][2]["num_ctx"] == get_settings().ollama_fast_num_ctx
+    with pytest.raises(InferenceFailureError) as caught:
+        KnowledgeAgent(llm=client, policy=policy).synthesize(
+            question="Compara en profundidad las condiciones", evidences=evidence(),
+            model_name=policy.deep_model, choice=ModelChoice.DEEP,
+        )
+    assert caught.value.failure_kind is kind
+    assert [call[0] for call in client.calls] == [policy.deep_model]
 
 
 def test_fallo_gemma_no_entra_en_un_bucle_de_modelos():
@@ -114,7 +115,7 @@ def test_fallo_gemma_no_entra_en_un_bucle_de_modelos():
     assert client.calls == 1
 
 
-def test_resumen_jerarquico_conserva_evidencia_si_reduce_agota_su_etapa(monkeypatch):
+def test_resumen_jerarquico_informa_fallo_operativo_si_reduce_agota_su_etapa(monkeypatch):
     policy = ModelPolicy()
     client = FailingDeepClient()
     agent = KnowledgeAgent(llm=client, policy=policy)
@@ -123,14 +124,13 @@ def test_resumen_jerarquico_conserva_evidencia_si_reduce_agota_su_etapa(monkeypa
     monkeypatch.setattr(agent, "synthesize", lambda **kwargs: SynthesisResult(
         answer=partial, model=policy.fast_model, latency_ms=12, grounding=verified, cited_source_ids=(SOURCE,),
     ))
-    result = agent._synthesize_hierarchical_summary(
-        question="Resume todas las partes", evidences=evidence(), model_name=policy.fast_model,
-        choice=ModelChoice.FAST, deep_model_name=policy.deep_model, scope_note="", evidence_truncated=False,
-    )
+    with pytest.raises(InferenceFailureError) as caught:
+        agent._synthesize_hierarchical_summary(
+            question="Resume todas las partes", evidences=evidence(), model_name=policy.fast_model,
+            choice=ModelChoice.FAST, deep_model_name=policy.deep_model, scope_note="", evidence_truncated=False,
+        )
+    assert caught.value.failure_kind is InferenceFailureKind.TIMEOUT
     assert [call[0] for call in client.calls] == [policy.deep_model]
-    assert result.hierarchical and result.grounding.grounded
-    assert result.cited_source_ids == (SOURCE,)
-    assert evidence()[0].text in result.answer
 
 
 def test_resumen_no_acepta_solo_teoria_general_cuando_hay_documento(monkeypatch):

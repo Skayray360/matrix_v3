@@ -4,10 +4,14 @@ import json
 
 import pytest
 
-from app.agents.documentary_output import DOCUMENTARY_SCHEMA, render_documentary_output
+from app.agents.documentary_output import (
+    DOCUMENTARY_GENERATION_SCHEMA,
+    DocumentaryOutputError,
+    render_documentary_output,
+)
 from app.agents.knowledge_agent import KnowledgeAgent
 from app.agents.prompts import build_answer_messages
-from app.common.errors import AnswerValidationError
+from app.common.answers import UNVERIFIED_ANSWER_NOTICE, safe_nonfactual_text
 from app.common.inference_errors import InferenceFailureError, InferenceFailureKind
 from app.config import get_settings
 from app.llm.model_policy import Intent, ModelPolicy
@@ -60,7 +64,7 @@ def test_rendered_claim_is_verified_and_public_citation_is_canonical():
     assert result.grounding.grounded and not result.grounding.factual_verified
     assert "[[prestaciones/regla.txt#1]]" in result.answer
     assert '"claims"' not in result.answer
-    assert client.calls[0]["response_schema"] == DOCUMENTARY_SCHEMA
+    assert client.calls[0]["response_schema"] == DOCUMENTARY_GENERATION_SCHEMA
     assert len(client.calls) == 1
 
 
@@ -75,8 +79,10 @@ def test_rendered_claim_is_verified_and_public_citation_is_canonical():
 ])
 def test_bad_claim_or_transport_is_never_published(answer):
     client = Client(answer, answer)
-    with pytest.raises(AnswerValidationError):
-        run(client)
+    result = run(client)
+    assert result.answer.startswith(UNVERIFIED_ANSWER_NOTICE)
+    assert safe_nonfactual_text(result.answer) and result.cited_source_ids == ()
+    assert result.answer_basis == "insufficient"
     assert len(client.calls) == 2
 
 
@@ -115,11 +121,12 @@ def test_switch_off_preserves_legacy_transport(monkeypatch):
     assert "response_schema" not in client.calls[0]
 
 
-def test_schema_instructions_are_excluded_from_summary_and_extractive(monkeypatch):
+def test_schema_instructions_cover_summary_but_exclude_extractive(monkeypatch):
     normal = build_answer_messages(question="Regla?", evidences=(evidence(),))
     summary = build_answer_messages(question="Resume", evidences=(evidence(),), document_summary=True)
     assert "TRANSPORTE:" in normal[0]["content"]
-    assert "TRANSPORTE:" not in summary[0]["content"]
+    assert "TRANSPORTE:" in summary[0]["content"]
+    assert "APLICACION_CONDICIONAL" not in summary[0]["content"]
     monkeypatch.setattr(get_settings(), "answer_evidence_mode", "extractive")
     extractive = build_answer_messages(question="Regla?", evidences=(evidence(),))
     assert "TRANSPORTE:" not in extractive[0]["content"]
@@ -138,3 +145,41 @@ def test_schema_reserves_context_separately_from_visible_messages(monkeypatch):
     enabled_budget = agent._input_budget_chars(policy.fast_model, Intent.DOCUMENTAL)
     monkeypatch.setattr(get_settings(), "answer_structured_output", False)
     assert agent._input_budget_chars(policy.fast_model, Intent.DOCUMENTAL) > enabled_budget
+
+
+@pytest.mark.parametrize("answer,code", [
+    ("not JSON with PRIVATE_TEXT", "json_parse"),
+    ('{"status":"insufficient","status":"answered","claims":[],"clarification":""}', "duplicate_property"),
+    ('{}', "schema_violation"),
+    (payload("Una regla.\nOtra regla."), "invalid_claim_format"),
+    (payload(alias="E99"), "unknown_alias"),
+    ('{"status":"answered","claims":[],"clarification":""}', "empty_answer"),
+    ('{"status":"insufficient","claims":[],"clarification":"PRIVATE_TEXT"}', "unsafe_clarification"),
+])
+def test_contract_errors_have_finite_causes_without_model_text(answer, code, caplog):
+    with pytest.raises(DocumentaryOutputError) as raised:
+        render_documentary_output(answer, {"E1": evidence().source_id})
+    assert raised.value.code == code
+    assert "PRIVATE_TEXT" not in str(raised.value)
+    result = run(Client(answer, answer))
+    assert result.answer.startswith(UNVERIFIED_ANSWER_NOTICE) and "PRIVATE_TEXT" not in result.answer
+    event = next(record for record in caplog.records if record.message == "agent.answer_validation_failed")
+    assert event.validation_detail == f"contrato documental JSON invalido: {code}"
+    assert not result.cited_source_ids
+
+
+def test_unknown_schema_alias_still_blocks_calculated_recovery(caplog):
+    from tests.unit.test_calculated_application import QUESTION, SOURCE
+
+    client = Client(
+        payload("Si los datos declarados son correctos, la Aportación Base se calcula al 99%."),
+        payload("Si los datos declarados son correctos, la Aportación Base se calcula al 63%.", alias="E99"),
+    )
+    result = KnowledgeAgent(llm=client, policy=ModelPolicy()).synthesize(
+        question=QUESTION, evidences=(SOURCE,), model_name=get_settings().ollama_fast_model,
+    )
+    assert result.answer_basis == "insufficient" and not result.cited_source_ids
+    assert "63%" not in result.answer and "99%" not in result.answer
+    event = next(r for r in caplog.records if r.message == "agent.answer_validation_failed")
+    assert event.invalid_source_count == 1
+    assert event.validation_detail.endswith(": unknown_alias")

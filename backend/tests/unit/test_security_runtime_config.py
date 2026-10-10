@@ -390,13 +390,12 @@ def test_local_inference_endpoint_rejects_credential_query_and_fragment_before_n
 
 def test_compose_keeps_inference_internal_and_trusts_only_explicit_proxy_ip():
     base = yaml.safe_load((ROOT / "docker-compose.yml").read_text())
-    overlay = yaml.safe_load((ROOT / "docker-compose.ollama.yml").read_text())
     backend = base["services"]["backend"]
     assert "http://ollama:11434" in backend["environment"]["OLLAMA_BASE_URL"]
     assert "host.docker.internal" not in backend["environment"]["LLM_LOCAL_HOSTS"]
     assert "${MATRIX_NGINX_IP" in backend["environment"]["FORWARDED_ALLOW_IPS"]
-    assert not any(key == "ports" for key in overlay["services"]["ollama"])
-    assert overlay["services"]["ollama"]["networks"] == ["matrix_llm"]
-    assert overlay["networks"]["matrix_llm"]["internal"] is True
+    assert not any(key == "ports" for key in base["services"]["ollama"])
+    assert base["services"]["ollama"]["networks"] == ["matrix_llm"]
+    assert base["networks"]["matrix_llm"]["internal"] is True
     assert "matrix_proxy" not in base["services"]["mysql"]["networks"]
     assert "matrix_proxy" not in base["services"]["qdrant"]["networks"]

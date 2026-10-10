@@ -1,3 +1,4 @@
+# Creado por Aldo Garcia.
 """Compensaciones vectoriales durables sin conservar nombres ni contenido."""
 
 from __future__ import annotations

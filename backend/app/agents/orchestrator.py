@@ -27,6 +27,7 @@ from dataclasses import dataclass, field
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.agents.contextual_query import contextualize_question
 from app.agents.knowledge_agent import KnowledgeAgent, SynthesisResult
 from app.agents.prompts import IDENTITY_ANSWER
 from app.agents.query_planner import build_query_plan
@@ -40,10 +41,11 @@ from app.common.errors import AnswerValidationError, ForbiddenError, MatrixError
 from app.common.logging import get_logger
 from app.common.timing import timed_stage
 from app.config import get_settings
-from app.database.models import Conversation, ConversationMessage
+from app.database.models import Conversation, ConversationMessage, Document
 from app.llm.model_policy import Intent, ModelPolicy, RoutingDecision
 from app.llm.ollama_client import get_ollama_client
 from app.llm.provider import InferenceClient
+from app.llm.request_control import check_inference_control
 from app.memory.service import ConversationContext, MemoryService, authorization_fingerprint
 from app.rag.retriever import RetrievalResult, Retriever
 from app.rag.schemas import Evidence
@@ -76,12 +78,46 @@ def _summary_source_scope(question: str) -> str:
         ):
             scopes.add("private")
         elif re.search(
-            r"\b(?:politica|reglamento|normativa)s?\b|\bmanual(?:es)?\b|\bcorporativ\w*\b|"
+            r"\bcorporativ\w*\b|"
             r"\bde la empresa\b|\bbase de conocimiento\b|\brepositorio\b",
             clause,
         ):
             scopes.add("corporate")
+        elif not re.search(r"\b(?:documento|archivo)s?\b", clause) and re.search(
+            r"\b(?:politica|reglamento|normativa)s?\b|\bmanual(?:es)?\b", clause,
+        ):
+            # «El archivo Manual de acceso.pdf» nombra un titulo, no cambia
+            # su propiedad. La resolucion autorizada elige el archivo; una
+            # referencia directa a «la politica de vacaciones» sigue en corpus.
+            scopes.add("corporate")
     return "mixed" if len(scopes) > 1 else next(iter(scopes), "auto")
+
+
+def _summary_scope_questions(question: str, scope: str) -> dict[str, str]:
+    """Separa referencias de una peticion que nombra ambos alcances.
+
+    El nombre privado no debe tratarse como un archivo corporativo ausente.
+    Los titulos que contienen una conjuncion se conservan con su separador; el
+    sintetizador siempre recibe la solicitud original completa.
+    """
+    if scope != "mixed":
+        return {"private": question, "corporate": question}
+    parts = re.split(r"(\s+(?:y|e|junto con|adem[aá]s de)\s+)", question, flags=re.IGNORECASE)
+    selected: dict[str, str] = {"private": "", "corporate": ""}
+    active = ""
+    for index in range(0, len(parts), 2):
+        clause = parts[index]
+        clause_scope = _summary_source_scope(clause)
+        if clause_scope in selected:
+            active = clause_scope
+        if not active and clause.strip():
+            # Una referencia inicial sin alcance no se descarta ni se asigna
+            # por conjetura. Los recuperadores conservan su comprobacion estricta.
+            return {"private": question, "corporate": question}
+        if active:
+            separator = parts[index - 1] if index else " "
+            selected[active] += (separator if selected[active] else "") + clause
+    return selected
 
 
 @dataclass(frozen=True, slots=True)
@@ -151,12 +187,22 @@ class Orchestrator:
     def handle_chat(self, db: Session, *, ctx: UserContext, conversation: Conversation, message: str) -> ChatOutcome:
         """Procesa un turno completo."""
         started = time.perf_counter()
+        check_inference_control()
 
         # --- 1. contenido no confiable del usuario --------------------------
         sanitized = sanitize_user_message(message)
         question = sanitized.text
         if not question:
             raise ForbiddenError("El mensaje esta vacio.")
+
+        if self._model_policy.classify_intent(question) is Intent.IDENTITY:
+            # La respuesta publica fija no necesita recuperar memoria ni consultar
+            # fuentes. El hilo sigue siendo privado y se verifica su propietario.
+            self._memory.get_owned_conversation(db, ctx, conversation.id)
+            db.info["authorization_scope"] = authorization_fingerprint(db, ctx, frozenset())
+            self._memory.rename_if_untitled(db, conversation, sanitized.text)
+            self._memory.append_message(db, conversation, role="user", content=sanitized.text, intent="identity")
+            return self._finish_identity(db, ctx=ctx, conversation=conversation, started=started)
 
         authorized_categories = self._policies.effective_categories(ctx)
         db.info["authorization_scope"] = authorization_fingerprint(db, ctx, authorized_categories)
@@ -169,7 +215,7 @@ class Orchestrator:
         documented_indices: set[int] = set()
         for turn in memory_context.turns:
             if turn.role == "user":
-                prior_questions.append(turn.content)
+                prior_questions.append(turn.context_query or turn.content)
             elif turn.documented and prior_questions:
                 documented_indices.add(len(prior_questions) - 1)
         reference = self._model_policy.contextual_reference(
@@ -178,7 +224,21 @@ class Orchestrator:
         intent = self._model_policy.classify_intent(question, previous_question=reference)
         if reference and intent is Intent.GENERAL:
             intent = Intent.DOCUMENTAL
-        retrieval_question = f"{reference}\nSeguimiento: {question}" if reference else question
+        source_clarification = ""
+        if (
+            reference and intent is Intent.DOCUMENT_SUMMARY
+            and self._model_policy.is_unqualified_summary(question)
+            and self._has_multiple_attachments(db, ctx=ctx, conversation_id=conversation.id)
+        ):
+            # Una segunda subida hace ambiguo «dame un resumen». No reutilizar
+            # silenciosamente el nombre del primer archivo. «Resumelo»/«ese
+            # documento» si eligen expresamente el antecedente autorizado.
+            reference = ""
+            source_clarification = (
+                "Hay varios adjuntos disponibles en esta conversacion. "
+                "¿Cual deseas resumir o explicar? Indica su nombre, o pide un resumen de todos."
+            )
+        retrieval_question = contextualize_question(question, reference)
         answer_diagnostics.begin(
             ctx=ctx, conversation_id=conversation.id, question=question,
             retrieval_question=retrieval_question, intent=intent.value,
@@ -190,10 +250,13 @@ class Orchestrator:
             role="user",
             content=sanitized.text,
             authorized_categories=tuple(sorted(authorized_categories)),
+            context_query=retrieval_question,
         )
-        if intent is Intent.IDENTITY:
-            return self._finish_identity(
-                db, ctx=ctx, conversation=conversation, started=started, intent=intent,
+        if source_clarification:
+            return self._finish_insufficient(
+                db, ctx=ctx, conversation=conversation, intent=intent,
+                started=started, authorized_categories=authorized_categories,
+                question=question, clarification=source_clarification,
             )
         # Solo identidad, capacidades y charla pura evitan RAG. Un concepto
         # aparentemente general puede estar documentado en el corpus autorizado.
@@ -210,6 +273,7 @@ class Orchestrator:
             )
 
         db.commit()  # Solicitud registrada; devuelve la conexion antes de embeddings/LLM.
+        check_inference_control()
         # --- 3. AUTORIZACION antes de cualquier recuperacion ----------------
         comparative = any(marker in question.lower() for marker in _COMPARATIVE_MARKERS)
 
@@ -224,7 +288,17 @@ class Orchestrator:
         )
 
         answer_diagnostics.retrieved(retrieval.evidences)
+        check_inference_control()
         # --- 6. suficiencia --------------------------------------------------
+        if retrieval.clarification:
+            # La ambiguedad se determina con fuentes autorizadas, antes del
+            # modelo. No se sustituye el archivo por otro alcance ni se pide al
+            # LLM adivinar cual de los adjuntos eligio el usuario.
+            return self._finish_insufficient(
+                db, ctx=ctx, conversation=conversation, intent=intent,
+                started=started, authorized_categories=authorized_categories,
+                question=retrieval_question, clarification=retrieval.clarification,
+            )
         if not retrieval.has_evidence and not structured_results:
             if not reference and self._allow_general_fallback(question, intent, authorized_categories):
                 return self._finish_general(
@@ -255,7 +329,7 @@ class Orchestrator:
         # --- 8/9. sintesis y verificacion de grounding ----------------------
         scope_note = self._build_scope_note(authorized_categories, used_private_scope=retrieval.used_private_scope)
         synthesis: SynthesisResult = self._agent.synthesize(
-            question=question,
+            question=retrieval_question,
             evidences=retrieval.evidences,
             structured=structured_results,
             memory=None if intent is Intent.GENERAL else memory_context,
@@ -268,6 +342,7 @@ class Orchestrator:
         )
 
         # --- 10. persistencia + auditoria -----------------------------------
+        check_inference_control()
         return self._finish_answer(
             db,
             ctx=ctx,
@@ -282,6 +357,18 @@ class Orchestrator:
         )
 
     # ------------------------------------------------------------------------
+    @staticmethod
+    def _has_multiple_attachments(db: Session, *, ctx: UserContext, conversation_id: str) -> bool:
+        """Solo metadatos privados propios; nunca consulta el contenido ni corpus."""
+        return db.execute(
+            select(func.count()).select_from(Document).where(
+                Document.scope == "conversation",
+                Document.owner_user_id == ctx.user_id,
+                Document.conversation_id == conversation_id,
+                Document.deleted_at.is_(None),
+            ),
+        ).scalar_one() > 1
+
     @timed_stage("retrieval")
     def _gather_evidence(
         self,
@@ -305,23 +392,29 @@ class Orchestrator:
         tools_used: list[str] = []
         if intent is Intent.DOCUMENT_SUMMARY:
             scope = _summary_source_scope(question)
+            scope_questions = _summary_scope_questions(question, scope)
             retrieval = RetrievalResult()
             if scope != "corporate":
                 retrieval = self._retriever.retrieve_attachment_summary(
-                    ctx=ctx, conversation_id=conversation.id
+                    ctx=ctx, conversation_id=conversation.id, question=scope_questions["private"],
                 )
+                if retrieval.clarification:
+                    return retrieval, (), tools_used
                 if retrieval.has_evidence:
                     tools_used.append("private_attachment_summary")
             if scope in ("corporate", "mixed") or (scope == "auto" and not retrieval.has_evidence):
                 corporate = self._retriever.retrieve(
                     ctx=ctx,
-                    question=question,
+                    question=scope_questions["corporate"],
                     authorized_categories=authorized_categories,
                     conversation_id=conversation.id,
                     include_private=False,
                     comparative=False,
+                    summary=True,
                 )
                 tools_used.append("rag")
+                if corporate.clarification:
+                    return corporate, (), tools_used
                 retrieval = RetrievalResult(
                     evidences=(*corporate.evidences, *retrieval.evidences),
                     authorized_categories=corporate.authorized_categories,
@@ -690,17 +783,21 @@ class Orchestrator:
         started: float,
         authorized_categories: frozenset[str],
         question: str = "",
+        clarification: str = "",
     ) -> ChatOutcome:
         db.commit()  # Liberar la conexion antes de redactar la aclaracion.
-        synthesis = self._agent.ask_clarification(question=question, model_name=self._model_policy.fast_model)
-        answer = synthesis.answer
+        if clarification:
+            answer, model = clarification, ""
+        else:
+            synthesis = self._agent.ask_clarification(question=question, model_name=self._model_policy.fast_model)
+            answer, model = synthesis.answer, synthesis.model
         latency_ms = int((time.perf_counter() - started) * 1000)
         stored = self._memory.append_message(
             db,
             conversation,
             role="assistant",
             content=answer,
-            model=synthesis.model,
+            model=model,
             answer_basis="insufficient",
             intent=str(intent),
             authorized_categories=tuple(sorted(authorized_categories)),
@@ -714,7 +811,7 @@ class Orchestrator:
                 role_set_hash=ctx.role_set_hash,
                 conversation_id=conversation.id,
                 intent=str(intent),
-                selected_model=synthesis.model,
+                selected_model=model,
                 authorization_decision="ALLOW",
                 latency_ms=latency_ms,
                 status="insufficient_evidence",
@@ -724,8 +821,9 @@ class Orchestrator:
             answer=answer,
             conversation_id=conversation.id,
             message_id=stored.id,
-            model=synthesis.model,
+            model=model,
             intent=str(intent),
             latency_ms=latency_ms,
+            grounded=False,
             answer_basis="insufficient",
         )

@@ -67,7 +67,8 @@ class TestCatalogoDeFuentes:
         assert preparada.status() is IntegrationStatus.PREPARED_NOT_CONNECTED
 
         monkeypatch.setenv("MATRIX_TEST_DSN2", "mysql+pymysql://u:p@h/db")
-        assert preparada.status() is IntegrationStatus.CONNECTED_AND_VALIDATED
+        # Una variable definida no demuestra que la fuente exista/responda.
+        assert preparada.status() is IntegrationStatus.PREPARED_NOT_CONNECTED
 
 
 # ---------------------------------------------------------------------------

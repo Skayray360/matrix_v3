@@ -31,7 +31,7 @@ def runtime_identity(root: Path) -> Iterator[dict[str, Any]]:
         "pid": process.pid, "created_at": created,
         "root": str(root.resolve()), "nonce": uuid4().hex,
     }
-    path = root / "var" / "matrixrh-backend.identity.json"
+    path = root / "knowledge-base" / "state" / "run" / "matrixrh-backend.identity.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(f".{identity['nonce']}.tmp")
     try:

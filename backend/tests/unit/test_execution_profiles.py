@@ -13,6 +13,7 @@ from app.agents.knowledge_agent import KnowledgeAgent
 from app.agents.orchestrator import Orchestrator
 from app.agents.query_planner import build_query_plan
 from app.common.errors import OllamaUnavailableError
+from app.common.inference_errors import InferenceFailureError, InferenceFailureKind
 from app.config.settings import Settings
 from app.llm.model_policy import Intent, ModelChoice, ModelPolicy
 from app.llm.ollama_client import ChatResult
@@ -36,12 +37,14 @@ def configured_policy(monkeypatch, *, shared: bool = True, **overrides):
     # Ventanas explicitamente distintas para probar el contrato configurable;
     # no representan los defaults de instalacion con un unico Gemma.
     overrides.setdefault("ollama_deep_num_ctx", 32768)
+    overrides.setdefault("answer_structured_output", False)
     settings = Settings(
         _env_file=None, app_env="test", ollama_fast_model="local-generator",
         ollama_deep_model="local-generator" if shared else "local-deep-generator",
         **overrides,
     )
-    for module in ("app.llm.model_policy", "app.agents.knowledge_agent", "app.agents.query_planner"):
+    for module in ("app.llm.model_policy", "app.agents.knowledge_agent", "app.agents.query_planner",
+                   "app.agents.documentary_output", "app.agents.prompts"):
         monkeypatch.setattr(f"{module}.get_settings", lambda: settings)
     return settings, ModelPolicy()
 
@@ -123,7 +126,7 @@ def test_shared_model_preserves_business_routing_decisions(monkeypatch):
 def test_agent_passes_shared_profile_to_general_and_documental_calls(monkeypatch, choice, general):
     settings, policy = configured_policy(monkeypatch)
     source = evidence()
-    llm = RecordingLlm([f"{source.text} [[{source.source_id}]]"])
+    llm = RecordingLlm(['Un concepto general.' if general else f"{source.text} [[{source.source_id}]]"])
     agent = KnowledgeAgent(llm=llm, policy=policy)
     if general:
         agent.answer_general(question="Explica un concepto.", memory=None, model_name=policy.fast_model, choice=choice)
@@ -171,9 +174,10 @@ def test_shared_profile_controls_packing_and_full_evidence_is_never_truncated(mo
     source = evidence(text="La excepcion requiere autorizacion. " * 700)
     llm = EvidenceLlm((source,))
     agent = KnowledgeAgent(llm=llm, policy=policy)
-    fast = agent.synthesize(question="Que regla aplica?", evidences=(source,),
-                            model_name=policy.fast_model, choice=ModelChoice.FAST)
-    assert fast.grounding.declares_insufficiency
+    with pytest.raises(InferenceFailureError) as caught:
+        agent.synthesize(question="Que regla aplica?", evidences=(source,),
+                         model_name=policy.fast_model, choice=ModelChoice.FAST)
+    assert caught.value.failure_kind is InferenceFailureKind.CONTEXT_LIMIT
     assert not llm.calls
     deep = agent.synthesize(question="Que regla aplica?", evidences=(source,),
                             model_name=policy.deep_model, choice=ModelChoice.DEEP)
@@ -214,17 +218,16 @@ def test_grounding_retry_keeps_profile_without_escalation_signal(monkeypatch, ch
 
 
 @pytest.mark.parametrize("choice", tuple(ModelChoice))
-def test_distinct_model_fallback_changes_profile_and_model_together(monkeypatch, choice):
+def test_distinct_model_is_not_silently_substituted_after_failure(monkeypatch, choice):
     settings, policy = configured_policy(monkeypatch, shared=False)
     source = evidence()
     llm = RecordingLlm([OllamaUnavailableError(detail="HTTP 404"), f"{source.text} [[{source.source_id}]]"])
-    result = KnowledgeAgent(llm=llm, policy=policy).synthesize(
-        question="Que requiere la solicitud?", evidences=(source,), model_name=policy.model_for(choice), choice=choice,
-    )
-    fallback_choice = ModelChoice.FAST if choice is ModelChoice.DEEP else ModelChoice.DEEP
-    assert result.model == policy.model_for(fallback_choice)
+    with pytest.raises(OllamaUnavailableError):
+        KnowledgeAgent(llm=llm, policy=policy).synthesize(
+            question="Que requiere la solicitud?", evidences=(source,), model_name=policy.model_for(choice), choice=choice,
+        )
+    assert len(llm.calls) == 1
     assert_profile(llm.calls[0], settings, choice)
-    assert_profile(llm.calls[1], settings, fallback_choice)
 
 
 def test_fallback_to_smaller_profile_is_rejected_without_truncating_prompt(monkeypatch):

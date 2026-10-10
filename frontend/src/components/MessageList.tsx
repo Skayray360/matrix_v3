@@ -27,15 +27,17 @@ type Props = {
 export function MessageList({
   messages,
   pending,
-  pendingLabel = "Consultando fuentes autorizadas",
+  pendingLabel = "Procesando su consulta",
   displayName,
 }: Props): JSX.Element {
   const endRef = useRef<HTMLDivElement | null>(null);
+  const lastMessageId = messages[messages.length - 1]?.id;
 
   useEffect(() => {
-    // Se desplaza al ultimo mensaje al llegar una respuesta.
+    // Cargar mensajes anteriores no cambia el ultimo ID: conserva la lectura
+    // del historial en lugar de desplazar de nuevo al final de la conversacion.
     endRef.current?.scrollIntoView({ block: "end" });
-  }, [messages.length, pending]);
+  }, [lastMessageId, pending]);
 
   if (messages.length === 0 && !pending) {
     return (
@@ -158,6 +160,10 @@ export function MessageList({
                               {index + 1}
                             </span>
                             <span className="name">{source.label}</span>
+                            {source.page_or_sheet &&
+                            !source.label.endsWith(`, ${source.page_or_sheet}`) ? (
+                              <span className="location">{source.page_or_sheet}</span>
+                            ) : null}
                             <span className="category">{source.category}</span>
                           </span>
                         </li>

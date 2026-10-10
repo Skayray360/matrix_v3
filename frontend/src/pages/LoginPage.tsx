@@ -2,7 +2,7 @@
 /**
  * Pantalla de acceso.
  *
- * El formulario local solo tiene sentido con `AUTH_PROVIDER=local_test`. Cuando
+ * El formulario local se usa con `AUTH_PROVIDER=local` o `local_test`. Cuando
  * el backend corre con OIDC o Entra ID, el boton corporativo redirige a
  * `/api/v1/auth/login` y el flujo OIDC ocurre entero en el servidor: el
  * navegador nunca ve un token.
@@ -23,9 +23,10 @@ import { api, ApiError } from "../services/api";
 
 type Props = {
   onAuthenticated: () => void | Promise<void>;
+  notice?: string;
 };
 
-export function LoginPage({ onAuthenticated }: Props): JSX.Element {
+export function LoginPage({ onAuthenticated, notice }: Props): JSX.Element {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -75,8 +76,10 @@ export function LoginPage({ onAuthenticated }: Props): JSX.Element {
           </a>
 
           <div className="login-separator">
-            <span>o acceso local de pruebas</span>
+            <span>o acceso local</span>
           </div>
+
+          {notice ? <p role="status">{notice}</p> : null}
 
           {error ? (
             <div className="banner" role="alert" data-testid="login-error">
@@ -132,8 +135,8 @@ export function LoginPage({ onAuthenticated }: Props): JSX.Element {
           </form>
 
           <p className="hint">
-            TI define el acceso de su cuenta. El formulario local se utiliza en entornos de prueba;
-            para producción use el acceso corporativo.
+            Use el método de acceso habilitado por TI para su cuenta: usuario local o acceso
+            corporativo.
           </p>
         </div>
         <div className="login-foot">

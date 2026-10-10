@@ -130,12 +130,12 @@ class SourceConfig(BaseModel):
         return os.environ.get(self.secret_ref) or None
 
     def status(self) -> IntegrationStatus:
-        """Estado honesto de la fuente."""
+        """Estado declarativo; tener DSN no prueba conectividad ni permisos."""
         if not self.enabled:
             return IntegrationStatus.DISABLED
-        if not self.dsn():
-            return IntegrationStatus.PREPARED_NOT_CONNECTED
-        return IntegrationStatus.CONNECTED_AND_VALIDATED
+        # Solo ReadOnlySourceAdapter.health_check ejecuta una comprobacion.
+        # Este metodo se usa en diagnosticos de solo lectura de configuracion.
+        return IntegrationStatus.PREPARED_NOT_CONNECTED
 
 
 class SourcesFile(BaseModel):

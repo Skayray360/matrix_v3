@@ -48,7 +48,7 @@ def test_conceptual_questions_have_no_subject_allowlist(monkeypatch, question):
         "¿Cuántos días de vacaciones me corresponden?",
         "Explica los requisitos para solicitar las vacaciones",
         "¿Qué es la prestación de nuestra empresa?",
-        "¿Qué es mi salario?", "Explica el contenido del archivo adjunto",
+        "¿Qué es mi salario?",
         "Explica Python y cuánto me dan si me caso",
         "Define lo que dice el documento de prestaciones",
         "¿Qué es el importe de mi bono?", "¿Y en ese caso?",
@@ -58,6 +58,11 @@ def test_conceptual_questions_have_no_subject_allowlist(monkeypatch, question):
 def test_operational_internal_or_ambiguous_questions_keep_retrieval(monkeypatch, question):
     configuration(monkeypatch)
     assert ModelPolicy().classify_intent(question) is Intent.DOCUMENTAL
+
+
+def test_attachment_overview_uses_document_summary_retrieval(monkeypatch):
+    configuration(monkeypatch)
+    assert ModelPolicy().classify_intent("Explica el contenido del archivo adjunto") is Intent.DOCUMENT_SUMMARY
 
 
 def test_employee_statistics_keep_structured_route(monkeypatch):

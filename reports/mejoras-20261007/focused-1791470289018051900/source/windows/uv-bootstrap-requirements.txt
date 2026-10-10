@@ -1,4 +1,0 @@
-# Gestor de paquetes aislado; NO son las dependencias del backend.
-# Fuente: https://pypi.org/pypi/uv/0.12.19/json (verificado 2026-10-05).
-# Artefacto: uv-0.12.19-py3-none-win_amd64.whl, 18050617 bytes.
-uv==0.12.19 --hash=sha256:dcbc531a96762569bbfe9639b4f45f00aabff51f427540711f63e7c23f225fdf

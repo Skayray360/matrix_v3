@@ -24,13 +24,16 @@ pytestmark = pytest.mark.unit
 def release_core(tmp_path):
     names = preflight.CORE_FILES | {
         "backend/app/__init__.py", "backend/app/main.py", "backend/scripts/preflight.py",
-        "backend/scripts/bootstrap.py", "backend/scripts/__init__.py", "windows/Common-MatrixRH.ps1",
+        "backend/scripts/bootstrap.py", "backend/scripts/__init__.py", "backend/scripts/windows/MatrixRH.ps1",
+        "backend/scripts/windows/launch_process.py",
     }
     for name in names:
         destination = tmp_path / name
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(ROOT / name, destination)
-    (tmp_path / "SHA256SUMS.txt").write_text("".join(
+    manifest = tmp_path / "backend/release/SHA256SUMS.txt"
+    manifest.parent.mkdir(parents=True)
+    manifest.write_text("".join(
         f"{hashlib.sha256((tmp_path / name).read_bytes()).hexdigest()}  {name}\n" for name in sorted(names)
     ), encoding="utf-8")
     return tmp_path
@@ -49,12 +52,13 @@ def test_integridad_stdlib_detecta_init_cruzado_sin_ejecutar_codigo(release_core
     payload = json.loads(result.stdout)
     assert payload["failed"] == ["integridad_codigo"]
     assert "no declara la version" in payload["checks"][0]["detail"]
-    assert not (release_core / ".env").exists()
-    assert not (release_core / "var").exists()
+    assert not (release_core / "backend/config/.env").exists()
+    assert not (release_core / "knowledge-base/state").exists()
 
 
 def test_integridad_rechaza_codigo_mezclado_permite_corpus_y_build_cliente(release_core):
-    for name in ("data/knowledge/cliente.txt", "frontend/dist/index.html", ".env", "var/uploads/cliente.txt"):
+    for name in ("knowledge-base/documents/cliente.txt", "frontend/dist/index.html", "backend/config/.env",
+                 "knowledge-base/state/uploads/cliente.txt"):
         path = release_core / name
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("datos sinteticos modificables", encoding="utf-8")
@@ -70,7 +74,7 @@ def test_integridad_rechaza_codigo_mezclado_permite_corpus_y_build_cliente(relea
 
 @pytest.mark.parametrize("line", ["../afuera.py", "/absoluto.py", "backend\\app\\main.py", "backend/app/main.py"])
 def test_integridad_rechaza_rutas_y_duplicados_del_manifiesto(release_core, line):
-    manifest = release_core / "SHA256SUMS.txt"
+    manifest = release_core / "backend/release/SHA256SUMS.txt"
     manifest.write_text(manifest.read_text() + "a" * 64 + "  " + line + "\n", encoding="utf-8")
     report = preflight.PreflightReport()
     preflight.check_integrity(report, root=release_core, require_manifest=True)
@@ -174,7 +178,8 @@ def model_pin_env(tmp_path, monkeypatch):
                  "LLM_LOCAL_HOSTS", "OLLAMA_FAST_MODEL", "OLLAMA_DEEP_MODEL", "OLLAMA_EMBEDDING_MODEL",
                  "LLM_FAST_DIGEST", "LLM_DEEP_DIGEST", "LLM_EMBEDDING_DIGEST"):
         monkeypatch.delenv(name, raising=False)
-    env = tmp_path / ".env"
+    env = tmp_path / "backend/config/.env"
+    env.parent.mkdir(parents=True)
     env.write_text("APP_ENV=development\nETIQUETA=Información México\n", encoding="utf-8")
     monkeypatch.setattr(bootstrap, "PROJECT_ROOT", tmp_path)
     return env
@@ -251,7 +256,7 @@ def test_serve_cli_host_no_omite_guardia_con_skip_preflight(monkeypatch, host, c
     assert "guardia de exposicion" in capsys.readouterr().out
 
 
-def test_serve_proxy_confia_solo_ips_validadas_y_no_omite_cifrado(monkeypatch):
+def test_serve_proxy_confia_solo_ips_validadas_y_no_omite_cifrado(tmp_path, monkeypatch):
     import uvicorn
 
     from app import config
@@ -275,6 +280,8 @@ def test_serve_proxy_confia_solo_ips_validadas_y_no_omite_cifrado(monkeypatch):
             })
 
     monkeypatch.setattr(uvicorn, "Server", FakeServer)
+    monkeypatch.setattr(bootstrap, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setattr(bootstrap, "check_integrity", lambda report: None)
     monkeypatch.setattr(bootstrap, "check_application", lambda report: None)
     monkeypatch.setattr(bootstrap, "check_storage_encryption", lambda report, settings: encryption_checks.append(True))
     assert bootstrap.cmd_serve(SimpleNamespace(host="127.0.0.1", port=port, reload=False, skip_preflight=True)) == 0
@@ -283,11 +290,15 @@ def test_serve_proxy_confia_solo_ips_validadas_y_no_omite_cifrado(monkeypatch):
     assert captured[0]["forwarded_allow_ips"] == "127.0.0.1,172.30.0.0/24"
 
 
-def test_paquete_conserva_readmes_y_excluye_historial_y_datos_runtime(tmp_path: Path):
+def test_paquete_conserva_readme_unico_y_excluye_historial_y_datos_runtime(tmp_path: Path):
     for name in (
         "README.md", "reports/README.md", "reports/historico/REVISION.md", "reports/tests/resultados.json",
         "var/README.md", "var/qdrant/README.md",
         "var/uploads/privado.txt", ".env", "frontend/dist/index.html", "source-history.bundle",
+        "backend/config/.env", "backend/config/docker.env", "backend/config/docker.env.bak",
+        "backend/config/secrets/local-admin-password.txt", "backend/runtime/python/python.exe",
+        "backend/logs/backend.log", "knowledge-base/state/qdrant/storage.sqlite",
+        "knowledge-base/models/blobs/sha256-sintetico", "knowledge-base/backups/backup.tar",
         ".venv.previous-20260910/lib/cache.dat",
         "offline-models/blobs/sha256-sintetico", "offline-models/manifests/registro/modelo",
         "weights/fixture.gguf", "weights/fixture.safetensors", "weights/fixture.onnx",
@@ -303,7 +314,7 @@ def test_paquete_conserva_readmes_y_excluye_historial_y_datos_runtime(tmp_path: 
     (tmp_path / "link.txt").symlink_to(external)
     selected = {p.relative_to(tmp_path).as_posix() for p in package_release.iter_package_files(tmp_path)}
     assert selected == {
-        "README.md", "reports/README.md", "frontend/dist/index.html", "var/README.md", "var/qdrant/README.md",
+        "README.md", "frontend/dist/index.html",
     }
 
 
@@ -388,20 +399,21 @@ def test_preflight_no_carga_configuracion_con_un_paquete_ausente(monkeypatch, mi
         pytest.fail("La configuracion no debe cargarse con dependencias incompletas")
 
     monkeypatch.setattr(preflight, "__import__", import_without_package, raising=False)
+    monkeypatch.setattr(preflight, "check_integrity", lambda report: None)
     monkeypatch.setattr(preflight, "check_settings", unexpected_settings)
     report = preflight.run_preflight(read_only=True)
     assert not report.ok
     assert report.as_dict()["failed"] == ["dependencias"]
     assert missing in report.checks[-1].detail
-    assert "INSTALAR_MATRIX_RH.bat -SkipFrontend" in preflight.render_text(report)
+    assert "ejecute instalar.bat" in preflight.render_text(report)
 
 
 @pytest.mark.parametrize("scope", [[], ["--llm-only"], ["--dependencies-only"]])
-def test_cli_preflight_sin_site_packages_devuelve_json_sin_traceback(scope):
+def test_cli_preflight_sin_site_packages_devuelve_json_sin_traceback(scope, release_core):
     """Reproduce el fallo real con un proceso Python que solo dispone de la biblioteca estandar."""
     result = subprocess.run(
         [sys.executable, "-S", "-m", "scripts.preflight", "--read-only", "--json", *scope],
-        cwd=ROOT / "backend", capture_output=True, text=True, check=False, timeout=15,
+        cwd=release_core / "backend", capture_output=True, text=True, check=False, timeout=15,
     )
     assert result.returncode == 1
     assert "Traceback" not in result.stderr
@@ -455,41 +467,10 @@ def test_uv_distribuciones_sin_target_conservan_version_estable_compatible():
         uv_runtime.compatible_uv_version("uv 0.11.32")
 
 
-def test_helper_mysql_windows_es_python_valido_y_no_expone_credenciales_en_argv():
-    content = (ROOT / "windows/Common-MatrixRH.ps1").read_text()
-    source = content.split('$codigo = @"\n', 1)[1].split('\n"@', 1)[0]
-    compile(source, "dbcheck-sintetico.py", "exec")
-    assert "sys.argv[2]" not in source
-    assert "inspect_ownership(engine)" in source
-    assert "SHOW DATABASES LIKE" not in source
-
-
-@pytest.mark.skipif(sys.platform == "win32", reason="Contrato Bash ejecutado en Linux; Windows tiene job de PowerShell")
-def test_detencion_shell_distingue_un_proceso_de_otra_carpeta(tmp_path: Path):
-    backend = tmp_path / "backend"
-    scripts = backend / "scripts"
-    scripts.mkdir(parents=True)
-    (scripts / "__init__.py").write_text("")
-    (scripts / "bootstrap.py").write_text("import sys\nsys.stdin.read()\n")
-    python_link = tmp_path / ".venv/bin/python"
-    python_link.parent.mkdir(parents=True)
-    python_link.symlink_to(sys.executable)
-    process = subprocess.Popen(
-        [str(python_link), "-m", "scripts.bootstrap", "serve"], cwd=backend, stdin=subprocess.PIPE,
-    )
-    try:
-        import psutil
-
-        try:
-            psutil.Process(process.pid).cwd()
-        except (psutil.AccessDenied, psutil.NoSuchProcess):
-            assert process.poll() is None
-            pytest.skip("El sandbox no expone /proc del hijo vivo; el control real falla cerrado")
-        command = [
-            "bash", "-c", 'source "$1"; ROOT="$2"; VENV_PY="$3"; process_owned "$4"',
-            "matrix-contract", str(ROOT / "scripts/matrixrh.sh"), str(tmp_path), sys.executable,
-        ]
-        assert subprocess.run([*command, str(process.pid)], check=False, timeout=10).returncode == 0
-        assert subprocess.run([*command, str(__import__("os").getpid())], check=False, timeout=10).returncode == 1
-    finally:
-        process.communicate(timeout=5)
+@pytest.mark.parametrize("name", [".htaccess", "backend/config/runtime-manifest.json",
+                                  "backend/config/apache/matrix-rh.conf.template"])
+def test_integridad_cubre_denegacion_web_y_procedencia_runtime(release_core, name):
+    (release_core / name).write_text("cambio no verificado", encoding="utf-8")
+    report = preflight.PreflightReport()
+    preflight.check_integrity(report, root=release_core, require_manifest=True)
+    assert not report.ok and name in report.checks[0].detail

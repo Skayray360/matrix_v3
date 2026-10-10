@@ -19,7 +19,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.authorization.context import UserContext
-from app.common.ids import new_id, utcnow_naive
+from app.common.ids import new_id, sha256_text, utcnow_naive
 from app.common.logging import get_logger
 from app.database.models import AuditEvent
 
@@ -81,7 +81,10 @@ class AuditService:
                 "intent": record.intent,
                 "selected_model": record.selected_model,
                 "selected_tools": list(record.selected_tools),
-                "source_ids": list(record.source_ids),
+                # Los IDs de adjuntos incorporan nombres privados; el destino
+                # de stdout tiene acceso/retencion distintos de la auditoria SQL.
+                "source_count": len(record.source_ids),
+                "source_hashes": [sha256_text(source_id) for source_id in record.source_ids],
                 "authorization_decision": record.authorization_decision,
                 "latency_ms": record.latency_ms,
                 "result_status": record.status,

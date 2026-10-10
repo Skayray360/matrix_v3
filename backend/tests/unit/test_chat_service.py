@@ -15,6 +15,7 @@ from sqlalchemy.orm import sessionmaker
 from app.agents import chat_service
 from app.agents.orchestrator import ChatOutcome
 from app.common.errors import ForbiddenError, NotFoundError, OllamaUnavailableError, ValidationFailedError
+from app.common.inference_errors import InferenceFailureError, InferenceFailureKind
 from app.database.models import Base, ChatOperation, Conversation, ConversationMessage
 from app.memory.service import MemoryService
 from tests.conftest import make_context
@@ -203,3 +204,32 @@ def test_compatible_chat_without_idempotency_key_still_reauthorizes_and_commits(
     assert result.conversation_id == state.conversation_id
     assert result.message_id == messages[-1].id
     assert [message.role for message in messages] == ["user", "assistant"]
+
+
+def test_deadline_exceeded_by_final_sql_write_rolls_back_response(publication_db, monkeypatch):
+    from app.llm import request_control
+
+    state = publication_db
+    install_generation(monkeypatch, state)
+    clock = [100.0]
+    monkeypatch.setattr(request_control.time, "monotonic", lambda: clock[0])
+    with state.factory() as db:
+        engine = db.get_bind()
+
+        def finish_after_deadline(_connection, _cursor, statement, _parameters, _context, _many):
+            if statement.startswith("UPDATE chat_operations SET") and "response=" in statement:
+                clock[0] = 103.0
+
+        event.listen(engine, "after_cursor_execute", finish_after_deadline)
+        try:
+            with pytest.raises(InferenceFailureError) as raised:
+                chat_service.execute_chat(
+                    db, ctx=state.context, conversation=db.get(Conversation, state.conversation_id),
+                    message="Consulta sintetica.", expected_scope=state.scope,
+                    operation_id=state.operation_id, reauthorize=lambda _: state.context,
+                    absolute_deadline=101.0,
+                )
+            assert raised.value.failure_kind is InferenceFailureKind.DEADLINE
+        finally:
+            event.remove(engine, "after_cursor_execute", finish_after_deadline)
+    assert_discarded(state)

@@ -134,9 +134,13 @@ class TestUploadGuardRamasRestantes:
             validate_upload(buffer.getvalue(), filename="ratio.docx")
 
     def test_un_xlsx_valido_se_acepta(self):
+        from openpyxl import Workbook
+
         buffer = io.BytesIO()
-        with zipfile.ZipFile(buffer, "w") as archive:
-            archive.writestr("xl/workbook.xml", b"<xml/>")
+        workbook = Workbook()
+        workbook.active.append(["Dato sintetico", 42])
+        workbook.save(buffer)
+        workbook.close()
         resultado = validate_upload(buffer.getvalue(), filename="libro.xlsx")
         assert resultado.extension == ".xlsx"
         assert resultado.mime_type.endswith("spreadsheetml.sheet")

@@ -6,7 +6,7 @@ from dataclasses import replace
 import pytest
 
 from app.agents.knowledge_agent import KnowledgeAgent
-from app.common.errors import AnswerValidationError
+from app.common.answers import UNVERIFIED_ANSWER_NOTICE, safe_nonfactual_text
 from app.config import get_settings
 from app.llm.model_policy import Intent, ModelPolicy
 from app.llm.ollama_client import ChatResult
@@ -72,15 +72,18 @@ def test_numeric_and_uncited_tail_failures_still_allow_the_complete_calculation(
 ])
 def test_recovery_does_not_silently_answer_an_incomplete_or_broader_request(monkeypatch, kwargs):
     transport, synthesize = run(monkeypatch, **kwargs)
-    with pytest.raises(AnswerValidationError):
-        synthesize()
+    result = synthesize()
+    assert result.answer.startswith(UNVERIFIED_ANSWER_NOTICE) and safe_nonfactual_text(result.answer)
+    assert result.answer_basis == "insufficient" and not result.cited_source_ids
+    assert "63%" not in result.answer and "99%" not in result.answer
     assert len(transport.calls) == 2
 
 
 def test_fabricated_citations_are_not_excused_by_a_computable_case(monkeypatch):
     transport, synthesize = run(monkeypatch, text=BAD.replace("[[E1]]", "[[unknown#0]]"))
-    with pytest.raises(AnswerValidationError):
-        synthesize()
+    result = synthesize()
+    assert result.answer.startswith(UNVERIFIED_ANSWER_NOTICE) and safe_nonfactual_text(result.answer)
+    assert not result.cited_source_ids and "unknown#0" not in result.answer
     assert len(transport.calls) == 2
 
 
@@ -89,3 +92,24 @@ def test_a_valid_generated_answer_keeps_the_normal_single_attempt(monkeypatch):
     result = synthesize()
     assert result.grounding.grounded and not result.regenerated
     assert len(transport.calls) == 1
+
+
+def test_computable_evidence_gets_one_retry_before_accepting_false_insufficiency(monkeypatch):
+    transport, synthesize = run(monkeypatch, text='No cuento con informacion suficiente para responder esta pregunta.')
+    result = synthesize()
+    assert len(transport.calls) == 2
+    assert result.regenerated and result.grounding.grounded
+    assert result.answer.count('63%') == 3
+    assert result.cited_source_ids == (SOURCE.source_id,)
+    assert result.answer_basis == 'documented'
+    assert all(call['model'] == transport.calls[0]['model'] for call in transport.calls)
+
+
+def test_actual_absence_of_rule_is_not_retried_as_false_insufficiency(monkeypatch):
+    transport, synthesize = run(
+        monkeypatch, text='No cuento con informacion suficiente para responder esta pregunta.',
+        source=replace(SOURCE, text='El programa requiere consultar una regla adicional.'),
+    )
+    result = synthesize()
+    assert len(transport.calls) == 1
+    assert result.answer_basis == 'insufficient'

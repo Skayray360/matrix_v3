@@ -8,7 +8,7 @@ acotar es un vector de denegacion de servicio y de abuso de contexto del LLM.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -20,6 +20,30 @@ class LocalLoginRequest(BaseModel):
 
     username: str = Field(min_length=1, max_length=128)
     password: str = Field(min_length=1, max_length=256)
+
+
+class LocalPasswordChangeRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    current_password: str = Field(min_length=1, max_length=256)
+    new_password: str = Field(min_length=16, max_length=128)
+
+
+class LocalUserCreateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    username: str = Field(min_length=1, max_length=128)
+    display_name: str = Field(min_length=1, max_length=256)
+    password: str = Field(min_length=16, max_length=128)
+    role: Literal["matrix_admin", "prestaciones_reader"] = "prestaciones_reader"
+
+
+class LocalUserResponse(BaseModel):
+    user_id: str
+    username: str
+    display_name: str
+    is_active: bool
+    roles: list[str]
 
 
 class MeResponse(BaseModel):

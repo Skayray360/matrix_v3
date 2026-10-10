@@ -27,6 +27,7 @@ import importlib
 import json
 import os
 import platform
+import re
 import socket
 import subprocess
 import sys
@@ -41,14 +42,14 @@ OK = "OK"
 WARN = "WARN"
 FAIL = "FAIL"
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-CORE_PREFIXES = ("backend/app/", "backend/scripts/", "backend/seeds/", "backend/migrations/", "windows/")
+CORE_PREFIXES = ("backend/app/", "backend/scripts/", "backend/seeds/", "backend/migrations/")
 OPERATOR_BATCH_FILES = frozenset({
-    "INSTALAR_MATRIX_RH.bat", "INICIAR_MATRIX_RH.bat",
-    "DETENER_MATRIX_RH.bat", "DIAGNOSTICO_MATRIX_RH.bat",
+    "instalar.bat", "iniciar.bat", "detener.bat", "diagnosticar.bat",
 })
 CORE_FILES = frozenset({
     "backend/pyproject.toml", "backend/uv.lock", "backend/Dockerfile", "docker-compose.yml",
     "frontend/package.json", "frontend/package-lock.json",
+    ".htaccess", "backend/config/runtime-manifest.json", "backend/config/apache/matrix-rh.conf.template",
 }) | OPERATOR_BATCH_FILES
 
 
@@ -130,7 +131,7 @@ def check_integrity(report: PreflightReport, *, root: Path = PROJECT_ROOT, requi
         report.add("integridad_codigo", FAIL,
                    f"Paquete incompleto o ilegible ({type(exc).__name__}); extraiga nuevamente el ZIP completo.")
         return
-    manifest = root / "SHA256SUMS.txt"
+    manifest = root / "backend" / "release" / "SHA256SUMS.txt"
     if not manifest.is_file():
         report.add(
             "integridad_codigo", FAIL if require_manifest else WARN,
@@ -153,7 +154,7 @@ def check_integrity(report: PreflightReport, *, root: Path = PROJECT_ROOT, requi
             entries[relative] = digest
         essential = CORE_FILES | {"backend/app/__init__.py", "backend/app/main.py",
                                   "backend/scripts/preflight.py", "backend/scripts/bootstrap.py",
-                                  "windows/Common-MatrixRH.ps1"}
+                                  "backend/scripts/windows/MatrixRH.ps1", "backend/scripts/windows/launch_process.py"}
         missing = sorted(essential - entries.keys())
         for prefix in CORE_PREFIXES:
             directory = root / prefix
@@ -176,7 +177,8 @@ def check_integrity(report: PreflightReport, *, root: Path = PROJECT_ROOT, requi
             details = ", ".join(sorted(set(missing + changed))[:8])
             report.add("integridad_codigo", FAIL,
                        f"Codigo distinto, ausente o fuera del manifiesto: {details}. "
-                       "Extraiga el ZIP completo en una carpeta vacia y conserve .env, corpus y var por separado.")
+                       "Extraiga el ZIP completo en una carpeta vacia y conserve backend/config/.env "
+                       "y knowledge-base mediante un respaldo coherente.")
             return
     except (OSError, ValueError, UnicodeError) as exc:
         report.add("integridad_codigo", FAIL,
@@ -236,16 +238,22 @@ def check_dependencies(report: PreflightReport) -> None:
 
 
 def check_settings(report: PreflightReport):  # noqa: ANN201
+    known_fields: set[str] = set()
     try:
-        from app.config import get_settings
+        from app.config import Settings, get_settings
 
+        known_fields = {name.upper() for name in Settings.model_fields}
         settings = get_settings()
     except Exception as exc:  # noqa: BLE001 - imports/configuracion tambien pueden estar incompletos
+        # Los validadores pueden incluir el valor invalido en detail. Mostrar
+        # exclusivamente nombres del esquema permite orientar sin divulgarlo.
         diagnostic = getattr(exc, "detail", "")
+        mentioned = set(re.findall(r"\b[A-Z][A-Z0-9_]+\b", diagnostic)) if isinstance(diagnostic, str) else set()
+        fields = sorted(mentioned & known_fields)
         report.add("configuracion", FAIL,
-                   f"No se pudo cargar .env o el backend ({type(exc).__name__}). "
-                   "Revise .env.example y la integridad del ZIP; no se modifico la configuracion."
-                   + (f" {diagnostic}" if diagnostic else ""))
+                   f"No se pudo cargar backend/config/.env o el backend ({type(exc).__name__}). "
+                   "Revise backend/config/env.example y la integridad del ZIP; no se modifico la configuracion."
+                   + (" Campos que revisar: " + ", ".join(fields) + "." if fields else ""))
         return None
     report.add(
         "configuracion",
@@ -272,23 +280,30 @@ def check_application(report: PreflightReport) -> None:
 
 
 def check_environment_safety(report: PreflightReport, settings) -> None:  # noqa: ANN001
-    """Verifica que el modo local no pueda vivir en produccion."""
+    """Distingue cuentas reales y proveedor sintetico; no presume controles de infraestructura."""
     from app.config import AppEnv, AuthProvider
 
-    if settings.app_env is AppEnv.PRODUCTION:
-        if settings.local_test_auth_enabled or settings.auth_provider is AuthProvider.LOCAL_TEST:
+    local = getattr(settings, "llm_local_only", True) and "vertex" not in (
+        getattr(settings, "llm_provider", "ollama"), getattr(settings, "llm_deep_provider", "ollama"),
+    )
+    report.add("inferencia_local", OK if local else FAIL,
+               "Inferencia local obligatoria en todos los entornos; cloud no habilitado en este producto.")
+
+    if settings.app_env in (AppEnv.PRODUCTION, AppEnv.STAGING, AppEnv.STANDALONE):
+        if (settings.local_test_auth_enabled or settings.auth_provider is AuthProvider.LOCAL_TEST
+                or settings.local_test_seed_users_enabled):
             report.add(
                 "modo_local_en_produccion",
                 FAIL,
-                "LOCAL_TEST_AUTH_ENABLED/AUTH_PROVIDER=local_test en production",
+                f"Identidad o seed sinteticos incompatibles con APP_ENV={settings.app_env}",
             )
         else:
-            report.add("modo_local_en_produccion", OK, "deshabilitado correctamente")
+            report.add("modo_local_en_produccion", OK, "identidades sinteticas deshabilitadas")
     else:
         report.add(
             "modo_local_en_produccion",
             OK,
-            f"APP_ENV={settings.app_env}: modo local permitido",
+            f"APP_ENV={settings.app_env}: proveedor {settings.auth_provider}",
         )
 
     if settings.auth_provider is AuthProvider.ENTRA:
@@ -347,6 +362,17 @@ def check_ollama(report: PreflightReport, settings) -> None:  # noqa: ANN001
             f"real={dimension} esperada={expected}"
             + ("" if dimension == expected else " -- no se trunca ni se rellena el vector"),
         )
+        from app.llm.model_configuration import validate_generator
+
+        for role, adapter in (("fast", settings.llm_provider), ("deep", settings.llm_deep_provider)):
+            if adapter == "ollama":
+                contract = validate_generator(client, profile=role)
+                report.add(f"capacidad_{role}", OK,
+                           f"completion disponible; contexto configurado={contract['context_tokens']}; "
+                           "calidad y JSON requieren la prueba sintetica de modelos")
+            elif adapter == "openai_compatible":
+                report.add(f"capacidad_{role}", WARN,
+                           "El inventario compatible no acredita capacidades; ejecute scripts.model_smoke_test.")
     except (MatrixError, httpx.HTTPError, ValueError) as exc:
         detail = exc.message if isinstance(exc, MatrixError) else type(exc).__name__
         report.add("ollama", FAIL, f"adapters {providers}: {detail}")
@@ -407,7 +433,7 @@ def check_database(report: PreflightReport, *, read_only: bool) -> bool:
             report.add(
                 "migraciones",
                 FAIL,
-                "pendientes: " + ", ".join(pending) + ". Ejecute INSTALAR_MATRIX_RH.bat",
+                "pendientes: " + ", ".join(pending) + ". Ejecute instalar.bat",
             )
         else:
             report.add("migraciones", OK, "al dia")
@@ -417,15 +443,19 @@ def check_database(report: PreflightReport, *, read_only: bool) -> bool:
 
 
 def check_seed_users(report: PreflightReport, settings, *, database_ok: bool = True) -> None:  # noqa: ANN001
-    """Verifica las cuentas sinteticas y que su hash sea Argon2id."""
+    """Verifica identidad local real o fixtures de prueba, sin crear ni restablecer cuentas."""
+    from app.config import AuthProvider
+
+    real_local = settings.auth_provider is AuthProvider.LOCAL
+    check_name = "usuarios_locales" if real_local else "usuarios_prueba"
     if not settings.is_local_auth_allowed:
-        report.add("usuarios_prueba", OK, "modo local deshabilitado: no aplica", required=False)
+        report.add(check_name, OK, "identidad local deshabilitada: no aplica", required=False)
         return
     if not database_ok:
         # Sin una base utilizable, consultar los usuarios produce un error de SQL
         # que no explica nada. Se reporta la dependencia real.
         report.add(
-            "usuarios_prueba",
+            check_name,
             WARN,
             "no verificable: resuelva antes el problema de la base de datos",
             required=False,
@@ -436,26 +466,43 @@ def check_seed_users(report: PreflightReport, settings, *, database_ok: bool = T
 
         from app.auth.passwords import is_argon2id
         from app.database.engine import session_scope
-        from app.database.models import LocalCredential, User
+        from app.database.models import IdentityLink, LocalCredential, Role, User, UserRole
 
         with session_scope() as db:
             problems: list[str] = []
-            for username in ("Matrix", "MatrixR1"):
-                user = db.execute(select(User).where(User.username == username)).scalar_one_or_none()
+            if real_local:
+                from app.auth.local_accounts import LOCAL_ADMIN_ROLE
+
+                users = db.execute(select(User).join(UserRole, UserRole.user_id == User.id).join(Role).where(
+                    User.auth_source == "local", User.is_synthetic_test.is_(False), User.is_active.is_(True),
+                    Role.name == LOCAL_ADMIN_ROLE, Role.is_test_role.is_(False),
+                )).scalars().all()
+                if not users:
+                    problems.append("No hay administrador local real activo; complete instalar.bat")
+            else:
+                users = [db.execute(select(User).where(User.username == username)).scalar_one_or_none()
+                         for username in ("Matrix", "MatrixR1")]
+            for user in users:
                 if user is None:
-                    problems.append(f"{username}: no existe")
+                    problems.append("Falta una cuenta sintetica del seed")
                     continue
                 credential = db.get(LocalCredential, user.id)
                 if credential is None:
-                    problems.append(f"{username}: sin credencial local")
+                    problems.append("Cuenta sin credencial local")
                 elif not is_argon2id(credential.password_hash_argon2id):
-                    problems.append(f"{username}: el hash no es Argon2id")
+                    problems.append("El hash de la cuenta no es Argon2id")
+                if real_local and db.execute(select(IdentityLink.id).where(
+                    IdentityLink.provider == "local", IdentityLink.user_id == user.id,
+                    IdentityLink.subject_id == user.id,
+                )).first() is None:
+                    problems.append("Cuenta local sin vinculo de identidad valido")
         if problems:
-            report.add("usuarios_prueba", FAIL, "; ".join(problems))
+            report.add(check_name, FAIL, "; ".join(problems))
         else:
-            report.add("usuarios_prueba", OK, "Matrix y MatrixR1 con hash Argon2id")
+            report.add(check_name, OK, "Administrador local activo con Argon2id y vinculo de identidad"
+                       if real_local else "Matrix y MatrixR1 con hash Argon2id")
     except Exception as exc:  # noqa: BLE001
-        report.add("usuarios_prueba", FAIL, type(exc).__name__)
+        report.add(check_name, FAIL, type(exc).__name__)
 
 
 def check_qdrant(report: PreflightReport, settings, *, read_only: bool = False) -> None:  # noqa: ANN001
@@ -515,7 +562,7 @@ def check_paths(report: PreflightReport, settings, *, read_only: bool) -> None: 
             f"{summary['indexable_files']} archivos indexables; {summary['pdf_files']} PDF; "
             f"{len(inventory.sources) - len(inventory.unavailable_sources)} raices disponibles"
             + (f"; categorias: {categories}" if categories else "")
-            + ". Solo inventario: texto de PDF se valida durante ingesta; no hay OCR.",
+            + ". Solo inventario: extraccion y OCR local optativo se validan durante la ingesta.",
             required=False,
         )
         for warning in inventory.warnings[:10]:
@@ -671,7 +718,9 @@ def check_config_files(report: PreflightReport, settings) -> None:  # noqa: ANN0
         policy = load_category_policy_file()
         report.add("politica_categorias", OK, f"{len(policy.categories)} categorias declaradas")
     except Exception as exc:  # noqa: BLE001
-        report.add("politica_categorias", FAIL, str(exc)[:200])
+        report.add("politica_categorias", FAIL,
+                   f"No se pudo validar backend/config/authorization/categories.yaml ({type(exc).__name__}). "
+                   "Revise su sintaxis y los campos contra el archivo de la entrega; no se cambiaron permisos.")
 
     try:
         catalog = load_sources()
@@ -691,7 +740,9 @@ def check_config_files(report: PreflightReport, settings) -> None:  # noqa: ANN0
                 required=settings.matrix_external_connectors_required,
             )
     except Exception as exc:  # noqa: BLE001
-        report.add("fuentes_estructuradas", FAIL, str(exc)[:200])
+        report.add("fuentes_estructuradas", FAIL,
+                   f"No se pudo validar backend/config/data_sources/sources.yaml ({type(exc).__name__}). "
+                   "Revise su sintaxis y las referencias de configuracion; no comparta credenciales.")
 
 
 def check_frontend(report: PreflightReport) -> None:
@@ -707,7 +758,7 @@ def check_frontend(report: PreflightReport) -> None:
 
 
 def check_supply_chain(report: PreflightReport) -> None:
-    """Cadena de suministro del frontend (seccion 13 de docs/README.md).
+    """Cadena de suministro del frontend.
 
     Es una comprobacion **obligatoria**: un paquete comprometido en el arbol
     ejecuta codigo con los privilegios del operador. Si no hay arbol instalado
@@ -816,12 +867,7 @@ def check_windows_scripts(report: PreflightReport) -> None:
     """Comprueba que los BAT apunten a rutas reales del proyecto."""
     from app.config import PROJECT_ROOT
 
-    expected = (
-        "INSTALAR_MATRIX_RH.bat",
-        "INICIAR_MATRIX_RH.bat",
-        "DETENER_MATRIX_RH.bat",
-        "DIAGNOSTICO_MATRIX_RH.bat",
-    )
+    expected = sorted(OPERATOR_BATCH_FILES | {"backend/scripts/windows/MatrixRH.ps1"})
     missing = [name for name in expected if not (PROJECT_ROOT / name).exists()]
     report.add(
         "scripts_windows",
@@ -877,8 +923,8 @@ def render_text(report: PreflightReport) -> str:
     if not report.ok:
         lines.append("Fallos obligatorios: " + ", ".join(c.name for c in report.checks if c.failed))
     if any(c.name == "dependencias" and c.failed for c in report.checks):
-        lines.append("Accion: desde la raiz del proyecto ejecute INSTALAR_MATRIX_RH.bat -SkipFrontend.")
-        lines.append("El instalador sincroniza todos los paquetes desde backend/uv.lock en .venv.")
+        lines.append("Accion: desde la raiz del proyecto ejecute instalar.bat.")
+        lines.append("El instalador sincroniza backend/uv.lock en backend/runtime/venv sin restablecer cuentas.")
     lines.append("")
     return "\n".join(lines)
 

@@ -32,6 +32,7 @@ from app.ingestion.loaders import supported_extensions
 
 _RESERVED_DATA_FOLDERS = frozenset({
     "knowledge", "synthetic_test_data", "uploads", "var", "config", "backend", "frontend",
+    "documents", "state", "models", "unclassified", "backups",
 })
 
 
@@ -93,7 +94,7 @@ _UniqueSafeLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG
 
 
 def load_knowledge_layout(path: Path | None = None) -> KnowledgeLayout:
-    target = path or PROJECT_ROOT / "config" / "knowledge-layout.yaml"
+    target = path or PROJECT_ROOT / "backend" / "config" / "knowledge-layout.yaml"
     if not target.is_file():
         return KnowledgeLayout()
     try:
@@ -137,6 +138,7 @@ class KnowledgeScan:
     ignored_files: int = 0
     private_roots: tuple[Path, ...] = ()
     test_roots: tuple[Path, ...] = ()
+    allowed_root: Path | None = None
 
     def as_dict(self) -> dict[str, object]:
         counts = Counter(item.source_id for item in self.files)
@@ -213,9 +215,9 @@ def scan_knowledge(
     """
     project = Path(os.path.abspath(project_root or PROJECT_ROOT))
     primary = Path(os.path.abspath(knowledge_root or get_settings().knowledge_root_path))
-    data_root = project / "data"
-    canonical = data_root / "knowledge"
-    layout = load_knowledge_layout(layout_path or project / "config" / "knowledge-layout.yaml")
+    data_root = project / "knowledge-base"
+    canonical = data_root / "documents"
+    layout = load_knowledge_layout(layout_path or project / "backend" / "config" / "knowledge-layout.yaml")
     declared = declared_categories
     if declared is None:
         declared = {policy.name for policy in load_category_policy_file().categories}
@@ -225,8 +227,13 @@ def scan_knowledge(
 
     scan = KnowledgeScan(
         sources=[KnowledgeSource("knowledge", canonical, "")],
-        private_roots=(project / "var" / "uploads", get_settings().upload_storage_path),
-        test_roots=(project / "data" / "synthetic_test_data",),
+        allowed_root=project,
+        private_roots=(
+            project / "knowledge-base" / "state", project / "knowledge-base" / "models",
+            project / "knowledge-base" / "backups", project / "knowledge-base" / "unclassified",
+            project / "backend", project / "frontend", get_settings().upload_storage_path,
+        ),
+        test_roots=(project / "backend" / "tests" / "fixtures",),
     )
     if _path_key(primary) != _path_key(canonical) and not primary.resolve().is_relative_to(canonical.resolve()):
         scan.sources.append(KnowledgeSource("configured-knowledge", primary, "configured-knowledge"))
@@ -270,6 +277,12 @@ def scan_knowledge(
 
 
 def _scan_source(scan: KnowledgeScan, *, source: KnowledgeSource, declared: set[str], seen: set[str]) -> None:
+    if scan.allowed_root is not None and not source.root.resolve().is_relative_to(scan.allowed_root.resolve()):
+        scan.unavailable_sources.add(source.source_id)
+        scan.warn(
+            "external_root_rejected", f"Fuente {source.source_id}: esta fuera del proyecto; no se indexa."
+        )
+        return
     if any(source.root.resolve().is_relative_to(test_root.resolve()) for test_root in scan.test_roots):
         scan.unavailable_sources.add(source.source_id)
         scan.warn(
@@ -372,7 +385,7 @@ def source_for_document(scan: KnowledgeScan, *, relative_path: str, storage_path
         if _path_key(portable_storage) == _path_key(expected):
             return source
     # Actualizar la carpeta del proyecto conserva el corpus original portable.
-    original_suffix = "/data/knowledge/" + relative_path
+    original_suffix = "/knowledge-base/documents/" + relative_path
     if normalize_folder(portable_storage).endswith(normalize_folder(original_suffix)):
         return next((source for source in scan.sources if source.source_id == "knowledge"), None)
     return None

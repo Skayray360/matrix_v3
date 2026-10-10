@@ -24,6 +24,7 @@ error controlado.
 
 from __future__ import annotations
 
+import math
 import threading
 from contextlib import suppress
 from dataclasses import dataclass
@@ -45,6 +46,17 @@ class ScoredPayload:
 
     score: float
     payload: dict[str, Any]
+
+
+@dataclass(frozen=True, slots=True)
+class AuthorizedDocument:
+    """Identidad documental obtenida tras aplicar la ACL SQL, nunca evidencia."""
+
+    document_id: str
+    filename: str
+    generation: str
+    chunk_count: int
+    available: bool = True
 
 
 class VectorStore:
@@ -79,7 +91,7 @@ class VectorStore:
             if settings.qdrant_mode is QdrantMode.EMBEDDED and "already accessed" in str(exc):
                 hint = (
                     " El almacen embebido admite un unico proceso: detenga el backend "
-                    "(DETENER_MATRIX_RH.bat) antes de ejecutar scripts que accedan "
+                    "(detener.bat) antes de ejecutar scripts que accedan "
                     "directamente al indice, o use QDRANT_MODE=server."
                 )
             raise QdrantUnavailableError(
@@ -128,6 +140,119 @@ class VectorStore:
 
     def collection_for(self, scope: str) -> str:
         return self._private if scope == SCOPE_CONVERSATION else self._corporate
+
+    def has_complete_generation(
+        self,
+        *,
+        document_id: str,
+        generation: str,
+        scope: str,
+        index_fingerprint: str,
+        expected_chunks: int,
+        document_sha256: str,
+        category: str | None = None,
+        owner_user_id: str | None = None,
+        conversation_id: str | None = None,
+        allowed_groups: tuple[str, ...] = (),
+        sensitivity: str = "internal",
+    ) -> bool:
+        """Comprueba la generacion real antes de declarar un documento sin cambios.
+
+        SQL no demuestra que los vectores sigan presentes tras copiar el
+        proyecto o restaurar solo la base. Esta lectura no crea colecciones y
+        distingue ausencia/incompletitud de un fallo de acceso a Qdrant. Solo
+        lee contenido con la ACL del documento; otras generaciones no cuentan.
+        """
+        if not document_id or not generation or not index_fingerprint or expected_chunks < 1:
+            return False
+        if scope == SCOPE_CORPORATE and category:
+            acl = self.build_corporate_filter(frozenset({category}))
+            expected_category = category
+        elif scope == SCOPE_CONVERSATION and owner_user_id and conversation_id:
+            acl = self.build_private_filter(user_id=owner_user_id, conversation_id=conversation_id)
+            expected_category = "__private__"
+        else:
+            return False
+        collection = self.collection_for(scope)
+        identity = models.Filter(must=[
+            models.FieldCondition(key="document_id", match=models.MatchValue(value=document_id)),
+            models.FieldCondition(key="generation", match=models.MatchValue(value=generation)),
+        ])
+        query_filter = models.Filter(must=[
+            identity, acl,
+            models.FieldCondition(key="index_fingerprint", match=models.MatchValue(value=index_fingerprint)),
+        ])
+        expected_metadata = {
+            "document_id": document_id, "generation": generation, "scope": scope,
+            "index_fingerprint": index_fingerprint, "document_sha256": document_sha256,
+            "category": expected_category,
+            "owner_user_id": owner_user_id if scope == SCOPE_CONVERSATION else None,
+            "conversation_id": conversation_id if scope == SCOPE_CONVERSATION else None,
+            "embedding_dimension": self._dimension, "embedding_model": self._settings.ollama_embedding_model,
+            "sensitivity": sensitivity,
+        }
+        fields = [*expected_metadata, "chunk_id", "chunk_index", "allowed_roles", "allowed_groups",
+                  "filename", "relative_path", "source_id", "text"]
+        seen: set[int] = set()
+        offset: Any | None = None
+        try:
+            if not self._client.collection_exists(collection):
+                self._ensured.discard(collection)
+                return False
+            vectors = self._client.get_collection(collection).config.params.vectors
+            if getattr(vectors, "size", None) != self._dimension:
+                raise QdrantUnavailableError("La dimension del indice no coincide con la configuracion.")
+            if getattr(vectors, "distance", None) != models.Distance.COSINE:
+                raise QdrantUnavailableError("La metrica del indice no coincide con la configuracion.")
+            # El conteo sin contenido detecta puntos sobrantes de esa misma
+            # identidad, incluidos los que tengan una ACL/huella inconsistente.
+            count = self._client.count(collection_name=collection, count_filter=identity, exact=True).count
+            if count != expected_chunks:
+                return False
+            while len(seen) < expected_chunks:
+                points, next_offset = self._client.scroll(
+                    collection_name=collection, scroll_filter=query_filter,
+                    limit=min(128, expected_chunks - len(seen)), offset=offset,
+                    with_payload=models.PayloadSelectorInclude(include=fields), with_vectors=True,
+                )
+                for point in points:
+                    payload = point.payload or {}
+                    index = payload.get("chunk_index")
+                    if (type(index) is not int or not 0 <= index < expected_chunks or index in seen
+                            or any(payload.get(key) != value for key, value in expected_metadata.items())
+                            or payload.get("chunk_id") != str(point.id)
+                            or payload.get("allowed_roles") != []
+                            or not isinstance(payload.get("allowed_groups"), list)
+                            or not all(isinstance(group, str) for group in payload["allowed_groups"])
+                            or sorted(payload["allowed_groups"]) != sorted(allowed_groups)):
+                        return False
+                    vector = point.vector
+                    if (not isinstance(vector, list) or len(vector) != self._dimension
+                            or not all(type(value) in (int, float) and math.isfinite(value) for value in vector)
+                            or not any(vector)):
+                        return False
+                    text = payload.get("text")
+                    filename = payload.get("filename")
+                    if not isinstance(text, str) or not text.strip() or not isinstance(filename, str) or not filename:
+                        return False
+                    if payload.get("source_id") != document_source_id(
+                        category=expected_category, filename=filename, chunk_index=index,
+                        scope=scope, document_id=document_id, relative_path=str(payload.get("relative_path") or ""),
+                    ):
+                        return False
+                    seen.add(index)
+                if next_offset is None:
+                    return len(seen) == expected_chunks
+                if not points or next_offset == offset:
+                    return False
+                offset = next_offset
+        except QdrantUnavailableError:
+            raise
+        except Exception as exc:  # noqa: BLE001 - un fallo de lectura no significa indice vacio
+            raise QdrantUnavailableError(
+                "No se pudo verificar la integridad de la generacion vectorial.", detail=type(exc).__name__,
+            ) from exc
+        return len(seen) == expected_chunks
 
     # ----------------------------------------------------------------- upsert
     def upsert_chunks(self, chunks: list[Chunk], vectors: list[list[float]]) -> int:
@@ -220,25 +345,33 @@ class VectorStore:
                 .all()
             )
             for document in documents:
-                if not document.active_generation:
-                    self.delete_document(document.id, scope=document.scope)
-                    document.index_cleanup_pending = False
-                    cleaned += 1
-                    continue
-                self._client.delete(
-                    collection_name=self.collection_for(document.scope),
-                    wait=True,
-                    points_selector=models.FilterSelector(
-                        filter=models.Filter(
-                            must=[models.FieldCondition(key="document_id", match=models.MatchValue(value=document.id))],
-                            must_not=[
-                                models.FieldCondition(
-                                    key="generation", match=models.MatchValue(value=document.active_generation)
-                                )
-                            ],
+                collection = self.collection_for(document.scope)
+                try:
+                    # Nada obsoleto puede borrarse de una coleccion inexistente.
+                    # No crearla ni confundir esto con una generacion integra:
+                    # la ingesta comprobara los vectores antes de omitirla.
+                    if self._client.collection_exists(collection):
+                        active = ([models.FieldCondition(
+                            key="generation", match=models.MatchValue(value=document.active_generation),
+                        )] if document.active_generation else None)
+                        self._client.delete(
+                            collection_name=collection, wait=True,
+                            points_selector=models.FilterSelector(filter=models.Filter(
+                                must=[
+                                    models.FieldCondition(
+                                        key="document_id", match=models.MatchValue(value=document.id),
+                                    ),
+                                    models.FieldCondition(key="scope", match=models.MatchValue(value=document.scope)),
+                                ],
+                                must_not=active,
+                            )),
                         )
-                    ),
-                )
+                    else:
+                        self._ensured.discard(collection)
+                except Exception as exc:  # noqa: BLE001 - conservar el pendiente si no se pudo comprobar/borrar
+                    raise QdrantUnavailableError(
+                        "No se pudo completar la limpieza de generaciones vectoriales.", detail=type(exc).__name__,
+                    ) from exc
                 document.index_cleanup_pending = False
                 cleaned += 1
         return cleaned
@@ -402,10 +535,149 @@ class VectorStore:
         collected.sort(
             key=lambda item: (
                 str(item.payload.get("filename", "")).casefold(),
+                str(item.payload.get("document_id", "")),
                 int(item.payload.get("chunk_index", 0)),
             )
         )
         return collected[:limit], len(collected) > limit
+
+    def list_authorized_documents(
+        self,
+        *,
+        scope: str,
+        index_fingerprint: str,
+        authorized_categories: frozenset[str] = frozenset(),
+        user_id: str = "",
+        conversation_id: str = "",
+        include_unavailable: bool = False,
+    ) -> list[AuthorizedDocument]:
+        """Resuelve identidades documentales dentro del alcance permitido.
+
+        La consulta no lee texto, rutas de almacenamiento ni otros propietarios.
+        Un nombre completo puede identificar el documento incluso cuando una
+        pregunta como ``explicame este archivo`` tiene similitud baja.
+        ``include_unavailable`` permite distinguir un adjunto pendiente de uno
+        inexistente; esos metadatos no habilitan recuperacion de contenido.
+        """
+        from sqlalchemy import select
+
+        from app.database.models import Document
+        from app.rag.index_manifest import session_scope
+
+        query = select(
+            Document.id, Document.filename, Document.active_generation, Document.chunk_count,
+            Document.status, Document.index_fingerprint,
+        ).where(
+            Document.scope == scope,
+            Document.deleted_at.is_(None),
+        )
+        if not include_unavailable:
+            query = query.where(
+                Document.status == "indexed", Document.active_generation.is_not(None),
+                Document.index_fingerprint == index_fingerprint,
+            )
+        if scope == SCOPE_CONVERSATION and user_id and conversation_id:
+            query = query.where(Document.owner_user_id == user_id, Document.conversation_id == conversation_id)
+        elif scope == SCOPE_CORPORATE and authorized_categories:
+            query = query.where(Document.category.in_(authorized_categories))
+        else:
+            return []
+        with session_scope() as db:
+            rows = db.execute(query.order_by(Document.filename, Document.id)).all()
+        return [AuthorizedDocument(
+            row.id, row.filename, row.active_generation or "", row.chunk_count,
+            row.status == "indexed" and bool(row.active_generation) and row.index_fingerprint == index_fingerprint,
+        ) for row in rows]
+
+    def list_document_chunks(
+        self,
+        *,
+        documents: list[AuthorizedDocument],
+        scope: str,
+        limit: int,
+        index_fingerprint: str,
+        authorized_categories: frozenset[str] = frozenset(),
+        user_id: str = "",
+        conversation_id: str = "",
+    ) -> tuple[list[ScoredPayload], bool]:
+        """Lee documentos elegidos con ACL, huella y generacion dentro de Qdrant.
+
+        Se conserva el orden documental. Cuando el limite es menor que el
+        documento, la seleccion cubre inicio, centro y final por ``chunk_index``
+        en vez de depender del orden aleatorio de UUID del scroll. La marca de
+        truncamiento acompana tanto muestreo como unidades activas ausentes.
+        """
+        if not documents or limit < 1:
+            return [], bool(documents)
+        if scope == SCOPE_CONVERSATION and user_id and conversation_id:
+            query_filter = self.build_private_filter(user_id=user_id, conversation_id=conversation_id)
+        elif scope == SCOPE_CORPORATE and authorized_categories:
+            query_filter = self.build_corporate_filter(authorized_categories)
+        else:
+            return [], False
+        from app.rag.index_manifest import active_filter, visible_candidates
+
+        if not isinstance(query_filter.must, list):
+            raise QdrantUnavailableError("Filtro de autorizacion no valido.")
+        query_filter.must.extend([
+            models.FieldCondition(key="index_fingerprint", match=models.MatchValue(value=index_fingerprint)),
+            models.FieldCondition(
+                key="document_id", match=models.MatchAny(any=[doc.document_id for doc in documents]),
+            ),
+        ])
+        query_filter = active_filter(query_filter)
+        collection = self.collection_for(scope)
+        self.ensure_collection(collection)
+        collected: list[ScoredPayload] = []
+        truncated = False
+        remaining = limit
+        capacities = [max(1, document.chunk_count or limit) for document in documents]
+        for position, document in enumerate(documents):
+            if remaining < 1:
+                truncated = True
+                break
+            # Distribuir el presupuesto segun el tamano publicado; si todos
+            # caben, una diferencia de tamanos no trunca al primer documento.
+            quota = min(capacities[position], max(1, remaining * capacities[position] // sum(capacities[position:])))
+            conditions: list[Any] = [
+                query_filter,
+                models.FieldCondition(key="document_id", match=models.MatchValue(value=document.document_id)),
+                models.FieldCondition(key="generation", match=models.MatchValue(value=document.generation)),
+            ]
+            if document.chunk_count > quota:
+                indices = (
+                    [0] if quota == 1 else
+                    [index * (document.chunk_count - 1) // (quota - 1) for index in range(quota)]
+                )
+                conditions.append(models.FieldCondition(key="chunk_index", match=models.MatchAny(any=indices)))
+                truncated = True
+            document_filter = models.Filter(must=conditions)
+            page_items: list[ScoredPayload] = []
+            offset: Any | None = None
+            try:
+                while len(page_items) < quota + 1:
+                    points, next_offset = self._client.scroll(
+                        collection_name=collection,
+                        scroll_filter=document_filter,
+                        limit=min(128, quota + 1 - len(page_items)),
+                        offset=offset,
+                        with_payload=True,
+                        with_vectors=False,
+                    )
+                    page_items.extend(
+                        ScoredPayload(score=1.0, payload=dict(point.payload or {})) for point in points
+                    )
+                    if next_offset is None:
+                        break
+                    offset = next_offset
+            except Exception as exc:  # noqa: BLE001
+                raise QdrantUnavailableError("Fallo la recuperacion documental autorizada.", detail=str(exc)) from exc
+            page_items.sort(key=lambda item: int(item.payload.get("chunk_index", 0)))
+            visible = visible_candidates(page_items[:quota])
+            truncated = truncated or len(page_items) > quota or len(visible) < min(document.chunk_count, quota)
+            collected.extend(visible)
+            remaining -= len(visible)
+        return collected, truncated
 
     # ------------------------------------------------------------- utilidades
     def count(self, collection: str) -> int:

@@ -207,6 +207,75 @@ def test_worker_inference_wait_has_finite_deadline():
         pytest.fail("Un worker sin cupo debe agotar su plazo")
 
 
+def test_cancel_route_interrupts_the_active_turn_and_releases_its_slots(queue_db, controlled_queue, monkeypatch):
+    from app.agents import chat_service
+    from app.llm.request_control import check_inference_control
+
+    entered, finished = Event(), Event()
+
+    def controlled_generation(db, **kwargs):
+        db.commit()
+        entered.set()
+        try:
+            while not finished.wait(0.01):
+                check_inference_control()
+            raise AssertionError("La cancelacion debe interrumpir el turno")
+        finally:
+            finished.set()
+
+    monkeypatch.setattr(chat_service, "get_orchestrator", lambda: SimpleNamespace(handle_chat=controlled_generation))
+    manager = controlled_queue.manager
+    with authenticated_client(queue_db) as harness, ThreadPoolExecutor(max_workers=1) as pool:
+        assert submit(harness, "request-cancel-active-123").status_code == 202
+        operation = harness.operation("request-cancel-active-123")
+        resources = controlled_queue.launches.pop(operation.id)
+        worker = pool.submit(manager._run, operation.id, resources)
+        assert entered.wait(1)
+        response = harness.client.post("/api/chat/requests/request-cancel-active-123/cancel")
+        assert response.status_code == 200
+        worker.result(timeout=2)
+        assert finished.is_set()
+        assert status(harness, "request-cancel-active-123").json()["status"] == "cancelled"
+        assert harness.operation("request-cancel-active-123").response is None
+    assert snapshot() == {}
+    assert manager._cancellations == {}
+
+
+def test_cancelled_inference_wait_exits_without_waiting_for_another_user():
+    from app.common.inference_errors import InferenceFailureError, InferenceFailureKind
+    from app.llm.request_control import inference_control
+
+    entered, cancelled = Event(), Event()
+
+    def waiting_turn():
+        with inference_control(10, cancel_event=cancelled), wait_for_inference(10):
+            entered.set()
+            with admission("inference", 1):
+                pytest.fail("La cancelacion no debe adquirir el cupo de otro usuario")
+
+    with ThreadPoolExecutor(max_workers=1) as pool, admission("inference", 1):
+        future = pool.submit(waiting_turn)
+        assert entered.wait(1)
+        cancelled.set()
+        with pytest.raises(InferenceFailureError) as caught:
+            future.result(timeout=1)
+        assert caught.value.failure_kind is InferenceFailureKind.CANCELLED
+        assert snapshot() == {"inference": 1}
+    assert snapshot() == {}
+
+
+def test_cancellation_events_are_isolated_and_not_reused_after_completion():
+    from app.agents.chat_queue import ChatQueue
+
+    manager = ChatQueue()
+    with manager.request_control("a") as first, manager.request_control("b") as other:
+        manager.cancel("a")
+        assert first.is_set()
+        assert not other.is_set()
+    with manager.request_control("a") as next_turn:
+        assert not next_turn.is_set()
+
+
 @pytest.mark.parametrize(
     ("active", "limit", "busy"),
     [(0, 50, False), (44, 50, False), (45, 50, True), (50, 50, True), (57, 64, False)],

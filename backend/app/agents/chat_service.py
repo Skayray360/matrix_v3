@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from contextlib import suppress
+from threading import Event
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -25,6 +26,7 @@ from app.common.errors import ForbiddenError, ValidationFailedError
 from app.database.engine import get_sessionmaker
 from app.database.models import ChatOperation, Conversation
 from app.llm.provider import inference_deadline
+from app.llm.request_control import check_inference_control
 from app.memory.service import MemoryService, authorization_fingerprint
 
 _orchestrator: Orchestrator | None = None
@@ -65,36 +67,54 @@ def authorization_scope(db: Session, ctx: UserContext) -> str:
 def execute_chat(
     db: Session, *, ctx: UserContext, conversation: Conversation, message: str,
     expected_scope: str, operation_id: str | None, reauthorize: Callable[[Session], UserContext],
+    cancel_event: Event | None = None, absolute_deadline: float | None = None,
 ) -> ChatExecutionResult:
     """Ejecuta un turno y descarta respuestas tardias, canceladas o revocadas."""
     try:
-        with inference_deadline():
+        with inference_deadline(cancel_event=cancel_event, absolute_deadline=absolute_deadline):
+            if operation_id:
+                pending = db.get(ChatOperation, operation_id)
+                if pending is None:
+                    raise ValidationFailedError("Solicitud no registrada.")
+                db.refresh(pending)
+                if pending.status != "running":
+                    raise ValidationFailedError("Solicitud cancelada o expirada.")
             outcome = get_orchestrator().handle_chat(db, ctx=ctx, conversation=conversation, message=message)
-        response = ChatExecutionResult(
-            conversation_id=outcome.conversation_id, message_id=outcome.message_id,
-            answer=outcome.answer, sources=outcome.public_sources(), intent=outcome.intent,
-            grounded=outcome.grounded, latency_ms=outcome.latency_ms,
-            answer_basis=outcome.answer_basis,
-        )
-        # Una transaccion nueva ve revocaciones/cancelaciones ocurridas durante IA.
-        with get_sessionmaker()() as check_db:
-            current = reauthorize(check_db)
-            if authorization_scope(check_db, current) != expected_scope:
-                raise ForbiddenError("Sus permisos cambiaron durante la consulta. Vuelva a consultar.")
-            _memory.get_owned_conversation(check_db, current, outcome.conversation_id)
-            operation = check_db.get(ChatOperation, operation_id) if operation_id else None
-            if operation is not None and operation.status != "running":
-                raise ValidationFailedError("Solicitud cancelada o expirada.")
-        if operation_id:
-            changed = db.execute(
-                update(ChatOperation)
-                .where(ChatOperation.id == operation_id, ChatOperation.status == "running")
-                .values(
-                    status="completed", response=response.model_dump(), error_code=None, message=None, session_id=None,
-                )
+            response = ChatExecutionResult(
+                conversation_id=outcome.conversation_id, message_id=outcome.message_id,
+                answer=outcome.answer, sources=outcome.public_sources(), intent=outcome.intent,
+                grounded=outcome.grounded, latency_ms=outcome.latency_ms,
+                answer_basis=outcome.answer_basis,
             )
-            if changed.rowcount != 1:
-                raise ValidationFailedError("Solicitud cancelada o expirada.")
+            check_inference_control()
+            # Una transaccion nueva ve revocaciones/cancelaciones ocurridas durante IA.
+            with get_sessionmaker()() as check_db:
+                current = reauthorize(check_db)
+                if authorization_scope(check_db, current) != expected_scope:
+                    raise ForbiddenError("Sus permisos cambiaron durante la consulta. Vuelva a consultar.")
+                _memory.get_owned_conversation(check_db, current, outcome.conversation_id)
+                operation = check_db.get(ChatOperation, operation_id) if operation_id else None
+                if operation_id and (operation is None or operation.status != "running"):
+                    raise ValidationFailedError("Solicitud cancelada o expirada.")
+            if response.sources:
+                _memory.set_source_details(
+                    db, ctx=current, message_id=outcome.message_id, sources=response.sources,
+                )
+            check_inference_control()
+            if operation_id:
+                changed = db.execute(
+                    update(ChatOperation)
+                    .where(ChatOperation.id == operation_id, ChatOperation.status == "running")
+                    .values(
+                        status="completed", response=response.model_dump(), error_code=None,
+                        message=None, session_id=None,
+                    )
+                )
+                if changed.rowcount != 1:
+                    raise ValidationFailedError("Solicitud cancelada o expirada.")
+            # SQL tambien consume plazo; una escritura tardia sigue pendiente
+            # y puede revertirse antes de confirmar el asistente y la operacion.
+            check_inference_control()
         db.commit()
         return response
     except Exception as exc:

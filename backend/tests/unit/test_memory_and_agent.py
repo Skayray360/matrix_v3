@@ -10,13 +10,20 @@ import pytest
 from app.agents.knowledge_agent import KnowledgeAgent
 from app.agents.prompts import SYSTEM_POLICY, build_answer_messages, format_evidence_block, format_memory_block
 from app.agents.query_planner import extract_json_object
-from app.common.errors import AnswerValidationError
+from app.common.answers import UNVERIFIED_ANSWER_NOTICE, safe_nonfactual_text
+from app.config import get_settings
 from app.llm.model_policy import ModelPolicy
 from app.llm.ollama_client import ChatResult
 from app.memory.service import ConversationContext, ConversationTurn
 from app.rag.schemas import Evidence
 
 pytestmark = pytest.mark.unit
+
+
+@pytest.fixture(autouse=True)
+def markdown_transport(monkeypatch):
+    # Estas muestras prueban el transporte Markdown compatible, no JSON.
+    monkeypatch.setattr(get_settings(), "answer_structured_output", False)
 
 
 def evidence(source_id: str, text: str) -> Evidence:
@@ -145,12 +152,12 @@ class TestAgenteDeConocimiento:
             ]
         )
         agent = KnowledgeAgent(llm=llm, policy=ModelPolicy())
-        with pytest.raises(AnswerValidationError) as failed:
-            agent.synthesize(
-                question="Cuantos dias?", evidences=EVIDENCIAS, model_name="gemma4:latest"
-            )
-        assert "30 dias" not in str(failed.value)
-        assert "nomina/inventado" not in str(failed.value)
+        result = agent.synthesize(
+            question="Cuantos dias?", evidences=EVIDENCIAS, model_name="gemma4:latest"
+        )
+        assert result.answer.startswith(UNVERIFIED_ANSWER_NOTICE) and safe_nonfactual_text(result.answer)
+        assert "30 dias" not in result.answer and "nomina/inventado" not in result.answer
+        assert result.cited_source_ids == () and result.answer_basis == "insufficient"
         # Politica anti-loop: exactamente dos llamadas, ni una mas.
         assert len(llm.llamadas) == 2
 
@@ -158,8 +165,8 @@ class TestAgenteDeConocimiento:
     def test_no_encadena_intentos_indefinidos(self):
         llm = FakeLlm(respuestas=["sin citas", "tampoco tiene citas", "ni esta"])
         agent = KnowledgeAgent(llm=llm, policy=ModelPolicy())
-        with pytest.raises(AnswerValidationError):
-            agent.synthesize(question="Cuantos dias?", evidences=EVIDENCIAS, model_name="gemma4:latest")
+        result = agent.synthesize(question="Cuantos dias?", evidences=EVIDENCIAS, model_name="gemma4:latest")
+        assert result.answer.startswith(UNVERIFIED_ANSWER_NOTICE) and not result.cited_source_ids
         assert len(llm.llamadas) == 2
 
 

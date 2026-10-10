@@ -21,10 +21,11 @@ def policy_with_settings(monkeypatch, **overrides):
         "ollama_fast_model": "synthetic-generator", "ollama_deep_model": "synthetic-generator",
         "ollama_fast_num_ctx": 8192, "ollama_deep_num_ctx": 8192,
         "ollama_fast_max_tokens": 1536, "ollama_deep_max_tokens": 3072,
-        "llm_system_prefix": "",
+        "llm_system_prefix": "", "answer_structured_output": False,  # CitedAnswerLlm entrega Markdown.
     }
     settings = Settings(**(config | overrides))
-    for module in ("app.agents.prompts", "app.agents.knowledge_agent", "app.llm.model_policy"):
+    for module in ("app.agents.prompts", "app.agents.knowledge_agent", "app.agents.documentary_output",
+                   "app.llm.model_policy"):
         monkeypatch.setattr(f"{module}.get_settings", lambda: settings)
     return settings, ModelPolicy()
 

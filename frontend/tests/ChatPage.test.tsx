@@ -9,6 +9,7 @@ import {
   type ChatReply,
   type ChatRequestStatus,
   type ConversationDetail,
+  type DocumentStatus,
   type Me,
 } from "../src/services/api";
 
@@ -171,6 +172,43 @@ describe("ChatPage origen de respuestas", () => {
     expect(api.getConversation).toHaveBeenLastCalledWith("A", undefined, 20);
   });
 
+  it("conserva página y etiqueta autorizadas al reabrir y paginar el historial", async () => {
+    const user = userEvent.setup();
+    const source = {
+      source_id: "synthetic/manual.pdf#2",
+      filename: "manual.pdf",
+      label: "Manual sintético",
+      page_or_sheet: "p. 3",
+      section: "Condiciones",
+      category: "prestaciones",
+      scope: "corporate",
+    };
+    const historical = {
+      id: "documental-history",
+      role: "assistant",
+      content: `Respuesta almacenada [[${source.source_id}]]`,
+      model: null,
+      created_at: "2026-10-08",
+      sources: [source],
+    };
+    vi.mocked(api.getConversation)
+      .mockResolvedValueOnce({ ...detail("A"), messages: [historical], next_before_seq: 20 })
+      .mockResolvedValueOnce({
+        ...detail("A"),
+        messages: [{ ...historical, id: "older-documental", content: "Respuesta anterior" }],
+      });
+    render(<ChatPage me={me} onLogout={vi.fn()} />);
+    await user.click(await screen.findByText("Conversacion A"));
+    expect(await screen.findByTestId("sources")).toHaveTextContent("Manual sintético");
+    expect(screen.getByTestId("sources")).toHaveTextContent("p. 3");
+    await user.click(screen.getByRole("button", { name: "Cargar mensajes anteriores" }));
+    await screen.findByText("Respuesta anterior");
+    for (const sources of screen.getAllByTestId("sources")) {
+      expect(sources).toHaveTextContent("Manual sintético");
+      expect(sources).toHaveTextContent("p. 3");
+    }
+  });
+
   it("recibe la procedencia explícita y la muestra también en trazabilidad", async () => {
     const user = userEvent.setup();
     vi.spyOn(api, "submitChat").mockResolvedValue(
@@ -240,14 +278,16 @@ describe("ChatPage fallos de generación", () => {
     await user.type(screen.getByTestId("composer-input"), "Pregunta documental{Enter}");
     expect(await screen.findByRole("alert")).toHaveTextContent("no pudo validarse");
     expect(screen.getByRole("alert")).not.toHaveTextContent("Ollama");
+    expect(screen.getByRole("alert")).not.toHaveTextContent("precisar el documento");
+    expect(screen.getByRole("alert")).toHaveTextContent("comparta esta referencia con TI");
     expect(screen.getByTestId("composer-input")).toHaveValue("Pregunta documental");
     expect(screen.queryByTestId("message-assistant")).not.toBeInTheDocument();
   });
 
   it.each([
-    ["timeout", "El modelo agotó el tiempo disponible"],
+    ["timeout", "La solicitud agotó el tiempo disponible"],
     ["model_incomplete", "El modelo devolvió una respuesta incompleta"],
-    ["inference_unavailable", "No se pudo obtener una respuesta de Ollama"],
+    ["inference_unavailable", "No se pudo obtener una respuesta del modelo local"],
     ["generation_failed", "No fue posible generar la respuesta"],
     [undefined, "No fue posible generar la respuesta"],
   ])("explica %s, conserva el borrador e identifica la solicitud", async (code, reason) => {
@@ -260,7 +300,9 @@ describe("ChatPage fallos de generación", () => {
     const requestId = vi.mocked(api.submitChat).mock.calls[0][2];
     expect(await screen.findByRole("alert")).toHaveTextContent(reason);
     expect(screen.getByRole("alert")).toHaveTextContent(
-      code === "model_incomplete" ? "Ollama puede estar abierto" : "Ollama esté abierto",
+      code === "model_incomplete"
+        ? "TI puede revisar el modelo"
+        : "comparta esta referencia con TI",
     );
     expect(screen.getByRole("alert")).toHaveTextContent(requestId);
     expect(screen.getByTestId("composer-input")).toHaveValue("Pregunta pendiente");
@@ -622,6 +664,30 @@ describe("ChatPage concurrencia", () => {
     expect(screen.getByTestId("composer-input")).toHaveValue("Resume el adjunto");
   });
 
+  it("conserva la pregunta escrita al crear una conversación para el primer adjunto", async () => {
+    const user = userEvent.setup();
+    vi.spyOn(api, "createConversation").mockResolvedValue(detail("C"));
+    vi.spyOn(api, "uploadAttachments").mockResolvedValue({ documents: [] });
+    vi.spyOn(api, "submitChat").mockResolvedValue(completed({ ...reply, conversation_id: "C" }));
+    render(<ChatPage me={me} onLogout={vi.fn()} />);
+    await screen.findByText("Conversacion A");
+    await user.type(screen.getByTestId("composer-input"), "Resume mi adjunto");
+    await user.upload(
+      screen.getByLabelText("Adjuntar archivos a la conversacion"),
+      new File(["contenido sintético"], "manual.txt"),
+    );
+    await waitFor(() => expect(screen.getByTestId("composer-input")).toBeEnabled());
+    expect(screen.getByTestId("composer-input")).toHaveValue("Resume mi adjunto");
+    await user.click(screen.getByTestId("send-button"));
+    await screen.findByText(reply.answer);
+    expect(api.submitChat).toHaveBeenCalledWith(
+      "Resume mi adjunto",
+      "C",
+      expect.any(String),
+      expect.any(AbortSignal),
+    );
+  });
+
   it.each(["A", null])("un acceso rapido conserva el borrador en conversacion %s", async (id) => {
     const user = userEvent.setup();
     vi.spyOn(api, "submitChat").mockResolvedValue(
@@ -643,6 +709,183 @@ describe("ChatPage concurrencia", () => {
     await user.click(screen.getByTestId("quick-action-general"));
     await screen.findByText("Respuesta del tema");
     expect(screen.getByTestId("composer-input")).toHaveValue("Borrador pendiente");
+  });
+});
+
+describe("ChatPage ciclo de adjuntos", () => {
+  const attachment: DocumentStatus = {
+    id: "guide-A",
+    filename: "Guia_configuracion_Kerberos_AD_PENOLEST_MX.docx",
+    status: "indexed",
+    chunk_count: 85,
+    scope: "conversation",
+    category: null,
+    error_message: null,
+  };
+
+  it.each([
+    "explicame sobre este documento Guia_configuracion_Kerberos_AD_PENOLEST_MX.",
+    "Resume este documento",
+  ])("mantiene el adjunto de A al enviar la consulta: %s", async (question) => {
+    const user = userEvent.setup();
+    vi.spyOn(api, "uploadAttachments").mockResolvedValue({ documents: [attachment] });
+    vi.spyOn(api, "submitChat").mockResolvedValue(completed(reply));
+    render(<ChatPage me={me} onLogout={vi.fn()} />);
+    await user.click(await screen.findByText("Conversacion A"));
+    await waitFor(() => expect(screen.getByTestId("composer-input")).toBeEnabled());
+    await user.upload(
+      screen.getByLabelText("Adjuntar archivos a la conversacion"),
+      new File(["Contenido sintético"], attachment.filename),
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId("attachments")).toHaveTextContent("85 fragmentos"),
+    );
+    await user.type(screen.getByTestId("composer-input"), `${question}{Enter}`);
+    await screen.findByText(reply.answer);
+    expect(api.uploadAttachments).toHaveBeenCalledWith("A", [expect.any(File)]);
+    expect(api.submitChat).toHaveBeenCalledWith(
+      question,
+      "A",
+      expect.any(String),
+      expect.any(AbortSignal),
+    );
+    expect(screen.getByTestId("attachments")).toHaveTextContent(attachment.filename);
+    expect(screen.getByTestId("attachments")).toHaveTextContent("indexed");
+  });
+
+  it("reconcilia el estado del adjunto al regresar a A durante su carga", async () => {
+    const user = userEvent.setup();
+    const upload = deferred<{ documents: DocumentStatus[] }>();
+    vi.spyOn(api, "uploadAttachments").mockReturnValue(upload.promise);
+    vi.mocked(api.getConversation)
+      .mockResolvedValueOnce(detail("A"))
+      .mockResolvedValueOnce(detail("B"))
+      .mockResolvedValueOnce({
+        ...detail("A"),
+        attachments: [{ ...attachment, status: "processing", chunk_count: 0 }],
+      })
+      .mockResolvedValue({ ...detail("A"), attachments: [attachment] });
+    render(<ChatPage me={me} onLogout={vi.fn()} />);
+    await user.click(await screen.findByText("Conversacion A"));
+    await waitFor(() => expect(screen.getByTestId("composer-input")).toBeEnabled());
+    await user.type(screen.getByTestId("composer-input"), "Resume el adjunto");
+    await user.upload(
+      screen.getByLabelText("Adjuntar archivos a la conversacion"),
+      new File(["Contenido sintético"], attachment.filename),
+    );
+    await user.click(screen.getByText("Conversacion B"));
+    expect(screen.queryByTestId("attachments")).not.toBeInTheDocument();
+    await user.click(screen.getByText("Conversacion A"));
+    await waitFor(() => expect(screen.getByTestId("attachments")).toHaveTextContent("processing"));
+    await act(async () => upload.resolve({ documents: [attachment] }));
+    await waitFor(() => expect(screen.getByTestId("attachments")).toHaveTextContent("indexed"));
+    expect(screen.getByTestId("attachments")).toHaveTextContent("85 fragmentos");
+    expect(screen.getAllByText(attachment.filename)).toHaveLength(1);
+    expect(screen.getByTestId("composer-input")).toHaveValue("Resume el adjunto");
+    expect(screen.getByTestId("composer-input")).toBeEnabled();
+  });
+
+  it("una carga tardía de A no añade sus archivos a B", async () => {
+    const user = userEvent.setup();
+    const upload = deferred<{ documents: DocumentStatus[] }>();
+    vi.spyOn(api, "uploadAttachments").mockReturnValue(upload.promise);
+    render(<ChatPage me={me} onLogout={vi.fn()} />);
+    await user.click(await screen.findByText("Conversacion A"));
+    await waitFor(() => expect(screen.getByTestId("composer-input")).toBeEnabled());
+    await user.upload(
+      screen.getByLabelText("Adjuntar archivos a la conversacion"),
+      new File(["Contenido sintético"], attachment.filename),
+    );
+    await user.click(screen.getByText("Conversacion B"));
+    await act(async () => upload.resolve({ documents: [attachment] }));
+    expect(screen.queryByTestId("attachments")).not.toBeInTheDocument();
+    expect(screen.getByText("Conversacion B").closest("button")).toHaveAttribute(
+      "aria-current",
+      "true",
+    );
+  });
+
+  it("un historial iniciado antes de terminar la carga no restaura el estado anterior", async () => {
+    const user = userEvent.setup();
+    const upload = deferred<{ documents: DocumentStatus[] }>();
+    const history = deferred<ConversationDetail>();
+    vi.spyOn(api, "uploadAttachments").mockReturnValue(upload.promise);
+    vi.mocked(api.getConversation)
+      .mockResolvedValueOnce(detail("A"))
+      .mockResolvedValueOnce(detail("B"))
+      .mockReturnValueOnce(history.promise);
+    render(<ChatPage me={me} onLogout={vi.fn()} />);
+    await user.click(await screen.findByText("Conversacion A"));
+    await waitFor(() => expect(screen.getByTestId("composer-input")).toBeEnabled());
+    await user.upload(
+      screen.getByLabelText("Adjuntar archivos a la conversacion"),
+      new File(["Contenido sintético"], attachment.filename),
+    );
+    await user.click(screen.getByText("Conversacion B"));
+    await user.click(screen.getByText("Conversacion A"));
+    await act(async () => upload.resolve({ documents: [attachment] }));
+    await act(async () =>
+      history.resolve({
+        ...detail("A"),
+        attachments: [{ ...attachment, status: "processing", chunk_count: 0 }],
+      }),
+    );
+    expect(screen.getByTestId("attachments")).toHaveTextContent("indexed");
+    expect(screen.getByTestId("attachments")).toHaveTextContent("85 fragmentos");
+    expect(screen.getAllByText(attachment.filename)).toHaveLength(1);
+    expect(api.getConversation).toHaveBeenCalledTimes(3);
+  });
+
+  it("terminar una carga no cancela la navegación a una conversación nueva", async () => {
+    const user = userEvent.setup();
+    const upload = deferred<{ documents: DocumentStatus[] }>();
+    const creation = deferred<ConversationDetail>();
+    vi.spyOn(api, "uploadAttachments").mockReturnValue(upload.promise);
+    vi.spyOn(api, "createConversation").mockReturnValue(creation.promise);
+    render(<ChatPage me={me} onLogout={vi.fn()} />);
+    await user.click(await screen.findByText("Conversacion A"));
+    await waitFor(() => expect(screen.getByTestId("composer-input")).toBeEnabled());
+    await user.upload(
+      screen.getByLabelText("Adjuntar archivos a la conversacion"),
+      new File(["Contenido sintético"], attachment.filename),
+    );
+    await user.click(screen.getByTestId("new-conversation"));
+    await act(async () => upload.resolve({ documents: [attachment] }));
+    vi.mocked(api.listConversations).mockResolvedValue([detail("A"), detail("B"), detail("C")]);
+    await act(async () => creation.resolve(detail("C")));
+    expect((await screen.findByText("Conversacion C")).closest("button")).toHaveAttribute(
+      "aria-current",
+      "true",
+    );
+    expect(screen.queryByTestId("attachments")).not.toBeInTheDocument();
+  });
+
+  it("conserva la pregunta junto al primer adjunto aunque se navegue antes de crear su conversación", async () => {
+    const user = userEvent.setup();
+    const creation = deferred<ConversationDetail>();
+    vi.spyOn(api, "createConversation").mockReturnValue(creation.promise);
+    vi.spyOn(api, "uploadAttachments").mockResolvedValue({ documents: [attachment] });
+    render(<ChatPage me={me} onLogout={vi.fn()} />);
+    await screen.findByText("Conversacion A");
+    await user.type(screen.getByTestId("composer-input"), "Pregunta sobre mi adjunto");
+    await user.upload(
+      screen.getByLabelText("Adjuntar archivos a la conversacion"),
+      new File(["Contenido sintético"], attachment.filename),
+    );
+    await user.click(screen.getByText("Conversacion B"));
+    vi.mocked(api.listConversations).mockResolvedValue([detail("A"), detail("B"), detail("C")]);
+    await act(async () => creation.resolve(detail("C")));
+    await screen.findByText("Conversacion C");
+    expect(screen.getByText("Conversacion B").closest("button")).toHaveAttribute(
+      "aria-current",
+      "true",
+    );
+    expect(api.uploadAttachments).toHaveBeenCalledWith("C", [expect.any(File)]);
+    vi.mocked(api.getConversation).mockResolvedValue({ ...detail("C"), attachments: [attachment] });
+    await user.click(screen.getByText("Conversacion C"));
+    await waitFor(() => expect(screen.getByTestId("composer-input")).toBeEnabled());
+    expect(screen.getByTestId("composer-input")).toHaveValue("Pregunta sobre mi adjunto");
+    expect(screen.getByTestId("attachments")).toHaveTextContent(attachment.filename);
   });
 });
 
@@ -687,7 +930,7 @@ describe("ChatPage admision y aviso de capacidad", () => {
     vi.spyOn(api, "chatStatus").mockResolvedValue(completed(reply));
     render(<ChatPage me={me} onLogout={vi.fn()} />);
     await send(user);
-    expect(screen.getByText("Consultando fuentes autorizadas")).toBeInTheDocument();
+    expect(screen.getByText("Procesando su consulta")).toBeInTheDocument();
     expect(screen.queryByTestId("capacity-notice")).not.toBeInTheDocument();
     expect(api.chatStatus).not.toHaveBeenCalled();
     expect(await screen.findByText(reply.answer, {}, { timeout: 3500 })).toBeInTheDocument();
@@ -728,7 +971,7 @@ describe("ChatPage admision y aviso de capacidad", () => {
     await send(user);
     expect(screen.getByText("Solicitud aceptada, esperando disponibilidad")).toBeInTheDocument();
     expect(screen.getByTestId("capacity-notice")).toBeInTheDocument();
-    await screen.findByText("Consultando fuentes autorizadas", {}, { timeout: 3500 });
+    await screen.findByText("Procesando su consulta", {}, { timeout: 3500 });
     expect(screen.queryByTestId("capacity-notice")).not.toBeInTheDocument();
     await screen.findByText(reply.answer, {}, { timeout: 3500 });
     expect(api.submitChat).toHaveBeenCalledTimes(1);

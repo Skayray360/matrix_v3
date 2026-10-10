@@ -1,0 +1,31 @@
+# Creado por Aldo Garcia.
+# El contexto de build nunca incluye conocimiento, estado o credenciales.
+.git
+**/.env
+**/.env.*
+**/*.env
+**/*.env.*
+**/docker.env
+backend/config/secrets
+backend/runtime
+backend/logs
+backend/tests
+knowledge-base
+**/.venv
+**/node_modules
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+**/.coverage*
+**/*.tsbuildinfo
+frontend/dist
+frontend/playwright-report
+frontend/test-results
+var
+reports
+**/*.pem
+**/*.key
+**/*.pfx
+**/*.p12
+**/*.bundle
+**/*.zip

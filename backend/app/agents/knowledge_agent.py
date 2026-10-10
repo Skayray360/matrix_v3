@@ -1,5 +1,5 @@
 # Creado por Aldo Garcia.
-"""Sintesis local con grounding, fallback y resumen jerarquico.
+"""Sintesis local con grounding, reintento acotado y resumen jerarquico.
 
 El agente solo recibe evidencia ya autorizada. No conoce el vector store ni el
 motor de permisos, por lo que ninguna salida de un modelo puede ampliar el
@@ -9,15 +9,19 @@ de ``source_id`` y admiten una sola regeneracion.
 
 from __future__ import annotations
 
+import re
+from collections import deque
 from dataclasses import dataclass, replace
 from time import perf_counter
 
 from app.agents.documentary_output import (
-    DOCUMENTARY_SCHEMA,
+    DOCUMENTARY_GENERATION_SCHEMA,
     SCHEMA_BUDGET_CHARS,
+    DocumentaryOutputError,
     render_documentary_output,
     structured_output_enabled,
 )
+from app.agents.partial_documentary import recover_partial_documentary_answer
 from app.agents.prompts import (
     build_answer_messages,
     build_clarification_messages,
@@ -25,9 +29,14 @@ from app.agents.prompts import (
     build_summary_reduce_messages,
 )
 from app.common import answer_diagnostics
-from app.common.answers import GENERAL_HEADING, AnswerBasis, safe_nonfactual_text
+from app.common.answers import (
+    GENERAL_HEADING,
+    UNVERIFIED_ANSWER_NOTICE,
+    AnswerBasis,
+    safe_nonfactual_text,
+)
 from app.common.answers import answer_basis as classify_answer_basis
-from app.common.errors import AnswerValidationError, OllamaUnavailableError
+from app.common.errors import AnswerValidationError
 from app.common.inference_errors import InferenceFailureError, InferenceFailureKind
 from app.common.logging import get_logger
 from app.common.timing import timed_stage
@@ -37,6 +46,7 @@ from app.llm.ollama_client import ChatResult
 from app.llm.provider import InferenceClient
 from app.memory.service import ConversationContext
 from app.rag.citation_aliases import citation_aliases, expand_citation_aliases
+from app.rag.claim_context import application_diagnostics
 from app.rag.grounding import (
     GroundingReport,
     coverage_ratio,
@@ -44,6 +54,7 @@ from app.rag.grounding import (
     verify_grounding,
 )
 from app.rag.schemas import Evidence
+from app.rag.summary_scope import requested_summary_points, select_summary_scope, summary_map_question
 from app.structured_data.tool import StructuredEvidence
 
 logger = get_logger(__name__)
@@ -54,12 +65,6 @@ _PROMPT_OVERHEAD_TOKENS = 1400
 _CHARS_PER_TOKEN_BUDGET = 3
 # Margen estimado del mensaje system adicional; no sustituye al tokenizer real.
 _ADDITIONAL_SYSTEM_OVERHEAD_TOKENS = 32
-
-
-def _safe_failure_kind(error: Exception) -> str:
-    if isinstance(error, InferenceFailureError) and isinstance(error.failure_kind, InferenceFailureKind):
-        return error.failure_kind.value
-    return "unavailable"
 
 
 @dataclass(frozen=True, slots=True)
@@ -89,6 +94,7 @@ class _FirstPass:
     insufficient_coverage: bool
     false_summary_insufficiency: bool
     choice: ModelChoice
+    false_documentary_insufficiency: bool = False
 
 
 class KnowledgeAgent:
@@ -110,25 +116,14 @@ class KnowledgeAgent:
     ) -> SynthesisResult:
         """Responde conocimiento general sin presentarlo como politica interna."""
         choice = self._policy.resolve_choice(model_name, choice)
-        messages = build_general_messages(question=question, memory=memory, capabilities=intent is Intent.CAPABILITIES)
-        try:
-            result, fallback_used = self._chat_with_fallback(
-                model_name=model_name, fallback_model_name=self._policy.fallback_for(model_name),
-                messages=messages, intent=Intent.GENERAL, choice=choice,
-            )
-        except OllamaUnavailableError as exc:
-            if (choice is not ModelChoice.DEEP or self._policy.fast_model == model_name
-                    or not self._can_fallback_to_fast(exc)):
-                raise
-            if self._messages_chars(messages) > self._input_budget_chars(self._policy.fast_model, Intent.GENERAL):
-                messages = build_general_messages(
-                    question=question, memory=None, capabilities=intent is Intent.CAPABILITIES,
-                )
-            result, _ = self._chat_with_fallback(
-                model_name=self._policy.fast_model, fallback_model_name=self._policy.fast_model,
-                messages=messages, intent=Intent.GENERAL, choice=ModelChoice.FAST, allow_fallback=False,
-            )
-            fallback_used = True
+        messages = build_general_messages(
+            question=question, memory=None if intent is Intent.CAPABILITIES else memory,
+            capabilities=intent is Intent.CAPABILITIES,
+        )
+        result, fallback_used = self._chat_with_fallback(
+            model_name=model_name, fallback_model_name=model_name,
+            messages=messages, intent=Intent.GENERAL, choice=choice,
+        )
         answer = result.content.strip()
         if not answer:
             raise InferenceFailureError(InferenceFailureKind.EMPTY)
@@ -157,7 +152,10 @@ class KnowledgeAgent:
         )
         answer = result.content.strip()
         if not answer.endswith('?') or not safe_nonfactual_text(answer):
-            raise AnswerValidationError(detail="solicitud de precision contiene afirmaciones no acreditadas")
+            # Una pregunta de precision no necesita publicar texto libre del
+            # modelo ni convertir un formato incorrecto en un fallo de chat.
+            answer = "¿Qué documento o apartado deseas consultar?"
+            logger.info("agent.clarification_recovered", extra={"recovery_method": "safe_question"})
         return SynthesisResult(
             answer=answer, model=result.model, latency_ms=result.latency_ms,
             grounding=GroundingReport(grounded=True, declares_insufficiency=True,
@@ -177,15 +175,6 @@ class KnowledgeAgent:
             question=question,
         )
 
-    @staticmethod
-    def _can_fallback_to_fast(error: OllamaUnavailableError) -> bool:
-        kind = str(getattr(error, "failure_kind", ""))
-        if kind in {"timeout", "transport", "incomplete", "empty", "context_limit"}:
-            return True
-        if kind in {"http", "busy"}:
-            return getattr(error, "http_status", None) in {404, 500, 502, 503, 504}
-        return (error.detail or "") in {"ReadTimeout", "ConnectTimeout", "timeout", "incomplete", "empty"}
-
     def _decode_and_verify(
         self, result: ChatResult, evidences: tuple[Evidence, ...], structured: tuple,
         *, question: str, aliases: dict[str, str], use_schema: bool,
@@ -193,14 +182,20 @@ class KnowledgeAgent:
         if use_schema:
             try:
                 result = replace(result, content=render_documentary_output(result.content, aliases))
-            except ValueError:
+            except DocumentaryOutputError as exc:
                 # Reutiliza el unico reintento existente; no publica JSON parcial.
                 return replace(result, content=""), GroundingReport(
                     grounded=False, reason="contrato documental JSON invalido",
-                    validation_detail="contrato documental JSON invalido",
+                    validation_detail=f"contrato documental JSON invalido: {exc.code}",
+                    invalid_source_ids=exc.invalid_aliases,
                 )
         result = replace(result, content=expand_citation_aliases(result.content, aliases))
-        return result, self._verify_answer(result.content, evidences, structured, question=question)
+        report = self._verify_answer(result.content, evidences, structured, question=question)
+        if report.grounded and report.declares_insufficiency and (evidences or structured):
+            # La abstencion del generador no demuestra que los documentos no
+            # contengan la respuesta. Describir el limite de esta consulta.
+            result = replace(result, content=UNVERIFIED_ANSWER_NOTICE + "\n\n¿Qué apartado deseas precisar?")
+        return result, report
 
     @timed_stage("generation")
     def synthesize(
@@ -218,12 +213,33 @@ class KnowledgeAgent:
         evidence_truncated: bool = False,
         _allow_hierarchy: bool = True,
         _allow_model_fallback: bool = True,
+        _summary_scope_resolved: bool = False,
     ) -> SynthesisResult:
         """Genera, verifica y como maximo una vez regenera la respuesta."""
         choice = self._policy.resolve_choice(model_name, choice)
         summary_mode = intent is Intent.DOCUMENT_SUMMARY
         if not evidences and not structured:
             return self.ask_clarification(question=question, model_name=model_name)
+
+        if summary_mode:
+            # Comprobar ANTES de empaquetar/dividir. Dos mapas no pueden
+            # acreditar por separado identidades distintas bajo una misma cita.
+            self._validate_summary_sources(evidences)
+            if not _summary_scope_resolved:
+                selection = select_summary_scope(question, evidences)
+                evidences = selection.evidences
+                if selection.clarification:
+                    return SynthesisResult(
+                        answer=selection.clarification, model=model_name, latency_ms=0,
+                        grounding=GroundingReport(grounded=True, declares_insufficiency=True),
+                        answer_basis="insufficient",
+                    )
+            points = requested_summary_points(question)
+            if points:
+                scope_note += (f"\nEl resumen final debe tener {points} puntos. "
+                               "Cada punto corresponde a una afirmacion con sus citas. "
+                               "No numeres el texto del claim; el servidor agrega la lista. "
+                               "Conserva las restricciones de cada regla y evita temas ajenos al pedido.")
 
         if summary_mode and _allow_hierarchy and self._summary_exceeds_context(
             evidences, model_name=model_name, question=question, memory=memory,
@@ -261,43 +277,32 @@ class KnowledgeAgent:
             documentary_only=True,
         )
         use_schema = structured_output_enabled(document_summary=summary_mode, has_structured=bool(structured))
-        try:
-            result, availability_fallback = self._chat_with_fallback(
-                model_name=model_name,
-                fallback_model_name=self._policy.fallback_for(model_name),
-                messages=messages,
-                intent=intent,
-                choice=choice,
-                allow_fallback=_allow_model_fallback,
-                response_schema=DOCUMENTARY_SCHEMA if use_schema else None,
-            )
-        except OllamaUnavailableError as exc:
-            if (not _allow_model_fallback or choice is not ModelChoice.DEEP
-                    or self._policy.fast_model == model_name or not self._can_fallback_to_fast(exc)):
-                raise
-            logger.warning(
-                "llm.model_fallback",
-                extra={"primary_model": model_name, "fallback_model": self._policy.fast_model,
-                       "failure_kind": _safe_failure_kind(exc)},
-            )
-            # Recalcular el prompt desde unidades autorizadas, no cortar texto
-            # serializado ni enviar una ventana mayor al perfil alternativo.
-            return self.synthesize(
-                question=question, evidences=evidences, structured=structured, memory=memory,
-                model_name=self._policy.fast_model, choice=ModelChoice.FAST,
-                scope_note=scope_note, intent=intent, evidence_truncated=evidence_truncated,
-                deep_model_name=None, _allow_hierarchy=False, _allow_model_fallback=False,
-            )
+        result, availability_fallback = self._chat_with_fallback(
+            model_name=model_name,
+            fallback_model_name=model_name,
+            messages=messages,
+            intent=intent,
+            choice=choice,
+            response_schema=DOCUMENTARY_GENERATION_SCHEMA if use_schema else None,
+        )
         result_choice = self._policy.resolve_choice(result.model) if availability_fallback else choice
         result, report = self._decode_and_verify(
             result, evidences, structured, question=question,
             aliases=citation_aliases(evidences, structured), use_schema=use_schema,
         )
+        if summary_mode:
+            report = self._summary_coverage_report(report, evidences)
+            result, report = self._summary_point_format(result, report, question)
         answer_diagnostics.validated(result.content, report, retry=False)
         coverage = coverage_ratio(result.content, evidences)
 
         false_summary_insufficiency = summary_mode and bool(evidences) and (
             report.declares_insufficiency or not report.cited_source_ids
+        )
+        false_documentary_insufficiency = (
+            report.declares_insufficiency
+            and self._calculated_answer(question, evidences, intent=intent, structured=structured,
+                                        evidence_truncated=evidence_truncated) is not None
         )
         insufficient_coverage = (
             get_settings().answer_evidence_mode == "extractive"
@@ -305,7 +310,8 @@ class KnowledgeAgent:
             and coverage < MIN_COVERAGE_WITH_RICH_EVIDENCE
             and not report.declares_insufficiency
         )
-        needs_retry = not report.grounded or insufficient_coverage or false_summary_insufficiency
+        needs_retry = (not report.grounded or insufficient_coverage or false_summary_insufficiency
+                       or false_documentary_insufficiency)
 
         if not needs_retry:
             answer = self._append_limit_notice(result.content, evidence_truncated)
@@ -342,6 +348,7 @@ class KnowledgeAgent:
                 insufficient_coverage=insufficient_coverage,
                 false_summary_insufficiency=false_summary_insufficiency,
                 choice=result_choice,
+                false_documentary_insufficiency=false_documentary_insufficiency,
             ),
         )
 
@@ -363,26 +370,32 @@ class KnowledgeAgent:
 
         Escala al modelo profundo si el problema es cobertura o insuficiencia
         falsa de resumen. Si la regeneracion tampoco queda fundamentada: para un
-        resumen cae a la red extractiva citable; para el resto se descarta la
-        salida y se declara insuficiencia (nunca se conservan afirmaciones sin
-        respaldo).
+        resumen cae a la red extractiva citable; el resto conserva solo unidades
+        completas que pasan por separado el contrato documental. Si ninguna
+        pasa, publica una limitacion controlada sin hechos del borrador.
         """
         retry_note = self._retry_note(
             first.report,
             first.coverage,
             false_summary_insufficiency=first.false_summary_insufficiency,
+            false_documentary_insufficiency=first.false_documentary_insufficiency,
+            structured_output=structured_output_enabled(document_summary=summary_mode, has_structured=bool(structured)),
         )
         escalate = (
             (first.insufficient_coverage or first.false_summary_insufficiency)
             and deep_model_name is not None
             and (first.choice is not ModelChoice.DEEP or deep_model_name != first.result.model)
         )
-        retry_model = (deep_model_name or first.result.model) if escalate else first.result.model
+        # Aumentar el perfil de contexto puede ser util; cambiar de generador
+        # durante una respuesta no es una sustitucion controlada de modelo.
+        escalate = escalate and deep_model_name == first.result.model
+        retry_model = first.result.model
         retry_choice = ModelChoice.DEEP if escalate else first.choice
         documentary_only = True
         # El mapa de transporte se conserva aun si hay menos fuentes tras el
         # presupuesto: E3 no pasa a designar el antiguo E4 en el reintento.
         source_aliases = citation_aliases(evidences, structured)
+        first_application_diagnostics = application_diagnostics(question, evidences)
         evidences, structured, memory, context_limited = self._pack_answer_context(
             question=question, evidences=evidences, structured=structured,
             memory=memory, model_name=retry_model, scope_note=scope_note,
@@ -397,10 +410,15 @@ class KnowledgeAgent:
             "agent.regenerating",
             extra={
                 "reason": first.report.reason or "cobertura insuficiente",
+                "validation_detail": first.report.validation_detail,
+                "claim_index": first.report.claim_index,
                 "coverage": round(first.coverage, 3),
                 "escalated": escalate,
                 "selected_model": retry_model,
                 "model_route": str(retry_choice),
+                "cited_source_count": len(first.report.cited_source_ids),
+                "invalid_source_count": len(first.report.invalid_source_ids),
+                **first_application_diagnostics,
             },
         )
         retry_messages = build_answer_messages(
@@ -419,35 +437,31 @@ class KnowledgeAgent:
             "selected_model": retry_model, "choice": retry_choice.value, "escalated": escalate,
         })
         use_schema = structured_output_enabled(document_summary=summary_mode, has_structured=bool(structured))
-        try:
-            retry_result, retry_fallback = self._chat_with_fallback(
-                model_name=retry_model, fallback_model_name=self._policy.fallback_for(retry_model),
-                messages=retry_messages, intent=intent, retry=True, choice=retry_choice,
-                response_schema=DOCUMENTARY_SCHEMA if use_schema else None,
-            )
-        except OllamaUnavailableError as exc:
-            if (retry_choice is not ModelChoice.DEEP or self._policy.fast_model == retry_model
-                    or not self._can_fallback_to_fast(exc)):
-                raise
-            return self.synthesize(
-                question=question, evidences=evidences, structured=structured, memory=memory,
-                model_name=self._policy.fast_model, choice=ModelChoice.FAST,
-                deep_model_name=None, scope_note=scope_note, intent=intent,
-                evidence_truncated=evidence_truncated, _allow_hierarchy=False, _allow_model_fallback=False,
-            )
+        retry_result, retry_fallback = self._chat_with_fallback(
+            model_name=retry_model, fallback_model_name=retry_model,
+            messages=retry_messages, intent=intent, retry=True, choice=retry_choice,
+            response_schema=DOCUMENTARY_GENERATION_SCHEMA if use_schema else None,
+        )
         result_choice = self._policy.resolve_choice(retry_result.model) if retry_fallback else retry_choice
         retry_result, retry_report = self._decode_and_verify(
             retry_result, evidences, structured, question=question, use_schema=use_schema,
             aliases={alias: source for alias, source in source_aliases.items()
                      if source in {e.source_id for e in (*evidences, *structured)}},
         )
+        if summary_mode:
+            retry_report = self._summary_coverage_report(retry_report, evidences)
+            retry_result, retry_report = self._summary_point_format(retry_result, retry_report, question)
         answer_diagnostics.validated(retry_result.content, retry_report, retry=True)
         retry_false_insufficiency = summary_mode and bool(evidences) and (
             retry_report.declares_insufficiency or not retry_report.cited_source_ids
         )
         total_latency = first.result.latency_ms + retry_result.latency_ms
 
-        if retry_report.grounded and not retry_false_insufficiency:
+        calculated = self._calculated_answer(
+            question, evidences, intent=intent, structured=structured, evidence_truncated=evidence_truncated,
+        )
+        retry_false_documentary_insufficiency = retry_report.declares_insufficiency and calculated is not None
+        if retry_report.grounded and not retry_false_insufficiency and not retry_false_documentary_insufficiency:
             return SynthesisResult(
                 answer=self._append_limit_notice(retry_result.content, evidence_truncated),
                 model=retry_result.model,
@@ -472,6 +486,7 @@ class KnowledgeAgent:
         if summary_mode:
             return self._extractive_summary(
                 evidences,
+                question=question,
                 model=retry_result.model,
                 latency_ms=total_latency,
                 evidence_truncated=evidence_truncated,
@@ -480,40 +495,57 @@ class KnowledgeAgent:
             )
 
         # Una consulta completa y acotada de calculo puede resolverse desde la
-        # regla y fila verificadas, aunque una redaccion mezcle otras cohortes
-        # y la otra falle al pedir precision. No reutilizar ni recortar el borrador; el helper
-        # exige el contrato entero de la pregunta y valida la nueva respuesta.
-        numeric_failure = "afirmacion numerica sin respaldo en sus fuentes citadas"
-        if (intent is Intent.DOCUMENTAL and get_settings().answer_evidence_mode == "cited"
-                and not structured and not evidence_truncated
-                and not first.report.has_invalid_citations and not retry_report.has_invalid_citations
-                and numeric_failure in {first.report.reason, retry_report.reason}):
-            from app.rag.calculated_application import calculated_application_answer
-
-            calculated = calculated_application_answer(question, evidences)
-            if calculated is not None:
-                answer, calculated_report = calculated
-                logger.info("agent.calculated_application", extra={"cited_source_count":
-                            len(calculated_report.cited_source_ids)})
-                answer_diagnostics.emit("calculated_application", {"cited_source_count":
-                                        len(calculated_report.cited_source_ids)})
-                answer_diagnostics.validated(answer, calculated_report, retry=True)
-                return SynthesisResult(
-                    answer=answer, model=retry_result.model, latency_ms=total_latency,
-                    grounding=calculated_report, regenerated=True,
-                    escalated_to_deep=(escalate or (first.availability_fallback and first.choice is ModelChoice.DEEP)
-                                       or (retry_fallback and result_choice is ModelChoice.DEEP)),
-                    cited_source_ids=calculated_report.cited_source_ids, answer_basis="documented",
-                )
+        # regla y fila verificadas aunque falle el formato de ambas generaciones.
+        # El motivo del fallo del modelo no invalida este calculo independiente:
+        # el helper exige el contrato entero y verifica su respuesta nueva.
+        # Ningun borrador ni cita inventada se reutiliza como evidencia.
+        if (not first.report.has_invalid_citations and not retry_report.has_invalid_citations
+                and calculated is not None):
+            answer, calculated_report = calculated
+            logger.info("agent.calculated_application", extra={"cited_source_count":
+                        len(calculated_report.cited_source_ids)})
+            answer_diagnostics.emit("calculated_application", {"cited_source_count":
+                                    len(calculated_report.cited_source_ids)})
+            answer_diagnostics.validated(answer, calculated_report, retry=True)
+            return SynthesisResult(
+                answer=answer, model=retry_result.model, latency_ms=total_latency,
+                grounding=calculated_report, regenerated=True,
+                escalated_to_deep=(escalate or (first.availability_fallback and first.choice is ModelChoice.DEEP)
+                                   or (retry_fallback and result_choice is ModelChoice.DEEP)),
+                cited_source_ids=calculated_report.cited_source_ids, answer_basis="documented",
+            )
 
         if retry_report.has_invalid_citations:
             logger.warning(
                 "agent.rejected_fabricated_citations",
                 extra={"invalid_count": len(retry_report.invalid_source_ids)},
             )
-        # El contrato original documental se conserva: una fuente recuperada no
-        # demuestra que responda la pregunta. No convertir un extracto ajeno a
-        # la consulta en una respuesta afirmativa tras dos generaciones fallidas.
+        # Una fuente recuperada no demuestra que conteste la pregunta. Solo
+        # recuperar afirmaciones completas ya generadas y verificables, nunca
+        # convertir un extracto arbitrario en respuesta afirmativa.
+        if (get_settings().answer_evidence_mode == "cited"
+                and not first.report.has_invalid_citations and not retry_report.has_invalid_citations):
+            for candidate in (retry_result.content, first.result.content):
+                recovered = recover_partial_documentary_answer(
+                    candidate, evidences, structured=structured, question=question,
+                )
+                if recovered is None:
+                    continue
+                logger.info("agent.partial_answer_recovered", extra={
+                    "kept_claim_count": recovered.kept_claims,
+                    "discarded_claim_count": recovered.discarded_claims,
+                    "reason": retry_report.reason,
+                    "validation_detail": retry_report.validation_detail,
+                    "cited_source_count": len(recovered.grounding.cited_source_ids),
+                })
+                answer_diagnostics.validated(recovered.answer, recovered.grounding, retry=True)
+                return SynthesisResult(
+                    answer=self._append_limit_notice(recovered.answer, evidence_truncated),
+                    model=retry_result.model, latency_ms=total_latency,
+                    grounding=recovered.grounding, regenerated=True,
+                    escalated_to_deep=escalate,
+                    cited_source_ids=recovered.grounding.cited_source_ids, answer_basis="documented",
+                )
         logger.warning(
             "agent.answer_validation_failed",
             extra={
@@ -525,9 +557,30 @@ class KnowledgeAgent:
                 "selected_model": retry_result.model,
                 "validation_detail": retry_report.validation_detail,
                 "claim_index": retry_report.claim_index,
+                **application_diagnostics(question, evidences),
             },
         )
-        raise AnswerValidationError(detail=retry_report.validation_detail or retry_report.reason)
+        # El transporte funciono pero no produjo hechos publicables. Es una
+        # limitacion documental, no una averia de la cola. Los fallos de red,
+        # permisos, runtime y contexto conservan sus excepciones originales.
+        answer = UNVERIFIED_ANSWER_NOTICE + "\n\n¿Qué documento o apartado deseas precisar?"
+        return SynthesisResult(
+            answer=answer, model=retry_result.model, latency_ms=total_latency,
+            grounding=GroundingReport(
+                grounded=True, declares_insufficiency=True,
+                reason="limite de verificacion documental; ningun hecho del borrador publicado",
+            ),
+            regenerated=True, escalated_to_deep=escalate, answer_basis="insufficient",
+        )
+
+    @staticmethod
+    def _calculated_answer(question, evidences, *, intent, structured, evidence_truncated):
+        if (intent is not Intent.DOCUMENTAL or get_settings().answer_evidence_mode != "cited"
+                or structured or evidence_truncated):
+            return None
+        from app.rag.calculated_application import calculated_application_answer
+
+        return calculated_application_answer(question, evidences)
 
     def _chat_transport(self, *, response_schema: dict | None = None, **kwargs) -> ChatResult:
         started = perf_counter()
@@ -555,58 +608,23 @@ class KnowledgeAgent:
         allow_fallback: bool = True,
         response_schema: dict | None = None,
     ) -> tuple[ChatResult, bool]:
-        """Fallback local acotado para rechazo HTTP especifico del modelo."""
+        """Compatibilidad de llamada; nunca sustituye el generador seleccionado.
+
+        Los argumentos historicos de fallback se aceptan para conservar APIs.
+        Un modelo ausente, ocupado o fallido genera su error operativo original.
+        """
         choice = self._policy.resolve_choice(model_name, choice)
         profile = self._policy.generation_profile(model_name, intent=intent, retry=retry, choice=choice)
         if self._messages_chars(messages) > self._input_budget_chars(model_name, intent, choice=choice):
             raise InferenceFailureError(InferenceFailureKind.CONTEXT_LIMIT)
-        try:
-            return (
-                self._chat_transport(
-                    model=model_name,
-                    messages=messages,
-                    temperature=profile.temperature,
-                    num_ctx=profile.num_ctx,
-                    max_tokens=profile.max_tokens,
-                    execution_profile=choice.value,
-                    response_schema=response_schema,
-                ),
-                False,
-            )
-        except OllamaUnavailableError as exc:
-            detail = exc.detail or ""
-            # Una caida de transporte afecta a ambos modelos en el mismo Ollama;
-            # no se duplica. HTTP puede ser modelo ausente u OOM y si justifica
-            # probar una sola vez el otro modelo local.
-            not_found = detail.startswith("HTTP 404") or getattr(exc, "http_status", None) == 404
-            if not allow_fallback or not not_found or fallback_model_name == model_name:
-                raise
-            # Un fallback a un perfil menor no puede delegar el truncamiento al
-            # runtime: ese corte puede eliminar una excepcion del documento.
-            fallback_choice = self._policy.resolve_choice(fallback_model_name)
-            if self._messages_chars(messages) > self._input_budget_chars(
-                fallback_model_name, intent, choice=fallback_choice
-            ):
-                raise
-            logger.warning(
-                "llm.model_fallback",
-                extra={"primary_model": model_name, "fallback_model": fallback_model_name},
-            )
-            fallback_profile = self._policy.generation_profile(
-                fallback_model_name, intent=intent, retry=retry, choice=fallback_choice
-            )
-            return (
-                self._chat_transport(
-                    model=fallback_model_name,
-                    messages=messages,
-                    temperature=fallback_profile.temperature,
-                    num_ctx=fallback_profile.num_ctx,
-                    max_tokens=fallback_profile.max_tokens,
-                    execution_profile=fallback_choice.value,
-                    response_schema=response_schema,
-                ),
-                True,
-            )
+        return (
+            self._chat_transport(
+                model=model_name, messages=messages, temperature=profile.temperature,
+                num_ctx=profile.num_ctx, max_tokens=profile.max_tokens,
+                execution_profile=choice.value, response_schema=response_schema,
+            ),
+            False,
+        )
 
     def _summary_exceeds_context(
         self, evidences: tuple[Evidence, ...], *, model_name: str,
@@ -634,8 +652,8 @@ class KnowledgeAgent:
         # El adapter inserta el prefijo despues de construir los mensajes. Debe
         # reservarse antes de seleccionar fuentes y de comprobar cada llamada.
         schema_chars = 0
-        if intent in {Intent.DOCUMENTAL, Intent.MIXED} and structured_output_enabled(
-            document_summary=False, has_structured=False,
+        if intent in {Intent.DOCUMENTAL, Intent.MIXED, Intent.DOCUMENT_SUMMARY} and structured_output_enabled(
+            document_summary=intent is Intent.DOCUMENT_SUMMARY, has_structured=False,
         ):
             # El schema tambien ocupa espacio en runtimes de salida restringida.
             # En MIXED se reserva conservadoramente aun si termina entrando SQL.
@@ -753,22 +771,23 @@ class KnowledgeAgent:
         evidence_truncated: bool,
     ) -> SynthesisResult:
         """Map FAST y reduce DEEP solo cuando el contexto no alcanza."""
+        self._validate_summary_sources(evidences)
         # Si una unidad no cabe en FAST, DEEP procesa el lote sin cortarla.
         # La eleccion es de perfil: los dos pueden compartir un mismo modelo.
         map_choice = (
             ModelChoice.DEEP
-            if any(
+            if self._policy.deep_model == model_name and any(
                 self._summary_exceeds_context(
-                    (item,), model_name=self._policy.fast_model,
-                    scope_note=scope_note, choice=ModelChoice.FAST,
+                    (item,), model_name=model_name,
+                    scope_note=scope_note, choice=choice,
                 )
                 for item in evidences
             )
-            else ModelChoice.FAST
+            else choice
         )
-        map_model = self._policy.model_for(map_choice)
-        reduce_model = deep_model_name or model_name
-        reduce_choice = ModelChoice.DEEP if deep_model_name is not None else choice
+        map_model = model_name
+        reduce_model = model_name
+        reduce_choice = ModelChoice.DEEP if deep_model_name == model_name else choice
         batches = self._partition_summary_evidence(
             evidences, model_name=map_model, scope_note=scope_note, choice=map_choice
         )
@@ -776,9 +795,7 @@ class KnowledgeAgent:
         def summarize_batch(index_and_batch: tuple[int, tuple[Evidence, ...]]) -> SynthesisResult:
             index, batch = index_and_batch
             return self.synthesize(
-                question=(
-                    f"Resume la parte {index + 1} de {len(batches)} del contenido, " "con sus temas principales."
-                ),
+                question=summary_map_question(question, part=index + 1, total=len(batches)),
                 evidences=batch,
                 model_name=map_model,
                 choice=map_choice,
@@ -786,45 +803,49 @@ class KnowledgeAgent:
                 scope_note=scope_note,
                 intent=Intent.DOCUMENT_SUMMARY,
                 _allow_hierarchy=False,
+                # Una continuacion de pagina puede no repetir el encabezado;
+                # el alcance ya se resolvio sobre el conjunto antes de dividir.
+                _summary_scope_resolved=True,
             )
 
         # No crear ejecutores por solicitud; comparten admision y deadline global.
         partial_results = tuple(summarize_batch(item) for item in enumerate(batches))
 
         partials = tuple(result.answer for result in partial_results)
-        reduce_messages = build_summary_reduce_messages(question=question, partial_summaries=partials)
+        # Solo las fuentes presentes en mapas verificados pueden citarse en
+        # la reduccion. Las demas no formaron parte de su entrada.
+        map_citations = {sid for result in partial_results for sid in result.cited_source_ids}
+        reduce_evidences = tuple(item for item in evidences if item.source_id in map_citations)
+        aliases = citation_aliases(reduce_evidences)
+        use_schema = structured_output_enabled(document_summary=True, has_structured=False)
+        reduce_messages = build_summary_reduce_messages(
+            question=question, partial_summaries=partials,
+            source_aliases=aliases if use_schema else None,
+        )
         if self._messages_chars(reduce_messages) > self._input_budget_chars(
             reduce_model, Intent.DOCUMENT_SUMMARY, choice=reduce_choice
         ):
             return self._extractive_summary(
                 evidences, model=reduce_model,
+                question=question,
                 latency_ms=sum(result.latency_ms for result in partial_results),
                 evidence_truncated=True, regenerated=True,
                 hierarchical=True, map_batches=len(batches),
                 choice=reduce_choice,
             )
-        try:
-            reduce_result, fallback_used = self._chat_with_fallback(
-                model_name=reduce_model,
-                fallback_model_name=self._policy.fallback_for(reduce_model),
-                messages=reduce_messages,
-                intent=Intent.DOCUMENT_SUMMARY,
-                choice=reduce_choice,
-            )
-        except OllamaUnavailableError as error:
-            if reduce_choice is not ModelChoice.DEEP or not self._can_fallback_to_fast(error):
-                raise
-            # Los mapas ya se generaron con la evidencia autorizada. Si la
-            # consolidacion DEEP falla, conservar un resumen literal verificable
-            # sin otra llamada grande ni publicar la salida parcial del proveedor.
-            return self._extractive_summary(
-                evidences, model=map_model,
-                latency_ms=sum(item.latency_ms for item in partial_results),
-                evidence_truncated=True, regenerated=True, hierarchical=True,
-                map_batches=len(batches), choice=map_choice,
-            )
+        reduce_result, fallback_used = self._chat_with_fallback(
+            model_name=reduce_model,
+            fallback_model_name=reduce_model,
+            messages=reduce_messages,
+            intent=Intent.DOCUMENT_SUMMARY,
+            choice=reduce_choice,
+            response_schema=DOCUMENTARY_GENERATION_SCHEMA if use_schema else None,
+        )
         result_choice = self._policy.resolve_choice(reduce_result.model) if fallback_used else reduce_choice
-        report = self._verify_answer(reduce_result.content, evidences, ())
+        reduce_result, report = self._decode_and_verify(
+            reduce_result, reduce_evidences, (), question=question, aliases=aliases, use_schema=use_schema,
+        )
+        reduce_result, report = self._summary_point_format(reduce_result, report, question)
         final_citations = set(report.cited_source_ids)
         covers_every_part = all(
             not extract_citations(partial) or bool(final_citations.intersection(extract_citations(partial)))
@@ -858,7 +879,11 @@ class KnowledgeAgent:
         combined_fits = len(combined) <= self._input_budget_chars(
             reduce_result.model, Intent.DOCUMENT_SUMMARY, choice=result_choice
         )
-        if combined_report.grounded and combined_fits:
+        if combined_report.grounded and combined_fits and not requested_summary_points(question):
+            logger.info("agent.summary_recovered", extra={
+                "recovery_method": "validated_sections", "evidence_count": len(evidences),
+                "cited_source_count": len(combined_report.cited_source_ids), "map_batches": len(batches),
+            })
             return SynthesisResult(
                 answer=self._append_limit_notice(combined, evidence_truncated),
                 model=reduce_result.model,
@@ -872,6 +897,7 @@ class KnowledgeAgent:
             )
         return self._extractive_summary(
             evidences,
+            question=question,
             model=reduce_result.model,
             latency_ms=total_latency,
             evidence_truncated=evidence_truncated,
@@ -885,6 +911,7 @@ class KnowledgeAgent:
         self,
         evidences: tuple[Evidence, ...],
         *,
+        question: str = "",
         model: str,
         latency_ms: int,
         evidence_truncated: bool,
@@ -899,18 +926,59 @@ class KnowledgeAgent:
         budget = self._input_budget_chars(model, Intent.DOCUMENT_SUMMARY, choice=choice)
         total_chars = len(lines[0])
         units = [(item.source_id, item.text) for item in evidences]
-        for source_id, text in units:
+        # Dar oportunidad a cada documento y a su principio/final antes de
+        # consumir el presupuesto en los primeros parrafos de un solo archivo.
+        groups: dict[tuple, list[int]] = {}
+        for index, item in enumerate(evidences):
+            groups.setdefault(self._document_key(item), []).append(index)
+        candidates: list[deque] = []
+        for indices in groups.values():
+            priority = [indices[0]]
+            if len(indices) > 1:
+                priority.append(indices[-1])
+            spans = deque([(1, len(indices) - 2)])
+            while spans:
+                left, right = spans.popleft()
+                if left <= right:
+                    middle = (left + right) // 2
+                    priority.append(indices[middle])
+                    spans.extend(((left, middle - 1), (middle + 1, right)))
+            candidates.append(deque(priority))
+        order: list[int] = []
+        while any(candidates):
+            order.extend(group.popleft() for group in candidates if group)
+        selected: dict[int, str] = {}
+        for index in order:
+            source_id, text = units[index]
             block = f"{text.strip()} [[{source_id}]]"
-            if not text.strip() or len(cited) >= extractive_limit or total_chars + len(block) + 2 > budget:
+            if not text.strip() or len(selected) >= extractive_limit or total_chars + len(block) + 2 > budget:
                 continue
             # Verificar tambien las copias: IDs ambiguos o citas incrustadas en
             # un documento no pueden saltarse el contrato por esta ruta.
             report = verify_grounding(block, evidences)
             if not report.extractive_verified:
                 continue
-            lines.append(block)
+            selected[index] = block
             total_chars += len(block) + 2
-            cited.append(source_id)
+        points = requested_summary_points(question)
+        for index, block in sorted(selected.items()):
+            lines.append(block)
+            cited.append(units[index][0])
+        if points and selected:
+            # Conservar unidades enteras (incluidas condiciones y tablas).
+            # No cortar frases ni inventar puntos para completar la cuota.
+            blocks = lines[1:]
+            count = min(points, len(blocks))
+            groups = [blocks[index * len(blocks) // count:(index + 1) * len(blocks) // count]
+                      for index in range(count)]
+            lines = ["Extractos verificados del contenido solicitado:"]
+            if count < points:
+                lines.append(
+                    f"No pude validar una sintesis en {points} puntos. Presento {count} extractos completos "
+                    "para conservar las condiciones del documento."
+                )
+            for index, group in enumerate(groups, start=1):
+                lines.append(f"{index}. " + "\n\n   ".join(block.replace("\n", "\n   ") for block in group))
         if len(cited) < len(units):
             lines.append(
                 f"Nota: esta seleccion cubre {len(cited)} de {len(units)} unidades recuperadas. "
@@ -918,7 +986,11 @@ class KnowledgeAgent:
             )
         if not cited:
             raise AnswerValidationError(detail="ninguna unidad extractiva completa verificable")
-        answer = self._append_limit_notice("\n".join(lines), evidence_truncated)
+        answer = self._append_limit_notice("\n\n".join(lines), evidence_truncated)
+        logger.info("agent.summary_recovered", extra={
+            "recovery_method": "complete_extracts", "evidence_count": len(evidences),
+            "cited_source_count": len(cited), "map_batches": map_batches,
+        })
         return SynthesisResult(
             answer=answer,
             model=model,
@@ -938,6 +1010,59 @@ class KnowledgeAgent:
         )
 
     @staticmethod
+    def _summary_point_format(
+        result: ChatResult, report: GroundingReport, question: str,
+    ) -> tuple[ChatResult, GroundingReport]:
+        """El formato pedido se verifica aparte del respaldo de las afirmaciones."""
+        count = requested_summary_points(question)
+        if count is None or not report.grounded or report.declares_insufficiency:
+            return result, report
+        paragraphs = [paragraph.strip() for paragraph in re.split(r"\n\s*\n", result.content)
+                      if paragraph.strip()]
+        points = [paragraph for paragraph in paragraphs if extract_citations(paragraph)]
+        # Solo cabeceras decorativas pueden quedar fuera de los puntos citados.
+        # No eliminar ni esconder texto factual para forzar la longitud.
+        notes = [paragraph for paragraph in paragraphs if paragraph not in points
+                 and safe_nonfactual_text(paragraph)]
+        extras = [paragraph for paragraph in paragraphs if paragraph not in points and paragraph not in notes
+                  and not paragraph.startswith("#")]
+        if len(points) != count or extras:
+            return result, replace(report, grounded=False,
+                                   reason="resumen no respeta cantidad de puntos",
+                                   validation_detail="resumen no respeta cantidad de puntos")
+        formatted = "\n\n".join(
+            f"{index}. " + re.sub(r"^(?:\d+[.)]|[-*])\s+", "", paragraph)
+            for index, paragraph in enumerate(points, start=1)
+        )
+        if notes:
+            formatted += "\n\n" + "\n\n".join(notes)
+        return replace(result, content=formatted), report
+
+    @staticmethod
+    def _validate_summary_sources(evidences: tuple[Evidence, ...]) -> None:
+        identities: dict[str, tuple] = {}
+        for item in evidences:
+            identity = (item.text, item.document_id, item.filename, item.page_or_sheet, item.scope)
+            if identities.setdefault(item.source_id, identity) != identity:
+                raise AnswerValidationError(detail="identificador de fuente ambiguo entre evidencias diferentes")
+
+    @staticmethod
+    def _document_key(item: Evidence) -> tuple:
+        return (item.scope, item.document_id or (item.category, item.filename))
+
+    @classmethod
+    def _summary_coverage_report(cls, report: GroundingReport, evidences: tuple[Evidence, ...]) -> GroundingReport:
+        """Cobertura minima por documento, no obligacion de citar cada chunk."""
+        if not report.grounded or report.declares_insufficiency:
+            return report
+        expected = {cls._document_key(item) for item in evidences}
+        cited = {cls._document_key(item) for item in evidences if item.source_id in report.cited_source_ids}
+        if expected - cited:
+            return replace(report, grounded=False, reason="resumen omite documentos recuperados",
+                           validation_detail="resumen omite documentos recuperados")
+        return report
+
+    @staticmethod
     def _append_limit_notice(answer: str, truncated: bool) -> str:
         if not truncated:
             return answer
@@ -954,7 +1079,46 @@ class KnowledgeAgent:
         coverage: float,
         *,
         false_summary_insufficiency: bool = False,
+        false_documentary_insufficiency: bool = False,
+        structured_output: bool = False,
     ) -> str:
+        if structured_output:
+            return (
+                f"Causa de rechazo: {report.validation_detail or report.reason or 'cobertura insuficiente'}. "
+                "Regenera exclusivamente el objeto JSON completo con status, claims, limitations y clarification. "
+                "Cada text es una afirmacion en una sola linea; citations contiene los aliases "
+                "simples de sus fuentes autorizadas. No pongas encabezados, tablas ni citas dentro "
+                "de text. Conserva las condiciones de la fuente en cada claim. Cifras, versiones, "
+                "identificadores y comandos deben corresponder a las fuentes citadas. Solo si "
+                "aplicas una regla a un caso personal, usa la fila y conceptos comprobados en "
+                "APLICACION_CONDICIONAL, sin afirmar elegibilidad ni vigencia actual. "
+                "No copies numeros de etiquetas internas. Conserva las afirmaciones respaldadas: si solo "
+                "puedes responder una parte usa partial, claims completos independientes y limitations con "
+                "los codigos del esquema. Usa insufficient sin claims solo si ninguna parte tiene respaldo. "
+                "clarification debe estar vacio o copiar literalmente una opcion del enum del esquema."
+                + (" La evidencia recibida contiene texto legible: resume ese contenido con sus citas; "
+                   "la abstencion anterior no corresponde a falta de texto."
+                   if false_summary_insufficiency else "")
+                + (" Incluye al menos un punto respaldado de cada documento recibido, sin mezclar sus condiciones."
+                   if report.reason == "resumen omite documentos recuperados" else "")
+                + (" Respeta la cantidad de puntos solicitada: un claim con sus citas por punto."
+                   if report.reason == "resumen no respeta cantidad de puntos" else "")
+                + (" La aplicacion ya fue comprobada; la abstencion anterior no corresponde a falta de evidencia."
+                   if false_documentary_insufficiency else "")
+            )
+        if report.reason == "resumen omite documentos recuperados":
+            return ("El resumen omitio documentos recibidos. Incluye al menos un punto respaldado de "
+                    "cada documento, con sus citas, sin mezclar condiciones ni agregar hechos.")
+        if report.reason == "resumen no respeta cantidad de puntos":
+            return ("Respeta la cantidad de puntos solicitada. Escribe un parrafo por punto, "
+                    "cada uno con las citas de sus fuentes, sin agregar temas fuera de la seccion pedida.")
+        if false_documentary_insufficiency:
+            return (
+                "La regla, los datos declarados y una fila compatible ya fueron comprobados. "
+                "La abstencion anterior no corresponde a falta de evidencia. Explica la aplicacion "
+                "condicional de APLICACION_CONDICIONAL con sus conceptos y citas, sin afirmar "
+                "elegibilidad ni vigencia actual."
+            )
         if false_summary_insufficiency:
             return (
                 "La evidencia contiene texto legible. Genera el resumen solicitado en vez de "
@@ -1000,7 +1164,10 @@ class KnowledgeAgent:
         if report.reason == "afirmacion numerica sin respaldo en sus fuentes citadas":
             return (
                 f"Causa de rechazo: {report.validation_detail or report.reason}. "
-                "Separa datos declarados, regla citada y aplicacion condicional. Usa solo "
+                "Conserva cifras, fechas, versiones, identificadores y comandos de las fuentes citadas. "
+                "No cambies un identificador tecnico ni tomes numeros de etiquetas internas. "
+                "Si la consulta aplica una regla al caso personal, separa datos declarados, regla "
+                "citada y aplicacion condicional. Usa solo "
                 "la fila y los conceptos comprobados en APLICACION_CONDICIONAL; no basta "
                 "que el porcentaje aparezca en otra fila. No presentes supuestos como "
                 "hechos del documento ni los traslades a orientacion general. Conserva "

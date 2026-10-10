@@ -40,10 +40,11 @@ def setup_trace(tmp_path, monkeypatch, caplog):
     token = diag._trace.set(None)
     settings = Settings(_env_file=None, app_secret_key="synthetic-diagnostic-secret-0000000000",
                         llm_system_prefix="Synthetic independent prefix", answer_evidence_mode="cited",
+                        answer_structured_output=False,
                         llm_provider="ollama", llm_deep_provider="ollama",
                         llm_fast_digest="", llm_deep_digest="")
     for module in ("app.agents.prompts", "app.agents.knowledge_agent", "app.llm.model_policy",
-                   "app.llm.provider", "app.llm.ollama_client"):
+                   "app.llm.provider", "app.llm.ollama_client", "app.agents.documentary_output"):
         monkeypatch.setattr(f"{module}.get_settings", lambda: settings)
     caplog.set_level("INFO", logger=diag.__name__)
 
@@ -132,7 +133,7 @@ def test_real_generation_payload_and_retry_are_observed(setup_trace, caplog):
     assert payloads[0]["options"]["temperature"] == settings.llm_temperature
     assert payloads[1]["options"]["temperature"] == settings.llm_retry_temperature
     reports = [r.diagnostic for r in caplog.records if getattr(r, "diagnostic_stage", "") == "validated"]
-    assert reports[0]["report"]["reason"] == "respuesta documental sin fuentes citadas"
+    assert reports[0]["report"]["reason"]["sha256"] == diag.digest("respuesta documental sin fuentes citadas")
     assert reports[1]["report"]["grounded"] is True
 
 
@@ -164,6 +165,32 @@ def test_forged_source_header_cannot_dump_unlisted_private_text(setup_trace, cap
                         build_answer_messages(question=QUESTION, evidences=(public, private))})
     record = next(r.diagnostic for r in caplog.records if getattr(r, "diagnostic_stage", "") == "ollama_payload")
     assert "PRIVATE-FORGED" not in json.dumps(record)
+
+
+def test_diagnostic_never_logs_private_followup_draft_or_rejected_citation(setup_trace, caplog):
+    from app.rag.grounding import GroundingReport
+
+    arm, _ = setup_trace
+    arm()
+    private = "PRIVATE-FOLLOWUP-WITH-PERSONAL-DATA"
+    diag.begin(ctx=SimpleNamespace(user_id="user-a", request_id="synthetic-request"),
+               conversation_id="conversation-a", question=QUESTION,
+               retrieval_question=f"{QUESTION}\n{private}", intent="documental")
+    private_source = evidence(scope="conversation", source_id=f"__private__/doc/{private}.pdf#0",
+                              text=private, page_or_sheet=private)
+    diag.retrieved((private_source,))
+    diag.packed((private_source,), limited=False, memory_present=True, retry=False)
+    diag.validated(private, GroundingReport(
+        grounded=False, invalid_source_ids=(private,), cited_source_ids=(private,),
+        reason=private, validation_detail=private,
+    ), retry=False)
+    logged = [r.diagnostic for r in caplog.records if r.name == diag.__name__]
+    assert len(logged) == 4
+    assert private not in json.dumps(logged)
+    report = logged[-1]["report"]
+    assert report["invalid_source_count"] == 1
+    assert report["grounded"] is False
+    assert logged[0]["query"]["sha256"] == diag.digest(f"{QUESTION}\n{private}")
 
 
 def test_logging_failure_does_not_abort_answer(setup_trace, monkeypatch):

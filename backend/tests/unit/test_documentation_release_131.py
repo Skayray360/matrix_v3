@@ -3,7 +3,10 @@
 
 from pathlib import Path
 
-from scripts.verify_documentation import check_links
+import pytest
+
+from scripts.verify_documentation import check_links, check_readme_layout
+from scripts.verify_headers import check as check_headers
 
 
 def sample(root: Path, relative: str, content: str = "") -> Path:
@@ -42,9 +45,40 @@ def test_encoded_paths_and_links_with_titles(tmp_path):
     assert check_links(tmp_path, [readme, guide]) == []
 
 
-def test_corpus_text_is_not_treated_as_operator_documentation(tmp_path):
-    corpus = sample(tmp_path, "data/synthetic_test_data/knowledge/example.md", "[fixture](missing.md)")
-    assert check_links(tmp_path, [corpus]) == []
+@pytest.mark.parametrize("directory", [
+    "knowledge-base/documents", "knowledge-base/unclassified", "knowledge-base/state",
+    "knowledge-base/models", "knowledge-base/backups", "backend/tests/fixtures/knowledge",
+    "backend/runtime", "backend/logs", "backend/config/secrets",
+])
+def test_data_and_runtime_are_neither_read_nor_relabelled_as_project_docs(tmp_path, monkeypatch, directory):
+    private = sample(tmp_path, f"{directory}/README.md", "Documento privado: [source](missing.md)")
+    readme = sample(tmp_path, "README.md", "Creado por Aldo Garcia.")
+    original_read = Path.read_text
+    original_open = Path.open
+
+    def read_checked(path, *args, **kwargs):
+        assert path != private, "La auditoria de codigo no debe leer documentos o secretos."
+        return original_read(path, *args, **kwargs)
+
+    def open_checked(path, *args, **kwargs):
+        assert path != private, "La auditoria de autoria no debe abrir documentos o secretos."
+        return original_open(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", read_checked)
+    monkeypatch.setattr(Path, "open", open_checked)
+    assert check_links(tmp_path, [private, readme]) == []
+    assert check_readme_layout(tmp_path, [private, readme]) == []
+    assert check_headers(tmp_path) == ([], 1)
+
+
+def test_delivery_requires_one_project_readme(tmp_path):
+    root_readme = sample(tmp_path, "README.md")
+    extra = sample(tmp_path, "backend/README.md")
+    assert "Falta README.md" in check_readme_layout(tmp_path, [extra])[0]
+    assert check_readme_layout(tmp_path, [root_readme]) == []
+    assert check_readme_layout(tmp_path, [root_readme, extra]) == [
+        "README adicional fuera de la guia unica: backend/README.md",
+    ]
 
 
 def test_empty_directory_is_not_a_distributed_destination(tmp_path):
@@ -53,3 +87,15 @@ def test_empty_directory_is_not_a_distributed_destination(tmp_path):
     assert check_links(tmp_path, [readme])
     guide = sample(tmp_path, "docs/guide.md")
     assert check_links(tmp_path, [readme, guide]) == []
+
+
+def test_workspace_checks_active_guides_without_rewriting_historical_snapshots(tmp_path):
+    readme = sample(tmp_path, "README.md", "[result](reports/old/result.json) [bad](missing.md)")
+    historical = sample(tmp_path, "reports/old/source/README.md", "[old](missing-old.md)")
+    result = sample(tmp_path, "reports/old/result.json", '{"historical":true}')
+    errors = check_links(tmp_path, [readme, historical], workspace=True)
+    assert len(errors) == 1 and "missing.md" in errors[0]
+    # Distribucion sigue exigiendo incluir el archivo; no se relaja ese contrato.
+    assert len(check_links(tmp_path, [readme, historical])) == 3
+    result.unlink()
+    assert len(check_links(tmp_path, [readme, historical], workspace=True)) == 2

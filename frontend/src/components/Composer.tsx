@@ -26,7 +26,7 @@ type Props = {
   onUpload: (files: File[]) => void;
 };
 
-const ACCEPTED = ".docx,.md,.pdf,.txt,.xlsx,.csv";
+const ACCEPTED = ".docx,.md,.pdf,.pptx,.txt,.xlsx,.csv";
 
 /** El estado se lee por icono ademas de por color: el color solo no basta. */
 function statusIcon(status: string): IconName {

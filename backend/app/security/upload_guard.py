@@ -20,6 +20,7 @@ import zipfile
 from dataclasses import dataclass
 from io import BytesIO
 from pathlib import Path, PurePosixPath, PureWindowsPath
+from xml.etree import ElementTree
 
 from app.common.errors import FileTooLargeError, UnsupportedFileError, ValidationFailedError
 from app.common.ids import new_id, sha256_bytes
@@ -35,10 +36,23 @@ _MAGIC_SIGNATURES: dict[str, tuple[bytes, ...]] = {
     ".pdf": (b"%PDF-",),
     ".docx": (b"PK\x03\x04",),
     ".xlsx": (b"PK\x03\x04",),
+    ".pptx": (b"PK\x03\x04",),
 }
 
 #: Formatos OOXML: contenedores ZIP sujetos a limites anti-bomba.
-_OOXML_EXTENSIONS = frozenset({".docx", ".xlsx"})
+_OOXML_PARTS = {
+    ".docx": (
+        "word/document.xml", "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml",
+    ),
+    ".xlsx": (
+        "xl/workbook.xml", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml",
+    ),
+    ".pptx": (
+        "ppt/presentation.xml", "application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml",
+    ),
+}
+_OOXML_EXTENSIONS = frozenset(_OOXML_PARTS)
+_CONTENT_TYPES_NS = "{http://schemas.openxmlformats.org/package/2006/content-types}"
 
 #: Ratio maximo de descompresion tolerado.
 MAX_COMPRESSION_RATIO = 120
@@ -148,8 +162,32 @@ def _check_ooxml_bomb(data: bytes, extension: str) -> None:
                 name = info.filename.replace("\\", "/")
                 if name.startswith("/") or ".." in PurePosixPath(name).parts:
                     raise UnsupportedFileError("El archivo contiene rutas internas no permitidas.")
-    except zipfile.BadZipFile as exc:
-        raise UnsupportedFileError("El archivo no es un contenedor OOXML valido.", detail=str(exc)) from exc
+            names = [info.filename for info in entries]
+            if len(names) != len(set(names)):
+                raise UnsupportedFileError("El archivo contiene entradas internas duplicadas.")
+            main_part, content_type = _OOXML_PARTS[extension]
+            if main_part not in names or "[Content_Types].xml" not in names:
+                raise UnsupportedFileError("El contenedor no corresponde al formato Office declarado.")
+            manifest = archive.getinfo("[Content_Types].xml")
+            if manifest.file_size > 1024 * 1024:
+                raise UnsupportedFileError("El manifiesto Office excede el limite permitido.")
+            raw = archive.read(manifest)
+            # Quitar ceros solo para detectar declaraciones tambien en UTF-16
+            # o UTF-32; el parser sigue recibiendo el XML original.
+            if re.search(br"<!\s*(?:DOCTYPE|ENTITY)\b", raw.replace(b"\x00", b""), re.I):
+                raise UnsupportedFileError("El archivo Office contiene declaraciones XML no permitidas.")
+            root = ElementTree.fromstring(raw)  # noqa: S314 - XML <=1MB, DTD/entidades rechazadas arriba
+            if root.tag != f"{_CONTENT_TYPES_NS}Types" or not any(
+                item.tag == f"{_CONTENT_TYPES_NS}Override"
+                and item.get("PartName") == f"/{main_part}"
+                and item.get("ContentType") == content_type
+                for item in root
+            ):
+                raise UnsupportedFileError("El contenido Office no corresponde a su extension.")
+            if any("vbaproject" in name.lower() for name in names) or b"macroenabled" in raw.lower():
+                raise UnsupportedFileError("Convierta el archivo a un formato Office sin macros.")
+    except (zipfile.BadZipFile, ElementTree.ParseError, RuntimeError, NotImplementedError, EOFError) as exc:
+        raise UnsupportedFileError("El archivo no es un contenedor OOXML valido.", detail=type(exc).__name__) from exc
 
 
 def validate_upload(data: bytes, *, filename: str) -> UploadValidation:
@@ -165,6 +203,10 @@ def validate_upload(data: bytes, *, filename: str) -> UploadValidation:
 
     display_name = sanitize_display_name(filename)
     extension = Path(display_name).suffix.lower()
+    if extension in {".doc", ".ppt"}:
+        raise UnsupportedFileError(
+            "Formato Office antiguo no compatible. Convierta localmente a DOCX o PPTX y vuelva a cargarlo."
+        )
     if extension not in settings.allowed_upload_extensions:
         raise UnsupportedFileError(f"Extension no permitida: {extension or '(sin extension)'}")
 

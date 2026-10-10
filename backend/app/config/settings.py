@@ -34,6 +34,7 @@ BACKEND_ROOT = Path(__file__).resolve().parents[2]
 class AppEnv(StrEnum):
     DEVELOPMENT = "development"
     TEST = "test"
+    STANDALONE = "standalone"
     STAGING = "staging"
     PRODUCTION = "production"
 
@@ -41,6 +42,7 @@ class AppEnv(StrEnum):
 class AuthProvider(StrEnum):
     ENTRA = "entra"
     OIDC = "oidc"
+    LOCAL = "local"
     LOCAL_TEST = "local_test"
 
 
@@ -61,7 +63,7 @@ class QdrantMode(StrEnum):
 def _resolve(path_value: str | Path) -> Path:
     """Resuelve rutas relativas contra la raiz del repositorio."""
     path = Path(path_value)
-    return path if path.is_absolute() else (PROJECT_ROOT / path).resolve()
+    return (path if path.is_absolute() else PROJECT_ROOT / path).resolve()
 
 
 def _is_loopback_host(host: str) -> bool:
@@ -80,7 +82,7 @@ class Settings(BaseSettings):
     """Configuracion completa de la aplicacion."""
 
     model_config = SettingsConfigDict(
-        env_file=(PROJECT_ROOT / ".env"),
+        env_file=(PROJECT_ROOT / "backend" / "config" / ".env"),
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
@@ -116,6 +118,8 @@ class Settings(BaseSettings):
     ollama_fast_max_tokens: Annotated[int, Field(ge=64, le=8192)] = 1536
     ollama_deep_max_tokens: Annotated[int, Field(ge=128, le=16384)] = 3072
     ollama_embedding_cache_size: Annotated[int, Field(ge=0, le=4096)] = 256
+    ollama_top_k: Annotated[int, Field(ge=1, le=1000)] = 40
+    ollama_repeat_penalty: Annotated[float, Field(gt=0, le=2)] = 1.0
     # Legado de configuracion: se acepta, pero el resumen por lotes es secuencial.
     ollama_summary_parallel_batches: Annotated[int, Field(ge=1, le=8)] = 2
 
@@ -130,7 +134,7 @@ class Settings(BaseSettings):
     llm_vertex_base_url: str = ""
     llm_temperature: Annotated[float, Field(ge=0, le=2)] = 0.1
     llm_general_temperature: Annotated[float, Field(ge=0, le=2)] = 0.25
-    llm_summary_temperature: Annotated[float, Field(ge=0, le=2)] = 0.08
+    llm_summary_temperature: Annotated[float, Field(ge=0, le=2)] = 0.1
     llm_retry_temperature: Annotated[float, Field(ge=0, le=2)] = 0.03
     llm_top_p: Annotated[float, Field(gt=0, le=1)] = 0.9
     # auto solicita contenido final sin thinking en Ollama; otros adapters
@@ -145,7 +149,7 @@ class Settings(BaseSettings):
     # Legado sin efecto: el transporte no repite un POST de resultado ambiguo.
     llm_max_transient_retries: Annotated[int, Field(ge=0, le=2)] = 0
     # Cada generacion tiene un limite propio; el presupuesto de la consulta
-    # incluye recuperacion, validacion y un posible fallback local.
+    # incluye recuperacion, validacion y regeneracion acotada del mismo modelo.
     llm_fast_timeout_seconds: Annotated[float, Field(gt=0, le=600)] = 180
     llm_deep_timeout_seconds: Annotated[float, Field(gt=0, le=600)] = 180
     llm_request_deadline_seconds: Annotated[float, Field(gt=0, le=600)] = 600
@@ -163,8 +167,8 @@ class Settings(BaseSettings):
     # La respuesta general debe distinguirse de las reglas internas verificadas.
     answer_allow_general_knowledge: bool = True
     answer_evidence_mode: Literal["cited", "extractive"] = "cited"
-    # Activar tras evaluar el contrato JSON con el modelo local instalado.
-    answer_structured_output: bool = False
+    # Contrato unico; la instalacion comprueba salida JSON del modelo elegido.
+    answer_structured_output: bool = True
 
     # Control local global (proceso unico; despliegue multiproceso requiere cola externa).
     chat_max_inflight: Annotated[int, Field(ge=1, le=250)] = 4
@@ -178,6 +182,9 @@ class Settings(BaseSettings):
     upload_body_max_bytes: Annotated[int, Field(ge=1024)] = 30_000_000
     extraction_timeout_seconds: Annotated[int, Field(ge=1, le=120)] = 30
     extraction_memory_mb: Annotated[int, Field(ge=128, le=4096)] = 512
+    extraction_ocr_enabled: bool = False
+    extraction_ocr_language: Annotated[str, Field(pattern=r"^[a-zA-Z0-9_+-]{1,80}$")] = "spa"
+    extraction_ocr_dpi: Annotated[int, Field(ge=100, le=300)] = 150
     extraction_max_chars: Annotated[int, Field(ge=1000)] = 2_000_000
 
     # ---------------------------------------------------------------- rag ---
@@ -193,7 +200,7 @@ class Settings(BaseSettings):
     rag_reindex_interval_hours: Annotated[int, Field(ge=1, le=168)] = 24
     rag_sync_interval_seconds: Annotated[int, Field(ge=10, le=3600)] = 60
     rag_sync_stability_seconds: Annotated[int, Field(ge=0, le=300)] = 10
-    rag_knowledge_root: Path = Path("./data/knowledge")
+    rag_knowledge_root: Path = Path("./knowledge-base/documents")
     rag_collection_corporate: str = "matrix_rh_corporate"
     rag_collection_private: str = "matrix_rh_private"
     #: Un resumen de adjuntos recupera por ACL/metadata, no por similitud. El
@@ -220,7 +227,7 @@ class Settings(BaseSettings):
     entra_redirect_uri: str = ""
     entra_post_logout_redirect_uri: str = ""
     entra_allowed_groups: str = ""
-    entra_role_mapping_file: Path = Path("./config/authorization/entra-role-mapping.yaml")
+    entra_role_mapping_file: Path = Path("./backend/config/authorization/entra-role-mapping.yaml")
 
     # OIDC interno: Keycloak/AD FS. Entra conserva sus variables y adapter.
     oidc_issuer: str = ""
@@ -233,7 +240,7 @@ class Settings(BaseSettings):
     oidc_allowed_groups: str = ""
 
     # ----------------------------------------------------------- database ---
-    database_url: SecretStr = SecretStr("mysql+pymysql://root:@127.0.0.1:3306/matrix_rh_131?charset=utf8mb4")
+    database_url: SecretStr = SecretStr("mysql+pymysql://matrixrh:@127.0.0.1:3308/matrix_rh?charset=utf8mb4")
     database_pool_size: Annotated[int, Field(ge=1, le=50)] = 5
     database_echo: bool = False
     #: Ruta opcional del datadir local. Preflight consulta @@datadir si falta.
@@ -246,24 +253,24 @@ class Settings(BaseSettings):
     encryption_attestation_reference: Path | None = None
 
     # --------------------------------------------------------- structured ---
-    structured_sources_config: Path = Path("./config/data_sources/sources.yaml")
+    structured_sources_config: Path = Path("./backend/config/data_sources/sources.yaml")
     structured_query_timeout_seconds: Annotated[int, Field(ge=1, le=120)] = 15
     structured_max_rows: Annotated[int, Field(ge=1, le=10000)] = 200
 
     # ------------------------------------------------------------- qdrant ---
     qdrant_mode: QdrantMode = QdrantMode.EMBEDDED
-    qdrant_path: Path = Path("./var/qdrant")
+    qdrant_path: Path = Path("./knowledge-base/state/qdrant")
     qdrant_url: str = "http://127.0.0.1:6333"
     qdrant_api_key: SecretStr = SecretStr("")
 
     # ------------------------------------------------------ authorization ---
-    authorization_policy_file: Path = Path("./config/authorization/categories.yaml")
+    authorization_policy_file: Path = Path("./backend/config/authorization/categories.yaml")
 
     # ------------------------------------------------------------ uploads ---
     upload_max_bytes: Annotated[int, Field(ge=1024)] = 26_214_400
     upload_max_files_per_request: Annotated[int, Field(ge=1, le=50)] = 5
-    upload_storage_root: Path = Path("./var/uploads")
-    upload_allowed_extensions: str = ".docx,.md,.pdf,.txt,.xlsx,.csv"
+    upload_storage_root: Path = Path("./knowledge-base/state/uploads")
+    upload_allowed_extensions: str = ".docx,.md,.pdf,.pptx,.txt,.xlsx,.csv"
 
     # -------------------------------------------------------- rate limits ---
     rate_limit_login_per_minute: Annotated[int, Field(ge=1, le=1000)] = 5
@@ -279,7 +286,7 @@ class Settings(BaseSettings):
 
     # ------------------------------------------------------------ windows ---
     matrix_install_mode: str = "windows_local"
-    matrix_use_wamp_mysql: bool = True
+    matrix_use_wamp_mysql: bool = False
     matrix_external_connectors_required: bool = False
     #: Permite usar una base que YA existia antes de que Matrix RH la tocara.
     #: Por defecto False: una base preexistente puede pertenecer a otra
@@ -368,8 +375,54 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _validate_environment_safety(self) -> Settings:
-        """Requisitos 32 y 58: el modo local jamas puede vivir en produccion."""
+        """Separa identidad sintetica, instalacion autonoma y exposicion HTTPS."""
         is_prod_like = self.app_env in (AppEnv.PRODUCTION, AppEnv.STAGING)
+
+        if self.app_env is AppEnv.STANDALONE:
+            if (self.auth_provider is not AuthProvider.LOCAL or self.local_test_auth_enabled
+                    or self.local_test_seed_users_enabled):
+                raise ValueError("standalone requiere AUTH_PROVIDER=local y LOCAL_TEST_* en false.")
+            if (not _is_loopback_host(self.app_host)
+                    or not _is_loopback_host(urlparse(self.app_base_url).hostname or "")):
+                raise ValueError(
+                    "standalone solo permite acceso loopback; para publicar en red configure production y HTTPS."
+                )
+            if not self.app_secret_key.get_secret_value():
+                raise ValueError("APP_SECRET_KEY persistente es obligatoria en standalone.")
+            if not self.llm_local_only or "vertex" in (self.llm_provider, self.llm_deep_provider):
+                raise ValueError("standalone requiere inferencia local.")
+            database = urlparse(self.database_url.get_secret_value())
+            if database.scheme != "mysql+pymysql" or not _is_loopback_host(database.hostname or ""):
+                raise ValueError("standalone requiere la instancia MySQL propia en loopback.")
+            if self.qdrant_mode is not QdrantMode.EMBEDDED:
+                raise ValueError("standalone requiere QDRANT_MODE=embedded dentro del proyecto.")
+            active_providers = (self.llm_provider, self.llm_deep_provider, self.llm_embedding_provider)
+            for provider_name, endpoint in (("ollama", self.ollama_base_url),
+                                            ("openai_compatible", self.llm_api_base_url)):
+                if provider_name not in active_providers:
+                    continue
+                target = urlparse(endpoint)
+                if (target.scheme not in {"http", "https"} or not _is_loopback_host(target.hostname or "")
+                        or target.username or target.password or target.fragment):
+                    raise ValueError("standalone requiere endpoints de modelos loopback sin credenciales en la URL.")
+            for path in (self.rag_knowledge_root, self.qdrant_path, self.upload_storage_root,
+                         self.authorization_policy_file, self.structured_sources_config, self.database_datadir_path):
+                if path is None:
+                    continue
+                if not _resolve(path).is_relative_to(PROJECT_ROOT.resolve()):
+                    raise ValueError("standalone requiere corpus, estado y configuracion dentro del proyecto.")
+
+        if self.auth_provider is AuthProvider.LOCAL:
+            if self.local_test_auth_enabled or self.local_test_seed_users_enabled:
+                raise ValueError("AUTH_PROVIDER=local no admite identidades ni seed de pruebas.")
+            if not self.app_secret_key.get_secret_value():
+                raise ValueError("AUTH_PROVIDER=local requiere APP_SECRET_KEY persistente.")
+            base = urlparse(self.app_base_url)
+            exposed = not _is_loopback_host(self.app_host) or not _is_loopback_host(base.hostname or "")
+            if base.scheme not in {"http", "https"} or base.username or base.password or base.fragment:
+                raise ValueError("APP_BASE_URL requiere HTTP(S) sin credenciales ni fragmentos.")
+            if exposed and (base.scheme != "https" or not self.session_cookie_secure):
+                raise ValueError("Autenticacion local en red requiere HTTPS y SESSION_COOKIE_SECURE=true.")
 
         if is_prod_like:
             if self.local_test_auth_enabled:
@@ -380,7 +433,7 @@ class Settings(BaseSettings):
             if self.auth_provider is AuthProvider.LOCAL_TEST:
                 raise ValueError(
                     f"AUTH_PROVIDER=local_test es incompatible con APP_ENV={self.app_env}. "
-                    "Use AUTH_PROVIDER=entra u oidc (SSO interno)."
+                    "Use AUTH_PROVIDER=local con cuentas reales, entra u oidc."
                 )
             if self.local_test_seed_users_enabled:
                 raise ValueError(f"LOCAL_TEST_SEED_USERS_ENABLED=true es incompatible con APP_ENV={self.app_env}.")
@@ -397,8 +450,6 @@ class Settings(BaseSettings):
             raise ValueError("Modelos fast/deep de proveedores distintos requieren identificadores distintos.")
 
         if self.auth_provider is AuthProvider.OIDC:
-            from urllib.parse import urlparse
-
             for field in ("issuer", "authorization_endpoint", "token_endpoint", "jwks_uri", "redirect_uri"):
                 value = getattr(self, f"oidc_{field}")
                 parsed = urlparse(value)
@@ -438,16 +489,16 @@ class Settings(BaseSettings):
         if exposed and test_identity:
             raise ValueError(
                 "APP_HOST/APP_BASE_URL expone Matrix RH en red con identidad o seed de pruebas. "
-                "Use loopback o AUTH_PROVIDER=oidc/entra con LOCAL_TEST_* en false."
+                "Use loopback o identidad real local/oidc/entra con LOCAL_TEST_* en false y HTTPS."
             )
-        if exposed or self.app_env in (AppEnv.STAGING, AppEnv.PRODUCTION):
+        if exposed or self.app_env in (AppEnv.STAGING, AppEnv.PRODUCTION, AppEnv.STANDALONE):
             database = urlparse(self.database_url.get_secret_value())
             username = unquote(database.username or "").strip().casefold()
             password = unquote(database.password or "")
             if not username or username in {"root", "postgres", "sa", "sys", "system"} or not password.strip():
                 raise ValueError(
                     "DATABASE_URL requiere un usuario dedicado con contrasena "
-                    "cuando el servicio se expone en red o en staging/production."
+                    "en standalone, staging, production o al exponer el servicio en red."
                 )
         return self
 
@@ -501,8 +552,10 @@ class Settings(BaseSettings):
 
     @property
     def is_local_auth_allowed(self) -> bool:
-        """El proveedor local solo existe en development/test."""
-        return self.app_env in (AppEnv.DEVELOPMENT, AppEnv.TEST) and self.local_test_auth_enabled
+        """Identidad local real o proveedor sintetico explicitamente habilitado."""
+        return self.auth_provider is AuthProvider.LOCAL or (
+            self.app_env in (AppEnv.DEVELOPMENT, AppEnv.TEST) and self.local_test_auth_enabled
+        )
 
     @property
     def knowledge_root_path(self) -> Path:
@@ -575,6 +628,8 @@ class Settings(BaseSettings):
             "LLM_COMPLETION_RETRIES": self.llm_completion_retries,
             "LLM_FAST_TOP_K": self.llm_fast_top_k,
             "LLM_DEEP_TOP_K": self.llm_deep_top_k,
+            "OLLAMA_TOP_K": self.ollama_top_k,
+            "OLLAMA_REPEAT_PENALTY": self.ollama_repeat_penalty,
             "LLM_FAST_TIMEOUT_SECONDS": self.llm_fast_timeout_seconds,
             "LLM_DEEP_TIMEOUT_SECONDS": self.llm_deep_timeout_seconds,
             "LLM_REQUEST_DEADLINE_SECONDS": self.llm_request_deadline_seconds,

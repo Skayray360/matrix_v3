@@ -26,7 +26,7 @@ GROUNDED_CASES = [case for case in GOLDEN["cases"] if case["type"] == "grounded"
 def corpus_chunks():
     """Solo extraccion/chunking reales: jamas usa retrieval como respuesta correcta."""
     chunks = {}
-    for path in (ROOT / "data" / "synthetic_test_data" / "knowledge").glob("*/*.md"):
+    for path in (ROOT / "backend" / "tests" / "fixtures" / "knowledge").glob("*/*.md"):
         if path.name == "README.md":
             continue
         drafts = chunk_blocks(extract_markdown(path.read_bytes()).blocks, **GOLDEN["source_profile"])

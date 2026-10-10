@@ -191,13 +191,15 @@ class TestUploadGuardRamas:
 
     def test_un_docx_valido_pequeno_se_acepta(self):
         import io
-        import zipfile
+
+        from docx import Document
 
         from app.security.upload_guard import validate_upload
 
         buffer = io.BytesIO()
-        with zipfile.ZipFile(buffer, "w") as archive:
-            archive.writestr("word/document.xml", b"<xml/>")
+        document = Document()
+        document.add_paragraph("Contenido sintetico de un archivo Word valido.")
+        document.save(buffer)
         resultado = validate_upload(buffer.getvalue(), filename="valido.docx")
         assert resultado.extension == ".docx"
 

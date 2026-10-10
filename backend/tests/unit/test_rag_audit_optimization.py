@@ -154,7 +154,10 @@ def test_retrieval_comparison_can_cite_both_equal_policies(monkeypatch):
         candidate("a", "empresa_a", "La prima es del 25%.", 0.9),
         candidate("b", "empresa_b", "La prima es del 25%.", 0.8),
     ]
-    store = SimpleNamespace(collection_for=lambda scope: scope, search=lambda **kwargs: items)
+    store = SimpleNamespace(
+        collection_for=lambda scope: scope, search=lambda **kwargs: items,
+        list_authorized_documents=lambda **kwargs: [],
+    )
     llm = SimpleNamespace(embed_one=lambda question: [1.0, 0.0])
     monkeypatch.setattr(retriever_module, "indexing_fingerprint", lambda client: "synthetic")
     result = Retriever(store=store, llm=llm).retrieve(

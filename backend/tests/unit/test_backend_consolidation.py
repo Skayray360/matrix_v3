@@ -47,8 +47,8 @@ def test_identity_remains_visible_without_accessing_sources(sql):
     ).handle_chat(db, ctx=ctx, conversation=conversation, message="¿Quién eres?")
     scope = authorization_fingerprint(db, ctx, frozenset())
     history = [m for m in memory.list_messages(db, conversation.id) if memory.message_visible(m, frozenset(), scope)]
-    assert outcome.answer == "Soy Matrix RH."
-    assert [m.content for m in history] == ["¿Quién eres?", "Soy Matrix RH."]
+    assert outcome.answer == "Soy Matrix."
+    assert [m.content for m in history] == ["¿Quién eres?", "Soy Matrix."]
 
 
 @pytest.mark.parametrize("content,source_ids", [("Dato restringido", None), ("Soy Matrix RH.", ["private-source"])])
@@ -136,12 +136,12 @@ def test_actual_query_schema_keeps_filter_types_for_vertex(value):
     assert {branch["type"] for branch in typed_value["anyOf"]} == {"STRING", "NUMBER", "BOOLEAN", "ARRAY"}
 
 
-@pytest.mark.parametrize("provider", ["ollama", "openai_compatible", "vertex"])
+@pytest.mark.parametrize("provider", ["ollama", "openai_compatible"])
 def test_real_query_schema_and_response_survive_adapter_change(monkeypatch, tmp_path, provider):
     path = tmp_path / "models.env"
     path.write_text(
-        f"LLM_PROVIDER={provider}\nLLM_LOCAL_ONLY={'false' if provider == 'vertex' else 'true'}\n"
-        "OLLAMA_FAST_MODEL=synthetic-planner\nLLM_VERTEX_BASE_URL=https://vertex.example.test/models\n",
+        f"LLM_PROVIDER={provider}\nLLM_LOCAL_ONLY=true\n"
+        "OLLAMA_FAST_MODEL=synthetic-planner\n",
         encoding="utf-8",
     )
     settings = Settings(_env_file=path)
@@ -160,9 +160,7 @@ def test_real_query_schema_and_response_survive_adapter_change(monkeypatch, tmp_
         captured.append(request)
         if provider == "ollama":
             return {"message": {"content": answer}, "done": True, "done_reason": "stop"}
-        if provider == "openai_compatible":
-            return {"choices": [{"message": {"content": answer}, "finish_reason": "stop"}]}
-        return {"candidates": [{"finishReason": "STOP", "content": {"parts": [{"text": answer}]}}]}
+        return {"choices": [{"message": {"content": answer}, "finish_reason": "stop"}]}
 
     monkeypatch.setattr(client, "_post", post)
     result = client.chat(
@@ -238,14 +236,11 @@ def test_database_lookup_matches_underscores_literally(monkeypatch):
     [
         ("openai_compatible", {"choices": ["invalid"]}),
         ("openai_compatible", {"choices": [{"message": ["invalid"], "finish_reason": "stop"}]}),
-        ("vertex", {"candidates": ["invalid"]}),
-        ("vertex", {"candidates": [{"finishReason": "STOP", "content": {"parts": [{"text": 12}]}}]}),
     ],
 )
 def test_malformed_adapter_reply_raises_controlled_error(monkeypatch, provider, body):
     settings = Settings(
-        _env_file=None, llm_provider=provider, llm_deep_provider=provider, llm_local_only=False,
-        llm_vertex_base_url="https://vertex.example.test/models",
+        _env_file=None, llm_provider=provider, llm_deep_provider=provider, llm_local_only=True,
     )
     monkeypatch.setattr("app.llm.provider.get_settings", lambda: settings)
     monkeypatch.setattr("app.llm.ollama_client.get_settings", lambda: settings)

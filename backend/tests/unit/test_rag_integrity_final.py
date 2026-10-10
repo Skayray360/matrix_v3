@@ -11,7 +11,7 @@ import pytest
 
 from app.agents.knowledge_agent import KnowledgeAgent
 from app.agents.prompts import build_answer_messages, format_evidence_block
-from app.common.errors import AnswerValidationError
+from app.common.answers import UNVERIFIED_ANSWER_NOTICE, safe_nonfactual_text
 from app.common.inference_errors import InferenceFailureError, InferenceFailureKind
 from app.config import get_settings
 from app.ingestion.loaders import extract_docx
@@ -187,10 +187,11 @@ def test_extractive_fallback_keeps_exception_after_old_420_cut():
 def test_rejected_documental_paraphrase_keeps_original_abstention_contract():
     item = evidence("Si tiene cinco anios, recibe 20 dias. No aplica al personal temporal.")
     llm = ScriptedLlm([f"Recibe 20 dias [[{item.source_id}]]."] * 2)
-    with pytest.raises(AnswerValidationError):
-        KnowledgeAgent(llm=llm, policy=ModelPolicy()).synthesize(
-            question="Cuantos dias?", evidences=(item,), model_name="gemma4:latest",
-        )
+    result = KnowledgeAgent(llm=llm, policy=ModelPolicy()).synthesize(
+        question="Cuantos dias?", evidences=(item,), model_name="gemma4:latest",
+    )
+    assert result.answer.startswith(UNVERIFIED_ANSWER_NOTICE) and safe_nonfactual_text(result.answer)
+    assert not result.cited_source_ids and "20 dias" not in result.answer
     assert len(llm.calls) == 2
 
 
@@ -222,9 +223,10 @@ def test_complete_evidence_has_priority_over_long_memory():
 def test_failed_documental_answer_does_not_promote_irrelevant_retrieved_source():
     item = evidence("El comedor abre de lunes a viernes.")
     llm = ScriptedLlm(["Respuesta sin citas."] * 2)
-    with pytest.raises(AnswerValidationError):
-        KnowledgeAgent(llm=llm, policy=ModelPolicy()).synthesize(
-            question="Cuantos dias de permiso de maternidad corresponden?",
-            evidences=(item,), model_name="gemma4:latest",
-        )
+    result = KnowledgeAgent(llm=llm, policy=ModelPolicy()).synthesize(
+        question="Cuantos dias de permiso de maternidad corresponden?",
+        evidences=(item,), model_name="gemma4:latest",
+    )
+    assert result.answer.startswith(UNVERIFIED_ANSWER_NOTICE) and safe_nonfactual_text(result.answer)
+    assert not result.cited_source_ids and "comedor" not in result.answer
     assert len(llm.calls) == 2

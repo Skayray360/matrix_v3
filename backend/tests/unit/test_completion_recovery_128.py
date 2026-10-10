@@ -24,8 +24,12 @@ FINAL = f"Corresponden 20 dias habiles de vacaciones [[{SOURCE}]]."
 
 
 def configure(monkeypatch, **overrides):
+    # FINAL es una muestra Markdown. La prueba JSON envia response_schema
+    # explicitamente y comprueba su preservacion en ambos intentos HTTP.
+    overrides.setdefault("answer_structured_output", False)
     settings = Settings(_env_file=None, app_env="test", **overrides)
-    for module in ("app.llm.provider", "app.llm.ollama_client", "app.llm.model_policy", "app.agents.knowledge_agent"):
+    for module in ("app.llm.provider", "app.llm.ollama_client", "app.llm.model_policy", "app.agents.knowledge_agent",
+                   "app.agents.prompts", "app.agents.documentary_output"):
         monkeypatch.setattr(f"{module}.get_settings", lambda: settings)
     return settings
 

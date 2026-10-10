@@ -1,0 +1,36 @@
+{
+  "release": "1.3.3",
+  "runtime": "ollama",
+  "local_only": true,
+  "local_only_enforcement": "ModelClient and preflight reject cloud configuration in every environment",
+  "tag_policy": "latest and unversioned tags are mutable; full runtime digest must match configured pins",
+  "generator_change_control": "scripts.model_change: plan, apply, rollback; only local synthetic contract probes",
+  "embedding_change_policy": "Separate revision/dimension/templates/index compatibility validation; generation changes do not reindex",
+  "evidence": "user_provided_inventory_not_runtime_verified",
+  "models": [
+    {
+      "role": "generation",
+      "tag": "gemma4:latest",
+      "reported_digest_prefix": "dc35e8d9c606",
+      "reported_size": "6.6 GB",
+      "profiles": [
+        "fast",
+        "deep",
+        "planner",
+        "summary"
+      ],
+      "context_configured": 8192
+    },
+    {
+      "role": "embedding",
+      "tag": "embeddinggemma:latest",
+      "reported_digest_prefix": "85462619ee72",
+      "reported_size": "621 MB",
+      "dimension_configured": 768
+    }
+  ],
+  "full_digests": "Populated locally into private .env by bootstrap pin-models; never fabricate a full digest from a short ID.",
+  "provenance_license_quantization": "TO_VERIFY with locally installed artifact metadata before production approval",
+  "weights_included": false,
+  "additional_models_required": false
+}

@@ -27,6 +27,36 @@ beforeEach(() => {
 });
 
 describe("Origen de las respuestas", () => {
+  it("conserva la lectura al anteponer historial y desplaza solo al recibir otro turno", () => {
+    const { rerender } = render(
+      <MessageList messages={[message]} pending={false} displayName="Prueba" />,
+    );
+    const scroll = vi.mocked(HTMLElement.prototype.scrollIntoView);
+    expect(scroll).toHaveBeenCalledTimes(1);
+    const older = { ...message, id: "older", content: "Respuesta anterior" };
+    rerender(<MessageList messages={[older, message]} pending={false} displayName="Prueba" />);
+    expect(scroll).toHaveBeenCalledTimes(1);
+    rerender(
+      <MessageList
+        messages={[older, message, { ...message, id: "newer" }]}
+        pending={false}
+        displayName="Prueba"
+      />,
+    );
+    expect(scroll).toHaveBeenCalledTimes(2);
+  });
+
+  it("muestra ubicación cuando el título de la fuente no la incluye", () => {
+    render(
+      <MessageList
+        messages={[{ ...message, sources: [{ ...source, label: "Manual 2022" }] }]}
+        pending={false}
+        displayName="Prueba"
+      />,
+    );
+    expect(screen.getByTestId("sources").querySelector(".location")).toHaveTextContent("2");
+  });
+
   it.each(["identity", "capabilities", "conversational"])(
     "omite el aviso documental en la intención introductoria %s",
     (intent) => {
@@ -45,7 +75,9 @@ describe("Origen de las respuestas", () => {
   it("conserva el aviso sustantivo aunque el intent sea introductorio", () => {
     render(
       <MessageList
-        messages={[{ ...message, intent: "capabilities", answer_basis: "mixed", sources: [source] }]}
+        messages={[
+          { ...message, intent: "capabilities", answer_basis: "mixed", sources: [source] },
+        ]}
         pending={false}
         displayName="Prueba"
       />,
@@ -131,9 +163,7 @@ describe("Origen de las respuestas", () => {
         displayName="Prueba"
       />,
     );
-    expect(screen.getByTestId("answer-basis-notice")).toHaveTextContent(
-      "No se pudo confirmar",
-    );
+    expect(screen.getByTestId("answer-basis-notice")).toHaveTextContent("No se pudo confirmar");
     expect(screen.queryByTestId("general-notice")).not.toBeInTheDocument();
   });
 

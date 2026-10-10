@@ -23,16 +23,20 @@ from app.rag.numeric_grounding import (
     _WORD_VALUES,
     _is_percent,
     _plain,
+    _quantity_value,
     numeric_claim_supported,
     tenure_tables,
 )
 from app.rag.schemas import Evidence
 
 _MONTHS = "enero febrero marzo abril mayo junio julio agosto septiembre octubre noviembre diciembre".split()
-_DATE = re.compile(r"(?:(?P<day>\d{1,2}) de )?(?P<month>" + "|".join(_MONTHS) + r") de (?P<year>\d{4})\b")
+_DATE = re.compile(
+    r"(?:(?P<day>\d{1,2})\s+de\s+)?(?P<month>" + "|".join(_MONTHS)
+    + r")\s+(?:(?:de|del)\s+)?(?P<year>\d{4})\b"
+)
 _DURATION = re.compile(
-    rf"(?<![\w.,])(?P<years>{_NUMBER}|{_WORD_PATTERN}) (?:anos|anios)\b"
-    rf"(?:\s+y\s+(?P<months>{_NUMBER}|{_WORD_PATTERN}) meses\b)?"
+    rf"(?<![\w.,])(?P<years>{_NUMBER}|{_WORD_PATTERN})\s+(?:anos?|anios?)\b"
+    rf"(?:\s+y\s+(?:(?P<months>{_NUMBER}|{_WORD_PATTERN})\s+mes(?:es)?\b|(?P<half>medio)\b))?"
 )
 _CONDITIONAL = re.compile(
     r"\b(?:si\b[^.!?\n]{0,140}\b(?:declara|declarados|correctos|supuestos)|"
@@ -43,17 +47,32 @@ _UNCERTAIN_RULE = re.compile(r"\b(?:excepto|salvo|siempre que|a condicion de|si 
 _RANGE = re.compile(rf"({_NUMBER})\s*[-–—]\s*({_NUMBER})")
 _ROW_DURATION = re.compile(
     rf"\b(?:(?:fila|tramo|intervalo|rango)(?:\s+de\s+antiguedad)?\s*(?::\s*|de\s+)?"
-    rf"|si\s+la\s+antiguedad\s+(?:es\s+de|esta\s+entre)\s+)"
+    rf"|si\s+la\s+antiguedad\s+(?:es\s+de|esta\s+entre)\s+"
+    # Solo construcciones que presentan una fila. Mencionar "tabla" cerca de
+    # "tu antiguedad" no convierte una afirmacion personal en un intervalo.
+    rf"|tabla(?:\s+de\s+antiguedad)?\s*(?:\(\s*|:\s*|"
+    rf"(?:indica|establece|senala|muestra)\s+que\s+)"
+    # Una relacion de pertenencia tampoco es una duracion personal distinta:
+    # «7.5 anos se ubican entre 7 y 7.99 anos». Ambos limites se verifican
+    # contra la fila seleccionada antes de retirar este fragmento.
+    rf"|se\s+(?:ubica[n]?|encuentra[n]?|situa[n]?)\s+(?:en\s+el\s+(?:rango|intervalo)\s+)?entre\s+)"
     rf"(?:entre\s+)?(?P<low>{_NUMBER})\s*(?:[-–—]|\b(?:y|a)\b)\s*(?P<high>{_NUMBER})\s+(?:anos|anios)\b"
 )
 
 
 def _number(value: str) -> Fraction:
-    return Fraction(_WORD_VALUES.get(value, value).replace(",", "."))
+    parsed = _quantity_value(_WORD_VALUES.get(value, value))
+    if not isinstance(parsed, Decimal):
+        raise ValueError("cantidad declarada con separador ambiguo")
+    return Fraction(parsed)
 
 
 def _duration(match: re.Match) -> Fraction | None:
-    years, months = _number(match["years"]), _number(match["months"] or "0")
+    try:
+        years = _number(match["years"])
+        months = Fraction(6) if match["half"] else _number(match["months"] or "0")
+    except (ArithmeticError, ValueError):
+        return None
     if years < 0 or months < 0 or months >= 12 or (months and years.denominator != 1):
         return None
     return years + months / 12
@@ -91,25 +110,37 @@ def declared_case(question: str) -> DeclaredCase:
     durations = (
         list(_DURATION.finditer(text))
         if re.search(
-            r"\b(?:tengo|cuento con|me retiro|si |y con|mi antiguedad)",
+            r"\b(?:tengo|cuento con|llevo|cumplo|me retiro|me voy|si |y con|mi antiguedad|"
+            r"ingrese|entre|empece a trabajar|termino mi relacion laboral|"
+            r"(?:cambia|modifica|actualiza) (?:mi|la) antiguedad)",
             text,
         )
         else []
     )
     duration = durations[0] if len(durations) == 1 else None
     if duration and (
-        not re.search(r"(?:tengo|cuento con|con|antiguedad(?: es|:)?(?: de)?)\s*$", text[: duration.start()])
-        or re.search(r"\b(?:meses|anos|anios)\b", text[: duration.start()] + text[duration.end() :])
+        not re.search(
+            r"(?:tengo|cuento con|llevo|cumplo|con|antiguedad(?: es|:)?(?: de)?|"
+            r"(?:cambia|modifica|actualiza) (?:mi|la) antiguedad a)\s*$", text[: duration.start()],
+        )
+        or re.search(r"\b(?:mes(?:es)?|anos?|anios?)\b", text[: duration.start()] + text[duration.end() :])
     ):
         duration = None
-    entries = list(re.finditer(r"\b(?:ingrese (?:en|el)|mi fecha de ingreso es)\s+(" + _DATE.pattern + ")", text))
+    entries = list(re.finditer(
+        r"\b(?:(?:ingrese|entre|empece a trabajar)\s+(?:en|el)|"
+        r"mi fecha de ingreso (?:es|fue)|mi ingreso (?:fue en|fue el|es en|es el|es|fue|:))\s+("
+        + _DATE.pattern + ")", text,
+    ))
     entry = entries[0] if len(entries) == 1 else None
     return DeclaredCase(
         tenure=_duration(duration) if duration else None,
         tenure_quote=duration.group() if duration else "",
         entry=_date_span(entry) if entry else None,
         entry_quote=entry.group() if entry else "",
-        before_retirement=bool(re.search(r"antes de (?:jubilarme|la jubilacion|cumplir[^.]*jubil)", text)),
+        before_retirement=bool(re.search(
+            r"antes de (?:jubilarme|la jubilacion|cumplir[^.]*jubil)|"
+            r"\bsin (?:estar )?jubilarme\b|\b(?:aun|todavia) no me jubilo\b", text,
+        )),
     )
 
 
@@ -213,7 +244,8 @@ class ClaimContext:
 def requests_application(question: str) -> bool:
     text = _plain(question)
     return bool(
-        re.search(r"\b(?:si|mi|me|ingrese|tengo|con)\b", text)
+        (re.search(r"\b(?:si|mi|me|ingrese|tengo|llevo|cumplo|cuento)\b", text)
+         or (re.search(r"\bcon\b", text) and _DURATION.search(text)))
         and re.search(r"\b(?:anos?|anios?|mes(?:es)?|antiguedad|fecha|porcentaje)\b", text)
     )
 
@@ -223,7 +255,11 @@ def claim_context(question: str, evidences: tuple[Evidence, ...]) -> ClaimContex
     applications, limitations = [], []
     requested = requests_application(question)
     if case.tenure is None:
-        return ClaimContext(case, (), (), requested)
+        missing = tuple(
+            (item.source_id, "falta antiguedad declarada inequívoca")
+            for item in evidences if requested and tenure_tables(item.text)
+        )
+        return ClaimContext(case, (), missing, requested)
     for evidence in evidences:
         tables = tenure_tables(evidence.text)
         if not tables:
@@ -292,9 +328,12 @@ def application_hints(question: str, evidences: tuple[Evidence, ...], aliases: d
             "Explica el conflicto sin elegir un porcentaje; citar solo un fragmento no lo resuelve."
         )
     if not context.applications:
+        lines.append("No se pudo comprobar una aplicacion. No afirmes un porcentaje para el caso.")
+        for source_id, reason in context.limitations:
+            lines.append(f"Limitacion comprobada en [[{labels.get(source_id, source_id)}]]: {reason}.")
         lines.append(
-            "No se pudo comprobar una aplicacion: falta una tabla/regla compatible completa. "
-            "No afirmes un porcentaje para el caso; explica la limitacion o pide precision."
+            "Si falta un dato declarado, pide ese dato. Una regla ausente o una estructura no reconocida "
+            "no son lo mismo; explica solamente la limitacion comprobada."
         )
     lines.append(
         "No traslades estos supuestos o su aplicacion a Orientacion general. "
@@ -302,6 +341,24 @@ def application_hints(question: str, evidences: tuple[Evidence, ...], aliases: d
     )
     lines.append("<<</APLICACION_CONDICIONAL>>>")
     return "\n".join(line for line in lines if line)
+
+
+def application_diagnostics(question: str, evidences: tuple[Evidence, ...]) -> dict:
+    """Estados y recuentos para soporte; sin datos del caso, títulos ni fuentes."""
+    context = claim_context(question, evidences)
+    missing = []
+    if context.application_requested:
+        if context.case.entry is None:
+            missing.append("entry")
+        if context.case.tenure is None:
+            missing.append("tenure")
+    return {
+        "application_requested": context.application_requested,
+        "application_missing_fields": missing,
+        "application_count": len(context.applications),
+        "application_limitation_count": len(context.limitations),
+        "application_conflict_count": len(context.conflicting_sources),
+    }
 
 
 def _metadata_claim(claim: str, evidences: tuple[Evidence, ...]) -> tuple[str, str]:
@@ -322,7 +379,10 @@ def _metadata_claim(claim: str, evidences: tuple[Evidence, ...]) -> tuple[str, s
 
     def attributed_titles(name: str) -> list[str]:
         return [attribution + r'["“]' + name + r'["”]', attribution + "'" + name + "'",
-                attribution + name + title_end]
+                attribution + name + title_end,
+                # El titulo literal entre comillas ya identifica la fuente;
+                # no requiere anteponer la palabra «documento».
+                r'\bsegun\s+["“]' + name + r'["”]', r"\bsegun\s+'" + name + r"'"]
 
     connectors = {"de", "del", "el", "la", "los", "las"}
     connector_gap = r"\s+(?:(?:de|del|el|la|los|las)\s+)*"
@@ -353,7 +413,7 @@ def _metadata_claim(claim: str, evidences: tuple[Evidence, ...]) -> tuple[str, s
                     # abrir la unidad; buscarlo en cualquier posicion aceptaba
                     # "Documento: Otro PLATICA ..." como el documento original.
                     patterns.append(
-                        r"(?m)^[ \t]*(?:[-*]\s+)?(?:(?:segun\s+)?(?:el|la)\s+)?"
+                        r"(?m)(?:^[ \t]*|(?<=[.!?])\s+)(?:[-*]\s+)?(?:(?:segun\s+)?(?:el|la)\s+)?"
                         + natural + title_end
                     )
             for pattern in patterns:
@@ -500,7 +560,10 @@ def check_numeric_claim(
                 [(s, application.percent) for s in application.rule.table_subjects] if _RANGE.search(clause) else values
             )
             expected = {value for _, value in selected_values} or {application.percent}
-            actual = {Decimal(_WORD_VALUES.get(m["value"], m["value"]).replace(",", ".")) for m in clause_percentages}
+            try:
+                actual = {_quantity_value(_WORD_VALUES.get(m["value"], m["value"])) for m in clause_percentages}
+            except ArithmeticError:
+                return "representacion numerica no reconocida"
             if len(expected) != 1 or actual != expected:
                 return "porcentaje no corresponde a la fila y conceptos aplicables"
         # Solo los porcentajes ya ligados a esa fila/regla se retiran del cotejo
@@ -515,7 +578,10 @@ def check_numeric_claim(
         # explicita "si la antiguedad es de ..." tambien describe la fila,
         # una vez comprobados ambos limites contra la aplicacion seleccionada.
         text = _ROW_DURATION.sub("fila de antiguedad comprobada", text)
-    if conditional:
+    if conditional and context.application_requested:
+        # Un resumen puede reproducir una regla hipotetica ("si la antiguedad
+        # es de ..."). Solo una consulta de aplicacion convierte esas cifras
+        # en datos del caso; en un resumen se cotejan contra el documento.
         # Conversion comprobable anos + meses/12, no calculo libre ni eval().
         formula = re.compile(
             rf"(?P<y>{_NUMBER})\s*\+\s*(?P<m>{_NUMBER})\s*/\s*12\s*=\s*(?P<result>{_NUMBER})\s*(?:anos|anios)"
@@ -523,12 +589,15 @@ def check_numeric_claim(
         original = _DURATION.fullmatch(context.case.tenure_quote)
 
         def valid_conversion(match):
-            return (
-                original
-                and _number(match["y"]) == _number(original["years"])
-                and _number(match["m"]) == _number(original["months"] or "0")
-                and _number(match["result"]) == context.case.tenure
-            )
+            try:
+                return (
+                    original
+                    and _number(match["y"]) == _number(original["years"])
+                    and _number(match["m"]) == (Fraction(6) if original["half"] else _number(original["months"] or "0"))
+                    and _number(match["result"]) == context.case.tenure
+                )
+            except (ArithmeticError, ValueError):
+                return False
 
         if any(not valid_conversion(match) for match in formula.finditer(text)):
             return "conversion de antiguedad no corresponde a las entradas declaradas"
@@ -582,6 +651,20 @@ def topic_mismatch(heading: str, cited: tuple[Evidence, ...], all_evidence: tupl
         return set(re.findall(r"\w+", value)) - {"el", "la", "los", "las", "de", "del", "por", "y", "que", "es"}
 
     named = words(_plain(heading))
+    # Un encabezado que identifica el archivo completo puede agrupar sus
+    # distintas secciones. Los titulos tematicos internos conservan el control
+    # estricto: pertenecer al mismo documento no hace equivalentes beneficios.
+    def document_identity(evidence):
+        return evidence.document_id, evidence.filename, evidence.scope
+
+    document_titles = set()
+    for evidence in all_evidence:
+        stem = evidence.filename.rsplit(".", 1)[0].replace("_", " ")
+        title = words(_plain(stem))
+        if len(title) >= 2 and title == named:
+            document_titles.add(document_identity(evidence))
+    if len(document_titles) == 1:
+        return any(document_identity(e) not in document_titles for e in cited)
     matched = {
         evidence_topic(e)
         for e in all_evidence
@@ -627,6 +710,15 @@ def unverified_current_claim(claim: str) -> bool:
         r"(?:\s+(?:nominal|base|diario|mensual|integrado|minimo|general)){0,2})\s+vigente\b",
         r"\1",
         _plain(claim),
+    )
+    # En un procedimiento, "usuario actual" o "ticket vigente" identifica
+    # estado relativo a la ejecucion. No es una afirmacion de que una norma
+    # historica siga aplicando hoy. Se neutraliza el modificador de ese objeto,
+    # nunca "actualmente", "hoy" ni otros usos de vigencia en la misma frase.
+    temporal_text = re.sub(
+        r"\b((?:usuario|directorio|proceso|ticket|sesion|conexion|consola|"
+        r"credencial|contrasena|contexto de seguridad)(?:es|s)?)\s+(?:actual(?:es)?|vigentes?)\b",
+        r"\1", temporal_text,
     )
     # Pedir datos sobre el presente del usuario no afirma vigencia documental.
     # Exigir el objeto completo de una peticion; no neutralizar "actual" solo,

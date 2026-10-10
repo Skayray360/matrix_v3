@@ -73,4 +73,15 @@ describe("Composer", () => {
     render(<Composer disabled={false} attachments={[]} onSend={vi.fn()} onUpload={vi.fn()} />);
     expect(screen.getByText(/solo en esta conversacion/i)).toBeInTheDocument();
   });
+
+  it("permite seleccionar una presentación PPTX admitida por el servidor", async () => {
+    const user = userEvent.setup();
+    const onUpload = vi.fn();
+    render(<Composer disabled={false} attachments={[]} onSend={vi.fn()} onUpload={onUpload} />);
+    const file = new File(["Contenido sintético"], "induccion.pptx", {
+      type: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    });
+    await user.upload(screen.getByLabelText("Adjuntar archivos a la conversacion"), file);
+    expect(onUpload).toHaveBeenCalledWith([file]);
+  });
 });

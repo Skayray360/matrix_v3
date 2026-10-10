@@ -1,145 +1,310 @@
 # Creado por Aldo Garcia.
-# ---------------------------------------------------------------------------
-# Despliegue contenerizado de Matrix RH.
-#
-# La ejecucion predeterminada incluye docker-compose.ollama.yml: Ollama local
-# permanece en su propio contenedor NVIDIA sin puertos publicados en el host,
-# con pesos persistentes fuera de la imagen y una red exclusiva con el backend.
-# Ver docs/README.md antes de activar ese perfil.
-#
-# Sólo Nginx se expone. MySQL, Qdrant y el backend viven en la red interna.
-# ---------------------------------------------------------------------------
+# OPCIONAL: otra copia en Linux (ext4/XFS/Btrfs/ZFS), nunca la carpeta viva de WAMP.
+# Preparar primero con scripts.docker_prepare; ver el unico README.md.
+# APP_ENV=development es un perfil LOCAL. No acredita cifrado ni despliegue corporativo.
+name: "matrixrh-${MATRIX_DOCKER_PROJECT_ID:?ejecute docker_prepare}"
 
-name: matrix-rh
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-backend: &backend
+  image: matrix-rh-backend:1.4.2
+  build:
+    context: .
+    dockerfile: backend/Dockerfile
+  user: "${MATRIX_DOCKER_UID:?ejecute docker_prepare}:${MATRIX_DOCKER_GID:?ejecute docker_prepare}"
+  env_file:
+    - ./backend/config/docker.env
+  environment:
+    APP_ENV: development
+    APP_HOST: 0.0.0.0
+    APP_PORT: "8000"
+    APP_BASE_URL: https://127.0.0.1:8443
+    AUTH_PROVIDER: local
+    LOCAL_TEST_AUTH_ENABLED: "false"
+    LOCAL_TEST_SEED_USERS_ENABLED: "false"
+    SESSION_COOKIE_SECURE: "true"
+    QDRANT_MODE: server
+    QDRANT_URL: http://qdrant:6333
+    OLLAMA_BASE_URL: http://ollama:11434
+    LLM_LOCAL_ONLY: "true"
+    LLM_LOCAL_HOSTS: 127.0.0.1,localhost,::1,ollama
+    MATRIX_ADOPT_EXISTING_DATABASE: "true"
+    FORWARDED_ALLOW_IPS: "${MATRIX_NGINX_IP:?ejecute docker_prepare}"
+  depends_on:
+    mysql:
+      condition: service_healthy
+    qdrant:
+      condition: service_healthy
+    ollama:
+      condition: service_healthy
+  init: true
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  tmpfs:
+    - /tmp:rw,noexec,nosuid,size=256m,mode=1777
+  mem_limit: 4g
+  cpus: 2
+  pids_limit: 256
+  stop_grace_period: 45s
+  networks: [matrix_data, matrix_llm, matrix_proxy]
+  logging: *logging
 
 services:
   mysql:
-    image: mysql:8.4
-    container_name: matrixrh-mysql
+    image: mysql:8.4@sha256:6ea90827b1100f8f2ae306a539f86d2c264a26ed435a2a9f75551dd5c3aeb242
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: matrix_rh_131
+      MYSQL_DATABASE: matrix_rh
       MYSQL_USER: matrixrh
-      # Los valores reales llegan del entorno del host o del gestor de secretos.
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?defina MYSQL_PASSWORD en el entorno}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?defina MYSQL_ROOT_PASSWORD en el entorno}
-    command:
-      - --character-set-server=utf8mb4
-      - --collation-server=utf8mb4_unicode_ci
+      MYSQL_PASSWORD: "${MATRIX_DOCKER_MYSQL_PASSWORD:?ejecute docker_prepare}"
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/mysql-root
+    secrets: [mysql-root]
+    command: [--character-set-server=utf8mb4, --collation-server=utf8mb4_unicode_ci]
     volumes:
-      - mysql_data:/var/lib/mysql
-      - ./infrastructure/database/init:/docker-entrypoint-initdb.d:ro
-    networks: [matrixrh]
+      - type: bind
+        source: ./knowledge-base/state/docker/mysql
+        target: /var/lib/mysql
+        bind: {create_host_path: false}
+    networks: [matrix_data]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 2g
+    cpus: 2
+    pids_limit: 256
+    stop_grace_period: 60s
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"]
+      test:
+        - CMD-SHELL
+        - 'MYSQL_PWD="$$MYSQL_PASSWORD" mysql --user="$$MYSQL_USER" --database="$$MYSQL_DATABASE" --host=127.0.0.1 --execute="SELECT 1" --silent >/dev/null'
       interval: 10s
       timeout: 5s
-      retries: 12
+      retries: 30
+      start_period: 40s
+    logging: *logging
 
   qdrant:
-    image: qdrant/qdrant:v1.12.4
-    container_name: matrixrh-qdrant
+    image: qdrant/qdrant:v1.12.4@sha256:241edb9d7778327516ef218f8c74e1bd61b5ea42cd4f193cb8d0896199705636
     restart: unless-stopped
+    user: "${MATRIX_DOCKER_UID}:${MATRIX_DOCKER_GID}"
+    working_dir: /qdrant/storage
+    entrypoint: [/qdrant/qdrant]
+    command: [--config-path, /qdrant/config/config.yaml]
     environment:
-      QDRANT__SERVICE__API_KEY: ${QDRANT_API_KEY:?defina QDRANT_API_KEY en el entorno}
+      QDRANT__SERVICE__API_KEY: "${QDRANT_API_KEY:?ejecute docker_prepare}"
+      QDRANT__STORAGE__STORAGE_PATH: /qdrant/storage
+      QDRANT__STORAGE__SNAPSHOTS_PATH: /qdrant/snapshots
+      QDRANT__TELEMETRY_DISABLED: "true"
     volumes:
-      - qdrant_data:/qdrant/storage
-    networks: [matrixrh]
+      - type: bind
+        source: ./knowledge-base/state/docker/qdrant
+        target: /qdrant/storage
+        bind: {create_host_path: false}
+      - type: bind
+        source: ./knowledge-base/state/docker/qdrant-snapshots
+        target: /qdrant/snapshots
+        bind: {create_host_path: false}
+    networks: [matrix_data]
+    read_only: true
+    tmpfs: [/tmp:rw,noexec,nosuid,size=128m,mode=1777]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 2g
+    cpus: 2
+    pids_limit: 256
+    stop_grace_period: 45s
+    healthcheck:
+      test:
+        - CMD
+        - bash
+        - -ec
+        - 'exec 3<>/dev/tcp/127.0.0.1/6333; printf "GET /readyz HTTP/1.1\r\nHost: localhost\r\napi-key: %s\r\nConnection: close\r\n\r\n" "$$QDRANT__SERVICE__API_KEY" >&3; IFS= read -r line <&3; [[ "$$line" == *" 200 "* ]]'
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    logging: *logging
+
+  ollama:
+    image: ollama/ollama:0.34.0@sha256:684d8674b4315fa18f4f0e973a118ec2652ed96f67563277839985175858e0ba
+    restart: unless-stopped
+    user: "${MATRIX_DOCKER_UID}:${MATRIX_DOCKER_GID}"
+    environment:
+      OLLAMA_HOST: 0.0.0.0:11434
+      OLLAMA_MODELS: /models
+      OLLAMA_NO_CLOUD: "1"
+      OLLAMA_NUM_PARALLEL: "1"
+      OLLAMA_MAX_LOADED_MODELS: "2"
+      HOME: /tmp
+    volumes:
+      - type: bind
+        source: ./knowledge-base/state/docker/ollama
+        target: /models
+        bind: {create_host_path: false}
+    networks: [matrix_llm]
+    read_only: true
+    tmpfs: [/tmp:rw,nosuid,size=1g,mode=1777]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: "${OLLAMA_MEMORY_LIMIT:-24g}"
+    cpus: "${OLLAMA_CPUS:-4}"
+    pids_limit: 512
+    stop_grace_period: 45s
+    healthcheck:
+      test: [CMD, ollama, list]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    logging: *logging
 
   backend:
-    build:
-      context: .
-      dockerfile: backend/Dockerfile
-    container_name: matrixrh-backend
+    <<: *backend
     restart: unless-stopped
-    env_file:
-      - .env
-    depends_on:
-      mysql:
-        condition: service_healthy
-      qdrant:
-        condition: service_started
-    environment:
-      APP_ENV: ${APP_ENV:-staging}
-      APP_HOST: 0.0.0.0
-      APP_PORT: "8000"
-      APP_SECRET_KEY: ${APP_SECRET_KEY:?defina APP_SECRET_KEY en el entorno}
-      DATABASE_URL: mysql+pymysql://matrixrh:${MYSQL_PASSWORD}@mysql:3306/matrix_rh_131?charset=utf8mb4
-      # MySQL crea esta base del mismo perfil antes del primer migrate.
-      # La adopcion explicita de una base vacia no omite la guardia de tablas
-      # ajenas ni la comprobacion de versiones/checksums ya registrados.
-      MATRIX_ADOPT_EXISTING_DATABASE: "true"
-      QDRANT_MODE: server
-      QDRANT_URL: http://qdrant:6333
-      QDRANT_API_KEY: ${QDRANT_API_KEY}
-      # Incluya el overlay Ollama para este default. Host bridge es opt-in de TI:
-      # exige endpoint y allowlist explicitos, no OLLAMA_HOST=0.0.0.0 en el host.
-      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
-      OLLAMA_FAST_MODEL: gemma4:latest
-      OLLAMA_DEEP_MODEL: gemma4:latest
-      OLLAMA_EMBEDDING_MODEL: embeddinggemma:latest
-      LLM_LOCAL_ONLY: "true"
-      LLM_LOCAL_HOSTS: ${LLM_LOCAL_HOSTS:-127.0.0.1,localhost,::1,ollama}
-      LLM_FAST_DIGEST: ${LLM_FAST_DIGEST:?fije el digest SHA-256 Gemma aprobado}
-      LLM_DEEP_DIGEST: ${LLM_FAST_DIGEST:?fije el digest SHA-256 Gemma aprobado}
-      LLM_EMBEDDING_DIGEST: ${LLM_EMBEDDING_DIGEST:?fije el digest SHA-256 EmbeddingGemma aprobado}
-      AUTH_PROVIDER: ${AUTH_PROVIDER:?defina AUTH_PROVIDER segun el entorno}
-      LOCAL_TEST_AUTH_ENABLED: "false"
-      LOCAL_TEST_SEED_USERS_ENABLED: "false"
-      MATRIX_SEED_PASSWORD: ""
-      SESSION_COOKIE_SECURE: "true"
-      # Solo Nginx en su direccion declarada puede afirmar la IP del cliente.
-      FORWARDED_ALLOW_IPS: 127.0.0.1,::1,${MATRIX_NGINX_IP:-172.30.0.10}
-      STORAGE_ENCRYPTION_ATTESTED: ${STORAGE_ENCRYPTION_ATTESTED:?declaracion TI requerida}
-      DATABASE_ENCRYPTION_ATTESTED: ${DATABASE_ENCRYPTION_ATTESTED:?declaracion TI requerida}
-      BACKUP_ENCRYPTION_ATTESTED: ${BACKUP_ENCRYPTION_ATTESTED:?declaracion TI requerida}
-      ENCRYPTION_ATTESTATION_REFERENCE: /app/config/encryption-attestation.md
+    command: [serve]
     volumes:
-      # Publicacion administrativa e ingesta comparten conocimiento persistente.
-      - ./data/knowledge:/app/data/knowledge:rw
-      - backend_var:/app/var
-      # Documento de TI que acredita el cifrado de volumenes y respaldos; el
-      # proceso valida su existencia, no acredita por si mismo dicha evidencia.
-      - ${ENCRYPTION_ATTESTATION_REFERENCE:?archivo local de evidencia TI}:/app/config/encryption-attestation.md:ro
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    networks: [matrixrh, matrix_proxy]
+      - type: bind
+        source: ./backend/config/docker.env
+        target: /app/backend/config/docker.env
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ./knowledge-base/documents
+        target: /app/knowledge-base/documents
+        bind: {create_host_path: false}
+      - type: bind
+        source: ./knowledge-base/state/docker/uploads
+        target: /app/knowledge-base/state/uploads
+        bind: {create_host_path: false}
+      - type: bind
+        source: ./knowledge-base/state/docker/run
+        target: /app/knowledge-base/state/run
+        bind: {create_host_path: false}
     healthcheck:
-      test: ["CMD-SHELL", "python -c \"import httpx,sys; sys.exit(0 if httpx.get('http://127.0.0.1:8000/ready', timeout=5).status_code==200 else 1)\""]
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/ready', timeout=5)"]
       interval: 15s
-      timeout: 10s
-      retries: 10
-      start_period: 40s
+      timeout: 8s
+      retries: 20
+      start_period: 45s
 
   nginx:
-    image: nginx:1.27-alpine
-    container_name: matrixrh-nginx
+    image: nginx:stable-alpine@sha256:0985e772fb9f729e6fa0980da05fca5d9c468e870eed43071545afa9d2e27d94
     restart: unless-stopped
+    user: "${MATRIX_DOCKER_UID}:${MATRIX_DOCKER_GID}"
+    entrypoint: [nginx]
+    command: [-g, "daemon off;"]
     depends_on:
-      backend:
-        condition: service_healthy
-    # Publicacion local por defecto. Una IP LAN requiere configuracion de TI.
-    ports:
-      - "${MATRIX_BIND_HOST:-127.0.0.1}:80:80"
-      - "${MATRIX_BIND_HOST:-127.0.0.1}:443:443"
+      backend: {condition: service_healthy}
+    ports: ["127.0.0.1:8443:8443"]
     volumes:
-      - ./infrastructure/nginx/matrixrh.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./infrastructure/nginx/certs:/etc/nginx/certs:ro
+      - type: bind
+        source: ./frontend/nginx/matrixrh.conf
+        target: /etc/nginx/conf.d/default.conf
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ./knowledge-base/state/docker/tls
+        target: /etc/nginx/certs
+        read_only: true
+        bind: {create_host_path: false}
     networks:
       matrix_proxy:
-        ipv4_address: ${MATRIX_NGINX_IP:-172.30.0.10}
+        ipv4_address: "${MATRIX_NGINX_IP:?ejecute docker_prepare}"
+      matrix_browser: {}
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx:rw,noexec,nosuid,size=64m,mode=1777
+      - /var/run:rw,noexec,nosuid,size=8m,mode=1777
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 128m
+    cpus: 1
+    pids_limit: 64
+    stop_grace_period: 30s
+    healthcheck:
+      test: [CMD, wget, -q, --no-check-certificate, -O, /dev/null, "https://127.0.0.1:8443/proxy-health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    logging: *logging
+
+  # Solo preparar, despues de "down"; no ejecutar junto a ollama sobre los mismos pesos.
+  model-download:
+    profiles: [prepare]
+    image: ollama/ollama:0.34.0@sha256:684d8674b4315fa18f4f0e973a118ec2652ed96f67563277839985175858e0ba
+    user: "${MATRIX_DOCKER_UID}:${MATRIX_DOCKER_GID}"
+    entrypoint: [/bin/sh, -ec]
+    command:
+      - |
+        ollama serve &
+        runtime_pid=$$!
+        trap 'kill -TERM "$$runtime_pid" 2>/dev/null || true; wait "$$runtime_pid" || true' EXIT INT TERM
+        attempt=0
+        until ollama list >/dev/null 2>&1; do
+          attempt=$$((attempt + 1))
+          [ "$$attempt" -lt 60 ] || exit 1
+          sleep 1
+        done
+        ollama show "$$GENERATION_MODEL" >/dev/null 2>&1 || ollama pull "$$GENERATION_MODEL"
+        ollama show "$$EMBEDDING_MODEL" >/dev/null 2>&1 || ollama pull "$$EMBEDDING_MODEL"
+    environment:
+      OLLAMA_HOST: 127.0.0.1:11434
+      OLLAMA_MODELS: /models
+      OLLAMA_NO_CLOUD: "1"
+      GENERATION_MODEL: "${OLLAMA_FAST_MODEL:?ejecute docker_prepare}"
+      EMBEDDING_MODEL: "${OLLAMA_EMBEDDING_MODEL:?ejecute docker_prepare}"
+      HOME: /tmp
+    volumes:
+      - type: bind
+        source: ./knowledge-base/state/docker/ollama
+        target: /models
+        bind: {create_host_path: false}
+    networks: [matrix_download]
+    read_only: true
+    tmpfs: [/tmp:rw,nosuid,size=1g,mode=1777]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 2g
+    pids_limit: 128
+    logging: *logging
+
+  prepare:
+    <<: *backend
+    profiles: [prepare]
+    restart: "no"
+    command: [prepare]
+    healthcheck: {disable: true}
+    volumes:
+      - type: bind
+        source: ./backend/config
+        target: /app/backend/config
+        bind: {create_host_path: false}
+      - type: bind
+        source: ./knowledge-base/documents
+        target: /app/knowledge-base/documents
+        bind: {create_host_path: false}
+      - type: bind
+        source: ./knowledge-base/state/docker/uploads
+        target: /app/knowledge-base/state/uploads
+        bind: {create_host_path: false}
+      - type: bind
+        source: ./knowledge-base/state/docker/run
+        target: /app/knowledge-base/state/run
+        bind: {create_host_path: false}
+
+secrets:
+  mysql-root:
+    file: ./backend/config/secrets/docker/mysql-root-password.txt
 
 networks:
-  matrixrh:
-    driver: bridge
-    internal: true
+  matrix_data: {internal: true}
+  matrix_llm: {internal: true}
   matrix_proxy:
-    driver: bridge
+    internal: true
     ipam:
       config:
-        - subnet: ${MATRIX_PROXY_SUBNET:-172.30.0.0/24}
-
-volumes:
-  mysql_data:
-  qdrant_data:
-  backend_var:
+        - subnet: "${MATRIX_PROXY_SUBNET:?ejecute docker_prepare}"
+  matrix_browser: {}
+  matrix_download: {}

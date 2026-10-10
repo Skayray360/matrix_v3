@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -45,6 +46,7 @@ EXPECTED: dict[str, str] = {
 BY_NAME: dict[str, str] = {
     "Dockerfile": "# Creado por Aldo Garcia.",
     ".env.example": "# Creado por Aldo Garcia.",
+    "env.example": "# Creado por Aldo Garcia.",
     ".gitignore": "# Creado por Aldo Garcia.",
 }
 
@@ -77,13 +79,16 @@ EXCLUDED_NAMES = frozenset(
 
 #: Rutas excluidas por naturaleza del contenido, no por ser generadas.
 #:
-#: `data/knowledge` contiene el CORPUS documental, no codigo. Insertar una linea
+#: knowledge-base contiene documentos de terceros y estado privado, no codigo.
+#: Insertar una linea
 #: de autoria en una politica de RH seria doblemente incorrecto: atribuiria a un
 #: desarrollador la autoria de un documento corporativo, y esa linea acabaria
-#: indexada como un chunk mas del RAG. Los README de esas carpetas si llevan
-#: encabezado, porque esos si son documentacion del proyecto.
-# El corpus sintetico conserva sus bytes/anotaciones al separarse del corpus activo.
-EXCLUDED_PREFIXES = ("data/knowledge/", "data/synthetic_test_data/knowledge/")
+#: indexada como un chunk mas del RAG. El corpus sintetico conserva sus bytes y
+#: anotaciones. Los runtimes descargados tampoco son codigo propio.
+EXCLUDED_PREFIXES = (
+    "knowledge-base/", "backend/tests/fixtures/", "backend/runtime/",
+    "backend/logs/", "backend/config/secrets/", "data/",
+)
 
 #: Numero de lineas iniciales en las que se busca la leyenda. Es holgado para
 #: admitir shebangs, `@echo off`, `<!doctype html>` y directivas de formato.
@@ -91,22 +96,22 @@ HEADER_WINDOW = 8
 
 
 def iter_candidates(root: Path):  # noqa: ANN201
-    for path in sorted(root.rglob("*")):
-        if not path.is_file():
-            continue
-        if any(part in EXCLUDED_DIRS for part in path.parts):
-            continue
-        if path.name in EXCLUDED_NAMES:
-            continue
-        relative = path.relative_to(root).as_posix()
-        # Los alias corporativos bajo data/ tambien contienen documentos, no
-        # codigo escrito por el autor del proyecto. Nunca modificar su autoria.
-        if path.suffix.lower() == ".md" and path.name.lower() != "readme.md" and relative.startswith("data/"):
-            continue
-        if path.name.lower() != "readme.md" and relative.startswith(EXCLUDED_PREFIXES):
-            continue
-        if path.name in BY_NAME or path.suffix.lower() in EXPECTED:
-            yield path
+    # Se poda antes de recorrer: un verificador de codigo no debe enumerar
+    # secretos, adjuntos, datadirs ni los miles de archivos de un runtime.
+    for directory, subdirectories, filenames in os.walk(root, followlinks=False):
+        parent = Path(directory)
+        subdirectories[:] = sorted(
+            name for name in subdirectories
+            if name not in EXCLUDED_DIRS
+            and not (parent / name).is_symlink()
+            and not ((parent / name).relative_to(root).as_posix() + "/").startswith(EXCLUDED_PREFIXES)
+        )
+        for name in sorted(filenames):
+            path = parent / name
+            if name in EXCLUDED_NAMES or path.is_symlink() or not path.is_file():
+                continue
+            if path.name in BY_NAME or path.suffix.lower() in EXPECTED:
+                yield path
 
 
 def expected_legend(path: Path) -> str:

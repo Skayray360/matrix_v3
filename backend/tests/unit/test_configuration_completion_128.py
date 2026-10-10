@@ -9,6 +9,12 @@ from scripts.configuration_upgrade import ADDITIONS, upgrade_configuration
 
 pytestmark = pytest.mark.unit
 
+def env_path(root):
+    path = root / "backend" / "config" / ".env"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    return path
+
+
 
 @pytest.mark.parametrize("newline", ["\n", "\r\n"])
 @pytest.mark.parametrize("bom", [b"", b"\xef\xbb\xbf"])
@@ -28,7 +34,7 @@ def test_upgrade_127_preserves_private_lines_encoding_comments_and_backup(tmp_pa
         "ANSWER_ALLOW_GENERAL_KNOWLEDGE=true", "ANSWER_EVIDENCE_MODE=cited",
     ]
     original = bom + (newline.join(lines) + newline).encode()
-    target = tmp_path / ".env"
+    target = env_path(tmp_path)
     target.write_bytes(original)
     result = upgrade_configuration(tmp_path)
     assert set(result["changed_keys"]) == {"LLM_FAST_THINKING", "LLM_DEEP_THINKING", "LLM_STRUCTURED_THINKING",
@@ -37,7 +43,7 @@ def test_upgrade_127_preserves_private_lines_encoding_comments_and_backup(tmp_pa
     expected = expected.replace("=768", "=1536").replace("=2048", "=3072")
     expected += "LLM_COMPLETION_RETRIES=1" + newline
     assert target.read_bytes() == bom + expected.encode()
-    backups = list((tmp_path / "var/backups/configuration").glob("*.bak"))
+    backups = list((tmp_path / "knowledge-base/backups/configuration").glob("*.bak"))
     assert len(backups) == 1 and backups[0].read_bytes() == original
     assert upgrade_configuration(tmp_path) == {"changed_keys": [], "backup_created": False}
 
@@ -47,7 +53,7 @@ def test_explicit_thinking_and_custom_limits_are_not_overwritten(tmp_path):
               "OLLAMA_FAST_MAX_TOKENS": "900", "OLLAMA_DEEP_MAX_TOKENS": "3000", "LLM_COMPLETION_RETRIES": "0",
               "LLM_REQUEST_DEADLINE_SECONDS": "300"}
     original = "\n".join(f"{key}={value}" for key, value in values.items()).encode()
-    target = tmp_path / ".env"
+    target = env_path(tmp_path)
     target.write_bytes(original)
     assert upgrade_configuration(tmp_path) == {"changed_keys": [], "backup_created": False}
     assert target.read_bytes() == original
@@ -58,7 +64,7 @@ def test_small_custom_deep_context_keeps_room_for_document_evidence(tmp_path, ex
     original = "OLLAMA_DEEP_NUM_CTX=4096\n"
     if explicit_limit:
         original += "OLLAMA_DEEP_MAX_TOKENS=2048\n"
-    target = tmp_path / ".env"
+    target = env_path(tmp_path)
     target.write_text(original)
     upgrade_configuration(tmp_path)
     updated = dict(line.split("=", 1) for line in target.read_text().splitlines() if "=" in line)

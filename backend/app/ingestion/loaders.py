@@ -1,7 +1,7 @@
 # Creado por Aldo Garcia.
 """Extractores de texto por formato.
 
-Formatos obligatorios: ``.docx``, ``.md``, ``.pdf``, ``.txt``, ``.xlsx``.
+Formatos: ``.docx``, ``.pptx``, ``.md``, ``.pdf``, ``.txt``, ``.xlsx``.
 Mejora permitida: ``.csv``.
 
 Controles de seguridad aplicados en todos los extractores (seccion 17):
@@ -24,6 +24,7 @@ from pathlib import Path
 
 from app.common.errors import ExtractionFailedError, UnsupportedFileError
 from app.common.logging import get_logger
+from app.ingestion.local_ocr import OcrOptions, ocr_pdf_page
 from app.rag.chunking import TextBlock
 
 logger = get_logger(__name__)
@@ -35,11 +36,16 @@ MAX_XLSX_ROWS_PER_SHEET = 5000
 MAX_XLSX_COLUMNS = 100
 MAX_CSV_ROWS = 20000
 MAX_TEXT_BYTES = 20 * 1024 * 1024
+MAX_DOCX_PARAGRAPHS = 20000
+MAX_DOCX_TABLES = 1000
+MAX_DOCX_TABLE_ROWS = 5000
+MAX_DOCX_TABLE_COLUMNS = 100
 
 _EXTENSION_MIME = {
     ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     ".md": "text/markdown",
     ".pdf": "application/pdf",
+    ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
     ".txt": "text/plain",
     ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     ".csv": "text/csv",
@@ -82,6 +88,13 @@ def _decode_text(data: bytes) -> str:
     Como ultimo recurso se decodifica con reemplazo para no perder el documento
     entero por un byte invalido.
     """
+    # PowerShell/Office pueden guardar TXT con BOM UTF-16. No convertir sus
+    # bytes NUL en texto aparentemente valido por el fallback Windows-1252.
+    if data.startswith((b"\xff\xfe", b"\xfe\xff")):
+        try:
+            return data.decode("utf-16")
+        except UnicodeDecodeError as exc:
+            raise ExtractionFailedError("El archivo UTF-16 esta incompleto o corrupto.") from exc
     for encoding in ("utf-8-sig", "utf-8", "cp1252", "latin-1"):
         try:
             return data.decode(encoding)
@@ -135,12 +148,17 @@ def extract_docx(data: bytes) -> ExtractedDocument:
     # una tabla podia heredar el ultimo titulo del documento. python-docx expone
     # los elementos del cuerpo en orden, sin ejecutar contenido incrustado.
     table_index = 0
+    paragraph_index = 0
     for item in document.iter_inner_content():
         if isinstance(item, Table):
             table_index += 1
+            if table_index > MAX_DOCX_TABLES or len(item.rows) > MAX_DOCX_TABLE_ROWS:
+                raise ExtractionFailedError("El documento Word excede el limite de tablas o filas.")
             rows: list[str] = []
             for row in item.rows:
-                cells = [cell.text.strip().replace("\n", " ") for cell in row.cells]
+                if len(row.cells) > MAX_DOCX_TABLE_COLUMNS:
+                    raise ExtractionFailedError("Una tabla Word excede el limite de columnas.")
+                cells = [cell.text.strip().replace("\n", " ").replace("|", "\\|") for cell in row.cells]
                 if any(cells):
                     rows.append("| " + " | ".join(cells) + " |")
             if rows:
@@ -154,6 +172,10 @@ def extract_docx(data: bytes) -> ExtractedDocument:
                 )
             continue
         paragraph = item
+        paragraph_index += 1
+        if paragraph_index > MAX_DOCX_PARAGRAPHS:
+            raise ExtractionFailedError("El documento Word excede el limite de parrafos.")
+        locator = f"parrafo {paragraph_index}"
         text = paragraph.text.strip()
         if not text:
             continue
@@ -169,11 +191,13 @@ def extract_docx(data: bytes) -> ExtractedDocument:
             if style.startswith("heading"):
                 digits = "".join(ch for ch in style if ch.isdigit())
                 level = min(6, int(digits)) if digits else 1
-            blocks.append(TextBlock(f"{'#' * level} {text}", section=section, kind="heading"))
+            blocks.append(TextBlock(
+                f"{'#' * level} {text}", section=section, page_or_sheet=locator, kind="heading", level=level,
+            ))
             continue
         kind = "list" if style.startswith("list") else "paragraph"
         prefix = "- " if kind == "list" else ""
-        blocks.append(TextBlock(f"{prefix}{text}", section=section, kind=kind))
+        blocks.append(TextBlock(f"{prefix}{text}", section=section, page_or_sheet=locator, kind=kind))
 
     if not blocks:
         warnings.append("El documento Word no contiene texto extraible.")
@@ -183,7 +207,7 @@ def extract_docx(data: bytes) -> ExtractedDocument:
 # ---------------------------------------------------------------------------
 # PDF
 # ---------------------------------------------------------------------------
-def extract_pdf(data: bytes) -> ExtractedDocument:
+def extract_pdf(data: bytes, *, ocr_options: OcrOptions | None = None) -> ExtractedDocument:
     """Extrae texto pagina por pagina.
 
     Una pagina escaneada sin capa de texto produce un aviso explicito. **No** se
@@ -200,7 +224,8 @@ def extract_pdf(data: bytes) -> ExtractedDocument:
         if reader.is_encrypted:
             # Se intenta la contrasena vacia (PDF "protegido" solo contra edicion).
             try:
-                reader.decrypt("")
+                if not reader.decrypt(""):
+                    raise ExtractionFailedError("El PDF esta protegido con contrasena y no puede procesarse.")
             except Exception as exc:  # noqa: BLE001
                 raise ExtractionFailedError(
                     "El PDF esta protegido con contrasena y no puede procesarse.", detail=str(exc)
@@ -219,6 +244,7 @@ def extract_pdf(data: bytes) -> ExtractedDocument:
     from app.rag.chunking import split_into_blocks
 
     empty_pages: list[int] = []
+    options = ocr_options or OcrOptions()
     for page_number, page in enumerate(pages[:MAX_PDF_PAGES], start=1):
         try:
             text = page.extract_text() or ""
@@ -226,8 +252,18 @@ def extract_pdf(data: bytes) -> ExtractedDocument:
             warnings.append(f"Pagina {page_number}: error de extraccion ({type(exc).__name__}).")
             continue
         if not text.strip():
-            empty_pages.append(page_number)
-            continue
+            if options.enabled:
+                try:
+                    text = ocr_pdf_page(data, page_number, options)
+                    warnings.append(
+                        f"Pagina {page_number}: texto obtenido por OCR local; "
+                        "revisar cifras y tablas contra el original."
+                    )
+                except ExtractionFailedError as exc:
+                    warnings.append(f"Pagina {page_number}: {exc.message}")
+            if not text.strip():
+                empty_pages.append(page_number)
+                continue
         label = f"pagina {page_number}"
         for block in split_into_blocks(text, default_section=label):
             blocks.append(
@@ -244,7 +280,16 @@ def extract_pdf(data: bytes) -> ExtractedDocument:
             "Paginas sin texto extraible (posible escaneo sin OCR): "
             + ", ".join(str(p) for p in empty_pages[:25])
         )
+        if not options.enabled:
+            warnings.append("El OCR local esta desactivado; las paginas escaneadas no se indexaron.")
     return ExtractedDocument(blocks=blocks, mime_type=_EXTENSION_MIME[".pdf"], warnings=warnings)
+
+
+def extract_pptx(data: bytes) -> ExtractedDocument:
+    from app.ingestion.pptx import extract_pptx_blocks
+
+    blocks, warnings = extract_pptx_blocks(data)
+    return ExtractedDocument(blocks, _EXTENSION_MIME[".pptx"], warnings)
 
 
 # ---------------------------------------------------------------------------
@@ -347,6 +392,8 @@ def extract_xlsx(data: bytes) -> ExtractedDocument:
 # ---------------------------------------------------------------------------
 def extract_csv(data: bytes) -> ExtractedDocument:
     """CSV con deteccion de delimitador y el mismo formato fila -> ``columna: valor``."""
+    if len(data) > MAX_TEXT_BYTES:
+        raise ExtractionFailedError("El archivo CSV excede el limite de extraccion.")
     text = _decode_text(data)
     sample = text[:8192]
     try:
@@ -389,18 +436,23 @@ _EXTRACTORS = {
     ".md": extract_markdown,
     ".docx": extract_docx,
     ".pdf": extract_pdf,
+    ".pptx": extract_pptx,
     ".xlsx": extract_xlsx,
     ".csv": extract_csv,
 }
 
 
-def extract_document(data: bytes, *, filename: str) -> ExtractedDocument:
+def extract_document(data: bytes, *, filename: str, ocr_options: OcrOptions | None = None) -> ExtractedDocument:
     """Selecciona el extractor por extension. Extension desconocida = rechazo."""
     extension = Path(filename).suffix.lower()
+    if extension in {".doc", ".ppt"}:
+        raise UnsupportedFileError(
+            "El formato Office antiguo requiere conversion local a DOCX o PPTX; no hay conversor automatico habilitado."
+        )
     extractor = _EXTRACTORS.get(extension)
     if extractor is None:
         raise UnsupportedFileError(f"Extension no soportada: {extension or '(sin extension)'}")
-    result = extractor(data)
+    result = extract_pdf(data, ocr_options=ocr_options) if extension == ".pdf" else extractor(data)
     if result.warnings:
         logger.info(
             "ingestion.extraction_warnings",

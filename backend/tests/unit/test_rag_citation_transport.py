@@ -11,7 +11,7 @@ import pytest
 
 from app.agents.knowledge_agent import KnowledgeAgent
 from app.agents.prompts import build_answer_messages
-from app.common.errors import AnswerValidationError
+from app.common.answers import UNVERIFIED_ANSWER_NOTICE, safe_nonfactual_text
 from app.config import get_settings
 from app.llm.model_policy import ModelPolicy
 from app.llm.ollama_client import ChatResult
@@ -46,6 +46,12 @@ class Client:
 def cited_mode(monkeypatch):
     monkeypatch.setattr(get_settings(), "answer_evidence_mode", "cited")
     monkeypatch.setattr(get_settings(), "answer_allow_general_knowledge", True)
+    monkeypatch.setattr(get_settings(), "answer_structured_output", False)
+
+
+def assert_withheld(result):
+    assert result.answer.startswith(UNVERIFIED_ANSWER_NOTICE) and safe_nonfactual_text(result.answer)
+    assert result.answer_basis == "insufficient" and not result.cited_source_ids
 
 
 def synthesize(client: Client, items: tuple[Evidence, ...] = (), **kwargs):
@@ -71,31 +77,30 @@ def test_long_filename_is_resolved_exactly_and_never_changed_in_public_citations
 def test_unknown_aliases_are_not_guessed_or_discarded(citation):
     answer = f"Se permite 1 prestamo. [[{citation}]]"
     client = Client(answer, answer)
-    with pytest.raises(AnswerValidationError):
-        synthesize(client)
+    assert_withheld(synthesize(client))
     assert len(client.calls) == 2
 
 
 def test_valid_alias_cannot_turn_user_numbers_into_documentary_evidence():
     answer = "Se permiten 9 prestamos. [[E1]]"
-    with pytest.raises(AnswerValidationError, match="verificacion") as failed:
-        synthesize(Client(answer, answer))
-    assert failed.value.detail
+    result = synthesize(Client(answer, answer))
+    assert_withheld(result)
+    assert "9 prestamos" not in result.answer
 
 
 def test_each_claim_is_checked_against_its_own_cited_source():
     items = (evidence(), evidence("prestaciones/otro.txt#1", "Se permiten 9 prestamos."))
     answer = "Se permiten 9 prestamos. [[E1]]"
-    with pytest.raises(AnswerValidationError) as failed:
-        synthesize(Client(answer, answer), items)
-    assert failed.value.detail
+    result = synthesize(Client(answer, answer), items)
+    assert_withheld(result)
+    assert "9 prestamos" not in result.answer
 
 
-def test_alias_does_not_bypass_general_section_validation():
+def test_alias_does_not_bypass_general_section_validation(caplog):
     answer = "### Orientación general\nSe permite 1 prestamo. [[E1]]"
-    with pytest.raises(AnswerValidationError) as failed:
-        synthesize(Client(answer, answer))
-    assert failed.value.detail == "orientacion general atribuida a fuentes documentales"
+    assert_withheld(synthesize(Client(answer, answer)))
+    event = next(record for record in caplog.records if record.message == "agent.answer_validation_failed")
+    assert event.reason == "orientacion general atribuida a fuentes documentales"
 
 
 def test_section_retry_is_specific_documentary_and_still_fully_verified():
@@ -119,8 +124,9 @@ def test_alias_for_evidence_discarded_by_context_budget_stays_invalid(monkeypatc
     client = Client("Se permiten 9 prestamos. [[E2]]", "Se permiten 9 prestamos. [[E2]]")
     agent = KnowledgeAgent(llm=client, policy=ModelPolicy())
     monkeypatch.setattr(agent, "_pack_answer_context", lambda **kwargs: (items[:1], (), None, True))
-    with pytest.raises(AnswerValidationError):
-        agent.synthesize(question="Cuantos prestamos?", evidences=items, model_name="gemma4:latest")
+    result = agent.synthesize(question="Cuantos prestamos?", evidences=items, model_name="gemma4:latest")
+    assert_withheld(result)
+    assert "9 prestamos" not in result.answer
     assert all("excluido.txt" not in call["messages"][1]["content"] for call in client.calls)
 
 
@@ -150,12 +156,12 @@ def test_structured_and_document_aliases_have_different_namespaces():
     assert result.cited_source_ids == (table.source_id,)
 
 
-def test_aliases_do_not_make_duplicate_canonical_sources_unambiguous():
+def test_aliases_do_not_make_duplicate_canonical_sources_unambiguous(caplog):
     items = (evidence(), evidence(text="Se permiten dos prestamos."))
     answer = "Se permite 1 prestamo. [[E1]]"
-    with pytest.raises(AnswerValidationError) as failed:
-        synthesize(Client(answer, answer), items)
-    assert "ambiguo" in failed.value.detail
+    assert_withheld(synthesize(Client(answer, answer), items))
+    event = next(record for record in caplog.records if record.message == "agent.answer_validation_failed")
+    assert "ambiguo" in event.reason
 
 
 def test_canonical_source_id_cannot_be_reinterpreted_as_an_alias():
@@ -176,8 +182,9 @@ def test_extractive_mode_still_requires_the_complete_original_unit(monkeypatch):
     good = synthesize(Client(f"{item.text} [[E1]]"), (item,))
     assert good.grounding.extractive_verified
     truncated = "Se permite un prestamo. [[E1]]"
-    with pytest.raises(AnswerValidationError):
-        synthesize(Client(truncated, truncated), (item,))
+    result = synthesize(Client(truncated, truncated), (item,))
+    assert_withheld(result)
+    assert "prestamo" not in result.answer
 
 
 def test_general_capability_remains_optional_in_initial_prompt():

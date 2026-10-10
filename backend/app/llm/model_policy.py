@@ -18,6 +18,7 @@ import unicodedata
 from dataclasses import dataclass, field
 from enum import StrEnum
 
+from app.common.identity import is_identity_question
 from app.config import get_settings
 
 
@@ -99,17 +100,6 @@ _CONVERSATIONAL_MARKERS = (
     "muchas gracias",
 )
 
-_IDENTITY_MARKERS = (
-    "quien eres",
-    "quien sos",
-    "como te llamas",
-    "cual es tu nombre",
-    "dime tu nombre",
-    "identificate",
-    "presentate",
-    "que asistente eres",
-)
-
 _CAPABILITY_REQUEST = re.compile(
     r"(?:(?:hola|buenos dias|buenas tardes)[, ]+)?"
     r"(?:(?:quien eres|presentate)[, ]+(?:y )?)?"
@@ -155,6 +145,31 @@ _SUMMARY_MARKERS = (
     "puntos clave",
     "ideas principales",
     "extracto del",
+)
+
+# Una explicacion cuyo objeto es el archivo completo necesita la misma
+# cobertura que un resumen. No incluye preguntas sobre una seccion, un dato o
+# un concepto que simplemente citan un documento al final de la peticion.
+_DOCUMENT_OVERVIEW = re.compile(
+    r"(?:(?:hola|buenos dias|buenas tardes)[, ]+)?(?:por favor[, ]+)?"
+    r"(?:(?:explica(?:me)?|describ(?:e|eme)|habla(?:me)?)(?: (?:sobre|acerca de))?|"
+    r"(?:puedes|podrias) (?:explicar(?:me)?|describir(?:me)?|hablar(?:me)?)"
+    r"(?: (?:sobre|acerca de))?|de que trata|que contiene|cual es el contenido de) "
+    r"(?:el contenido (?:de|del) )?"
+    r"(?:(?:el|la|los|las|este|esta|estos|estas|ese|esa|esos|esas|mi|mis|un|una) )?"
+    r"(?:documentos?|archivos?|adjuntos?|manual(?:es)?|reglamentos?|presentacion|guia)\b.*"
+)
+
+# Ordenes sin otro tema ni titulo. Solo heredan contexto ya autorizado; una
+# solicitud completa como «dame un resumen sobre X» conserva su propio tema.
+_DOCUMENT_TRANSFORM_FOLLOWUP = re.compile(
+    r"(?:y )?(?:por favor[, ]+)?(?:"
+    r"(?:resume(?:me|lo)?|sintetiza(?:lo)?|explicamelo|describelo)|"
+    r"(?:(?:dame|haz(?:me)?|prepara|elabora|necesito|quiero) )?"
+    r"(?:(?:un|una|el|la|los|las) )?(?:(?:breve|pequeno) )?"
+    r"(?:resumen|sintesis|puntos clave|ideas principales))"
+    r"(?: (?:breve|general|detallado|ejecutivo|conciso))?"
+    r"(?: de (?:eso|esto|lo anterior))?(?:[, ]+por favor)?"
 )
 
 # Una pregunta operativa desconocida sigue requiriendo recuperacion. Las
@@ -344,6 +359,15 @@ class ModelPolicy:
         """Referencia que puede necesitar precisar el nombre o documento del plan."""
         return bool(_DEFINITE_BENEFIT_REFERENCE.search(_normalized(question)))
 
+    @staticmethod
+    def is_unqualified_summary(question: str) -> bool:
+        """Resumen sin tema, titulo ni anafora explicita que elija un antecedente."""
+        text = _complete_request(question)
+        return bool(
+            _DOCUMENT_TRANSFORM_FOLLOWUP.fullmatch(text)
+            and not re.search(r"\b(?:resumelo|sintetizalo|explicamelo|describelo|eso|esto|lo anterior)\b", text)
+        )
+
     def contextual_reference(
         self, question: str, *, prior_questions: tuple[str, ...] = (),
         documented_indices: frozenset[int] = frozenset(),
@@ -355,11 +379,13 @@ class ModelPolicy:
         """
         previous = ""
         documented = False
+        from app.agents.contextual_query import contextualize_question
+
         for index, turn in enumerate(prior_questions):
             if self.classify_intent(turn) in (Intent.CONVERSATIONAL, Intent.IDENTITY, Intent.CAPABILITIES):
                 continue
             follows = self._uses_previous_topic(turn, previous, documented=documented)
-            previous = f"{previous}\n{turn}"[-1200:] if follows else turn
+            previous = contextualize_question(turn, previous) if follows else turn
             documented = index in documented_indices or (follows and documented)
         return previous if self._uses_previous_topic(question, previous, documented=documented) else ""
 
@@ -375,7 +401,18 @@ class ModelPolicy:
             return False
         if re.match(r"^(?:por cierto|cambiando de tema|otra pregunta)\b", _normalized(question).lstrip("¿ ")):
             return False
-        if re.search(r"\b(?:segun|de acuerdo con|que dice|documento|archivo|reglamento|manual)\b", text):
+        from app.agents.contextual_query import document_anaphora_remainder, is_case_followup
+
+        # El contrato completo distingue "Indica documento y pagina" de una
+        # fuente nueva. No rechazar un seguimiento por esa orden de presentar.
+        if is_case_followup(question):
+            return True
+        if _DOCUMENT_TRANSFORM_FOLLOWUP.fullmatch(text):
+            return True
+
+        remainder = document_anaphora_remainder(question)
+        source_text = text if remainder is None else remainder
+        if re.search(r"\b(?:segun|de acuerdo con|que dice|documento|archivo|reglamento|manual)\b", source_text):
             return False
         if _NAMED_BENEFIT_REFERENCE.search(text):
             return False
@@ -386,12 +423,19 @@ class ModelPolicy:
             r"prestaciones?|apoyos?|seguros?|fondos?|esquemas?)\s+(?:de|del|para)\s+\w+", text,
         ):
             return False
-        if _CONTEXT_REFERENCE.search(text):
+        if remainder is not None or _CONTEXT_REFERENCE.search(text):
             return True
         if re.fullmatch(r"(?:y )?(?:que es|como funciona) (?:el|la) (?:plan|beneficio|prestacion|programa)", text):
             return True
         # Una explicacion completa prevalece sobre el prefijo "y".
         if _GENERAL_REQUEST.fullmatch(text):
+            return False
+        from app.rag.claim_context import declared_case
+
+        case = declared_case(question)
+        if case.tenure is not None or case.entry is not None:
+            # «Con ocho anos de vida de mi perro» tiene un sujeto nuevo. El
+            # comodin con/para no debe arrastrar una politica del tema anterior.
             return False
         return bool(_ELLIPTICAL_FOLLOWUP.fullmatch(text))
 
@@ -411,10 +455,7 @@ class ModelPolicy:
 
         if _CAPABILITY_REQUEST.fullmatch(text.strip(" ¿?¡!.,;:")):
             return Intent.CAPABILITIES
-        identity_request = re.sub(
-            r"^(?:hola|buenos dias|buenas tardes|buenas noches)[, :¿]+", "", _complete_request(question),
-        )
-        if identity_request in _IDENTITY_MARKERS:
+        if is_identity_question(question):
             return Intent.IDENTITY
 
         has_structured = any(marker in text for marker in _STRUCTURED_MARKERS)
@@ -434,7 +475,11 @@ class ModelPolicy:
             and not self._uses_previous_topic(question, previous_question)
         ):
             return Intent.GENERAL
-        if _contains_phrase(text, _SUMMARY_MARKERS):
+        if (
+            _contains_phrase(text, _SUMMARY_MARKERS)
+            or _DOCUMENT_OVERVIEW.fullmatch(complete_request)
+            or (previous_question and _DOCUMENT_TRANSFORM_FOLLOWUP.fullmatch(complete_request))
+        ):
             return Intent.DOCUMENT_SUMMARY
         return Intent.DOCUMENTAL
 

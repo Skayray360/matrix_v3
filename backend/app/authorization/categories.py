@@ -11,7 +11,7 @@ servicio de ingesta encuentra un dominio nuevo bajo ``especializadas`` (o una
 carpeta legacy nueva) lo registra automaticamente y le aplica
 ``deny-by-default`` hasta que exista una regla explicita.
 
-El archivo ``config/authorization/categories.yaml`` es declarativo y validado por
+El archivo ``backend/config/authorization/categories.yaml`` es declarativo y validado por
 esquema: nunca se evalua como codigo.
 """
 

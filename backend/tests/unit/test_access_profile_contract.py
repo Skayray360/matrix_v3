@@ -10,9 +10,9 @@ import yaml
 from scripts.load_entra_mapping import load_mapping_file
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
-MAPPING_PATH = PROJECT_ROOT / "config" / "authorization" / "entra-role-mapping.yaml"
-CATEGORIES_PATH = PROJECT_ROOT / "config" / "authorization" / "categories.yaml"
-SOURCES_PATH = PROJECT_ROOT / "config" / "data_sources" / "sources.yaml"
+MAPPING_PATH = PROJECT_ROOT / "backend" / "config" / "authorization" / "entra-role-mapping.yaml"
+CATEGORIES_PATH = PROJECT_ROOT / "backend" / "config" / "authorization" / "categories.yaml"
+SOURCES_PATH = PROJECT_ROOT / "backend" / "config" / "data_sources" / "sources.yaml"
 
 
 def test_matriz_hcm_es_autocontenida_y_acumulativa() -> None:

@@ -12,9 +12,9 @@ from app.config import get_settings
 from app.database.engine import session_scope
 from app.database.models import Document
 
-# Contrato unico para la huella y el manifest SQL. La version 7 limita el solape
-# al presupuesto restante y conserva una sola pagina/hoja en cada fragmento.
-PIPELINE_VERSION = 7
+# Contrato unico para huella y manifest SQL. v8 agrega localizadores Word,
+# diapositivas PPTX y OCR local optativo; requiere reextraer los mismos bytes.
+PIPELINE_VERSION = 8
 
 
 def indexing_fingerprint(llm=None) -> str:
@@ -30,7 +30,10 @@ def indexing_fingerprint(llm=None) -> str:
         # v4 aplica el limite de filas/columnas durante la lectura de XLSX.
         # La huella obliga a reextraer documentos con bytes identicos para que
         # un indice anterior no conserve filas ahora fuera del limite.
-        "extractor": 4,
+        "extractor": 5,
+        "ocr_enabled": settings.extraction_ocr_enabled,
+        "ocr_language": settings.extraction_ocr_language,
+        "ocr_dpi": settings.extraction_ocr_dpi,
         "model": settings.ollama_embedding_model,
         "revision": revision,
         "provider": settings.llm_embedding_provider,

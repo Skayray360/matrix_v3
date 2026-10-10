@@ -11,6 +11,30 @@ AnswerBasis = Literal["documented", "general", "mixed", "insufficient"]
 DOCUMENTED_HEADING = "### Información documentada"
 GENERAL_HEADING = "### Orientación general"
 
+# Estas frases describen el resultado de la consulta, no una regla empresarial.
+# Se generan desde codigos cerrados; no son un canal para hechos sin fuente.
+PARTIAL_ANSWER_NOTICE = "Esta respuesta cubre solo las partes respaldadas que pude verificar."
+DOCUMENTARY_LIMITATIONS = {
+    "missing_information": "Quedan aspectos de la consulta por confirmar con documentación adicional.",
+    "missing_case_data": "Hace falta precisar los datos del caso para comprobar la aplicación.",
+    "unverified_calculation": "No pude comprobar el cálculo con la regla y los datos disponibles.",
+    "unverified_current_validity": "No pude confirmar la vigencia actual con las fuentes disponibles.",
+    "unresolved_sources": "Hace falta aclarar las fuentes antes de combinar sus condiciones.",
+}
+UNVERIFIED_ANSWER_NOTICE = (
+    "No pude verificar una respuesta a esta pregunta con el contenido disponible."
+)
+
+
+def _plain_notice(text: str) -> str:
+    return " ".join("".join(char for char in unicodedata.normalize("NFKD", text.casefold())
+                            if not unicodedata.combining(char)).split()).rstrip(".")
+
+
+_CONTROLLED_NOTICES = frozenset(_plain_notice(text) for text in (
+    PARTIAL_ANSWER_NOTICE, UNVERIFIED_ANSWER_NOTICE, *DOCUMENTARY_LIMITATIONS.values(),
+))
+
 def safe_nonfactual_text(text: str) -> bool:
     """Actos no factuales completos, sin un catalogo de respuestas del producto.
 
@@ -52,6 +76,10 @@ def safe_nonfactual_text(text: str) -> bool:
     value = re.sub(r"\betc\.(?=\s*\))", "etc", value)
     pieces = [part.strip(" ¿") for part in re.findall(r"[^.!?;]+[.!?;]?", value) if part.strip(" ¿.!?;")]
     for part in pieces:
+        # Coincidencia completa, nunca substring: una frase controlada no puede
+        # legitimar una prestacion, cifra o clausula adicional en la misma unidad.
+        if part.rstrip('.;') in _CONTROLLED_NOTICES:
+            continue
         if part.endswith('?'):
             # Preguntas abiertas sobre identificacion; sin subordinadas que
             # afirmen una regla dentro de la propia pregunta.

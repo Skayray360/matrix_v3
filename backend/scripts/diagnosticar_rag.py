@@ -46,7 +46,7 @@ def dispatcher_snapshot(db) -> dict:
             if state == "unknown" else
             "El inicio puede recuperar la reserva del proceso local terminado."
             if state == "dead" else
-            "El propietario identificado sigue vivo; use DETENER_MATRIX_RH.bat."
+            "El propietario identificado sigue vivo; use detener.bat."
             if state == "alive" else "No hay reserva vigente."
         ),
     }

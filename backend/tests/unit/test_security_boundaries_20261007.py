@@ -1,3 +1,4 @@
+# Creado por Aldo Garcia.
 """Synthetic regressions for untrusted prompt structure and Windows paths."""
 
 from dataclasses import replace

@@ -1,9 +1,7 @@
 # Creado por Aldo Garcia.
-"""Hashing de contrasenas con Argon2id.
+"""Hashing de contrasenas locales con Argon2id.
 
-Solo se usa para el proveedor local de development/test. En produccion la
-autenticacion principal es Microsoft Entra ID y Matrix RH no almacena ninguna
-contrasena.
+Los proveedores federados conservan sus credenciales fuera de Matrix RH.
 
 Parametros: se usan los del perfil recomendado por la especificacion de Argon2
 (RFC 9106) tal como los expone ``argon2-cffi``, con memoria elevada para que el

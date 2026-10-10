@@ -6,6 +6,7 @@ from dataclasses import replace
 import pytest
 
 from app.rag.calculated_application import calculated_application_answer
+from app.rag.claim_context import application_hints
 from app.rag.grounding import GroundingReport
 from app.rag.schemas import Evidence
 
@@ -78,13 +79,13 @@ def test_complete_natural_document_alias_and_ellipsis_remain_supported():
 @pytest.mark.parametrize("question", [
     QUESTION + " Compara también las aportaciones anteriores y posteriores al cambio.",
     QUESTION + " ¿Y cuáles son mis otras prestaciones?",
+    QUESTION + " Determina mi saldo final.",
     QUESTION.replace("¿qué porcentaje", "¿qué importe y porcentaje"),
     QUESTION.replace("antes de jubilarme,", "después de jubilarme,"),
     QUESTION.replace(" y me retiro con 6 años y 6 meses de antigüedad", ""),
     QUESTION.replace("ingresé en mayo de 2020 y ", ""),
     QUESTION.replace("6 años y 6 meses", "6 años y 12 meses"),
     QUESTION.replace("6 años y 6 meses", "6 años y 6 meses o 8 años"),
-    QUESTION.replace("Indica documento y página.", ""),
     QUESTION.replace("base, base complementaria y adicional complementaria", "base y base complementaria"),
     QUESTION.replace("base, base complementaria y adicional complementaria", "base, base y adicional complementaria"),
     QUESTION.replace("adicional complementaria", "seguro adicional"),
@@ -95,6 +96,60 @@ def test_complete_natural_document_alias_and_ellipsis_remain_supported():
 ])
 def test_incomplete_mixed_or_unidentified_questions_have_no_calculated_substitute(question):
     assert calculate(question) is None
+
+
+def test_documentary_sources_are_required_even_without_an_explicit_citation_instruction():
+    result = calculate(QUESTION.replace("Indica documento y página.", ""))
+    assert result is not None
+    assert result[1].cited_source_ids == (SOURCE.source_id,)
+    assert 'página 12' in result[0]
+
+
+@pytest.mark.parametrize('question', [
+    'Entré en mayo de 2020. Llevo seis años y medio y me retiro sin jubilarme. '
+    'Según el documento Programa Jubilación diciembre 2041, ¿qué porcentajes recibiría de las '
+    'aportaciones base, base complementaria y adicional complementaria?',
+    'Según el documento Programa Jubilación diciembre 2041, mi fecha de ingreso fue mayo de 2020. '
+    'Tengo 6 años y 6 meses de antigüedad y todavía no me jubilo. '
+    '¿Qué porcentaje aplica para las aportaciones base, base complementaria y adicional complementaria?',
+    'Cuento con 6 años y 6 meses y me retiro antes de jubilarme. Empecé a trabajar en mayo de 2020. '
+    'Según el documento Programa Jubilación diciembre 2041, ¿qué porcentajes recibiría de las '
+    'aportaciones base, base complementaria y adicional complementaria?',
+])
+def test_independent_wording_uses_complete_declared_fields_in_any_order(question):
+    result = calculate(question)
+    assert result is not None
+    assert result[0].count('63%') == 3
+    assert result[1].grounded and result[1].cited_source_ids == (SOURCE.source_id,)
+
+
+def test_source_title_is_not_a_business_program_constant():
+    source = replace(SOURCE, text=SOURCE.text.replace('Portabilidad del Programa Sintético', 'Derechos de ahorro acumulado'))
+    result = calculate(source=source)
+    assert result is not None
+    assert result[0].count('63%') == 3
+
+
+def test_natural_document_title_can_follow_complete_case_sentences():
+    source = replace(SOURCE, filename='PLATICA DE PROGRAMA JUBILACIÓN DICIEMBRE 2041.pdf')
+    question = (
+        'Entré en mayo de 2020. Llevo seis años y medio y me retiro sin jubilarme. '
+        'Según la plática del Programa Jubilación de diciembre de 2041, ¿qué porcentajes recibiría '
+        'de las aportaciones base, base complementaria y adicional complementaria?'
+    )
+    result = calculate(question, source)
+    assert result is not None and result[0].count('63%') == 3
+
+
+@pytest.mark.parametrize('question,missing', [
+    (QUESTION.replace('ingresé en mayo de 2020 y ', ''), 'falta fecha de ingreso declarada'),
+    (QUESTION.replace('6 años y 6 meses', '6 años o 8 años'), 'falta antiguedad declarada'),
+])
+def test_clarification_hints_identify_the_missing_field_instead_of_missing_document(question, missing):
+    hints = application_hints(question, (SOURCE,), {'E1': SOURCE.source_id})
+    assert missing in hints
+    assert '[[E1]]' in hints
+    assert 'falta una tabla' not in hints
 
 
 @pytest.mark.parametrize("source", [
@@ -172,6 +227,8 @@ def test_uninterpreted_fragment_of_the_same_document_blocks_calculated_output(fi
 @pytest.mark.parametrize("heading", [
     "Portabilidad del programa exclusivo para empleados de planta",
     "Portabilidad del Programa Exclusivo",
+    "Derechos de ahorro de directivos",
+    "No aplica a invitados",
 ])
 def test_population_restriction_cannot_hide_in_title(heading):
     source = replace(SOURCE, text=SOURCE.text.replace("Portabilidad del Programa Sintético", heading))

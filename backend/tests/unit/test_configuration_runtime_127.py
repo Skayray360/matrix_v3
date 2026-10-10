@@ -15,6 +15,12 @@ from scripts.runtime_control import runtime_identity, watch_shutdown
 
 pytestmark = pytest.mark.unit
 
+def env_path(root):
+    path = root / "backend" / "config" / ".env"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    return path
+
+
 SYNTHETIC_CONFIG = (
     "# Configuracion sintetica: no contiene credenciales reales.\r\n"
     "APP_ENV=development\r\n"
@@ -31,12 +37,12 @@ SYNTHETIC_CONFIG = (
 
 
 def backups(root: Path) -> list[Path]:
-    return list((root / "var" / "backups" / "configuration").glob("*.bak"))
+    return list((root / "knowledge-base" / "backups" / "configuration").glob("*.bak"))
 
 
 def test_legacy_upgrade_backs_up_exact_bytes_preserves_secrets_models_and_pins(tmp_path, capsys):
     original = b"\xef\xbb\xbf" + SYNTHETIC_CONFIG.encode("utf-8")
-    target = tmp_path / ".env"
+    target = env_path(tmp_path)
     target.write_bytes(original)
     result = upgrade_configuration(tmp_path)
     copies = backups(tmp_path)
@@ -51,7 +57,8 @@ def test_legacy_upgrade_backs_up_exact_bytes_preserves_secrets_models_and_pins(t
     assert "LLM_REQUEST_DEADLINE_SECONDS=600" in updated.splitlines()
     assert all(f"{key}={value}" in updated.splitlines() for key, value in ADDITIONS.items())
     assert not capsys.readouterr().out
-    assert {path.name for path in tmp_path.iterdir()} == {".env", "var"}
+    assert {path.name for path in tmp_path.iterdir()} == {"backend", "knowledge-base"}
+    assert {path.name for path in target.parent.iterdir()} == {".env"}
 
 
 @pytest.mark.parametrize(
@@ -59,7 +66,7 @@ def test_legacy_upgrade_backs_up_exact_bytes_preserves_secrets_models_and_pins(t
     ("120", "120.0", "120.000", "'120'", '"120.0" # presupuesto anterior'),
 )
 def test_only_legacy_120_budget_is_migrated(tmp_path, legacy):
-    target = tmp_path / ".env"
+    target = env_path(tmp_path)
     target.write_text(f"LLM_REQUEST_DEADLINE_SECONDS={legacy}\n", encoding="utf-8")
     upgrade_configuration(tmp_path)
     assert target.read_text(encoding="utf-8").splitlines()[0].startswith("LLM_REQUEST_DEADLINE_SECONDS=600")
@@ -74,7 +81,7 @@ def test_custom_deadline_and_operational_choices_are_preserved(tmp_path, custom)
         "LLM_FAST_THINKING=enabled", "LLM_DEEP_THINKING=disabled", "LLM_STRUCTURED_THINKING=auto",
         "LLM_COMPLETION_RETRIES=0", "OLLAMA_FAST_MAX_TOKENS=900", "OLLAMA_DEEP_MAX_TOKENS=3000",
     ]
-    target = tmp_path / ".env"
+    target = env_path(tmp_path)
     original = ("\n".join(lines) + "\n").encode("utf-8")
     target.write_bytes(original)
     result = upgrade_configuration(tmp_path)
@@ -85,7 +92,7 @@ def test_custom_deadline_and_operational_choices_are_preserved(tmp_path, custom)
 
 @pytest.mark.parametrize("custom", ("90", "300", '"240" # ajuste de TI'))
 def test_custom_deadline_is_preserved_when_missing_settings_require_a_write(tmp_path, custom):
-    target = tmp_path / ".env"
+    target = env_path(tmp_path)
     line = f"export LLM_REQUEST_DEADLINE_SECONDS = {custom}"
     original = (line + "\nAPP_SECRET_KEY=synthetic-existing-key\n").encode()
     target.write_bytes(original)
@@ -97,7 +104,7 @@ def test_custom_deadline_is_preserved_when_missing_settings_require_a_write(tmp_
 
 
 def test_missing_new_settings_are_added_without_generating_any_credentials_or_digest(tmp_path):
-    target = tmp_path / ".env"
+    target = env_path(tmp_path)
     target.write_text("APP_ENV=development\nOLLAMA_FAST_MODEL=custom-local\n", encoding="utf-8")
     result = upgrade_configuration(tmp_path)
     keys = {
@@ -111,7 +118,7 @@ def test_missing_new_settings_are_added_without_generating_any_credentials_or_di
 
 
 def test_second_upgrade_is_idempotent_without_another_backup(tmp_path):
-    target = tmp_path / ".env"
+    target = env_path(tmp_path)
     target.write_text(SYNTHETIC_CONFIG, encoding="utf-8")
     first = upgrade_configuration(tmp_path)
     assert first["backup_created"] is True
@@ -124,7 +131,7 @@ def test_second_upgrade_is_idempotent_without_another_backup(tmp_path):
 
 
 def test_atomic_replace_failure_retains_original_env_backup_and_removes_temporary_file(tmp_path, monkeypatch):
-    target = tmp_path / ".env"
+    target = env_path(tmp_path)
     original = SYNTHETIC_CONFIG.encode("utf-8")
     target.write_bytes(original)
 
@@ -137,12 +144,13 @@ def test_atomic_replace_failure_retains_original_env_backup_and_removes_temporar
     assert target.read_bytes() == original
     assert len(backups(tmp_path)) == 1
     assert backups(tmp_path)[0].read_bytes() == original
-    assert {path.name for path in tmp_path.iterdir()} == {".env", "var"}
+    assert {path.name for path in tmp_path.iterdir()} == {"backend", "knowledge-base"}
+    assert {path.name for path in target.parent.iterdir()} == {".env"}
 
 
 @pytest.mark.parametrize("key", ("LLM_REQUEST_DEADLINE_SECONDS", *ADDITIONS))
 def test_duplicate_operational_keys_are_rejected_before_backup_or_mutation(tmp_path, key):
-    target = tmp_path / ".env"
+    target = env_path(tmp_path)
     original = (
         f"{key}=120\nexport {key.lower()} = 600\n"
         "APP_SECRET_KEY=synthetic-do-not-replace\n"
@@ -152,12 +160,13 @@ def test_duplicate_operational_keys_are_rejected_before_backup_or_mutation(tmp_p
         upgrade_configuration(tmp_path)
     assert target.read_bytes() == original
     assert backups(tmp_path) == []
-    assert {path.name for path in tmp_path.iterdir()} == {".env"}
+    assert {path.name for path in tmp_path.iterdir()} == {"backend"}
+    assert {path.name for path in target.parent.iterdir()} == {".env"}
 
 
 @pytest.mark.parametrize("kind", ("missing", "directory", "symlink"))
 def test_configuration_upgrade_requires_regular_local_env(tmp_path, kind):
-    target = tmp_path / ".env"
+    target = env_path(tmp_path)
     if kind == "directory":
         target.mkdir()
     elif kind == "symlink":
@@ -277,7 +286,7 @@ def test_shutdown_refuses_reused_pid_and_invalid_creation_time(tmp_path, created
 
 def test_runtime_identity_registers_real_backend_and_removes_only_own_record(tmp_path, monkeypatch):
     monkeypatch.setattr("scripts.runtime_control.psutil.Process", lambda _pid: SimpleNamespace(pid=4242, create_time=lambda: 123.5))
-    path = tmp_path / "var/matrixrh-backend.identity.json"
+    path = tmp_path / "knowledge-base/state/run/matrixrh-backend.identity.json"
     with runtime_identity(tmp_path) as identity:
         assert identity["pid"] == 4242
         assert identity["created_at"] == 123.5
@@ -288,7 +297,7 @@ def test_runtime_identity_registers_real_backend_and_removes_only_own_record(tmp
 
 def test_old_runtime_exit_never_deletes_replacement_identity(tmp_path, monkeypatch):
     monkeypatch.setattr("scripts.runtime_control.psutil.Process", lambda _pid: SimpleNamespace(pid=4242, create_time=lambda: 123.5))
-    path = tmp_path / "var/matrixrh-backend.identity.json"
+    path = tmp_path / "knowledge-base/state/run/matrixrh-backend.identity.json"
     with runtime_identity(tmp_path):
         replacement = {"pid": 4343, "created_at": 555.5, "root": str(tmp_path), "nonce": "a" * 32}
         path.write_text(json.dumps(replacement))

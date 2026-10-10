@@ -46,7 +46,7 @@ from app.common.errors import ConfigurationError
 # de la aplicacion ni requerir sus servicios. Solo necesita Python y PyYAML.
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
-DENYLIST_PATH = PROJECT_ROOT / "config" / "supply_chain_denylist.yaml"
+DENYLIST_PATH = PROJECT_ROOT / "backend" / "config" / "supply_chain_denylist.yaml"
 FRONTEND = PROJECT_ROOT / "frontend"
 NODE_MODULES = FRONTEND / "node_modules"
 

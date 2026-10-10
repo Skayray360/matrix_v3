@@ -1,2 +1,0 @@
-Respaldo parcial previo a etapa 1. No contiene datos, .env ni una copia completa del proyecto.
-Para recuperar: con Matrix detenido, copiar cada archivo de originals a la misma ruta relativa en la raiz del proyecto, incluido SHA256SUMS.txt. Retirar solamente el archivo nuevo indicado en baseline.json. Verificar los hashes original_sha256. Ejecutar desde backend: ..\.venv\Scripts\python.exe -B -S -m scripts.preflight --integrity-only --require-manifest

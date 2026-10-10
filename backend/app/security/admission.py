@@ -7,6 +7,7 @@ from threading import Condition, Lock
 from time import monotonic
 
 from app.common.errors import OllamaUnavailableError
+from app.llm.request_control import check_inference_control, remaining_inference_seconds
 
 _lock = Lock()
 _changed = Condition(_lock)
@@ -26,13 +27,24 @@ def wait_for_inference(seconds: float):
 
 @contextmanager
 def admission(key: str, limit: int):
+    if key == "inference":
+        check_inference_control()
     with _changed:
         while _active.get(key, 0) >= limit:
+            if key == "inference":
+                check_inference_control()
             deadline = _wait_until.get() if key == "inference" else None
             remaining = deadline - monotonic() if deadline is not None else 0
             if remaining <= 0:
                 raise OllamaUnavailableError("Capacidad ocupada. Intente de nuevo mas tarde.", detail="admission_full")
-            _changed.wait(timeout=remaining)
+            turn_remaining = remaining_inference_seconds() if key == "inference" else None
+            if turn_remaining is not None:
+                remaining = min(remaining, turn_remaining)
+            # Una cancelacion no produce notify en esta Condition; comprobarla
+            # periodicamente evita retener un cupo HTTP durante toda la espera.
+            _changed.wait(timeout=min(remaining, 0.1))
+        if key == "inference":
+            check_inference_control()
         _active[key] = _active.get(key, 0) + 1
     try:
         yield

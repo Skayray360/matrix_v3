@@ -1,3 +1,4 @@
+# Creado por Aldo Garcia.
 """Sincronizacion real SQL/Qdrant sinteticos, sin corpus ni servicios operativos."""
 
 from concurrent.futures import ThreadPoolExecutor

@@ -14,6 +14,7 @@ from qdrant_client import QdrantClient
 from app.agents.knowledge_agent import KnowledgeAgent
 from app.agents.orchestrator import Orchestrator
 from app.agents.prompts import GENERAL_SYSTEM_POLICY, IDENTITY_ANSWER, SYSTEM_POLICY
+from app.common.answers import UNVERIFIED_ANSWER_NOTICE, safe_nonfactual_text
 from app.common.errors import OllamaUnavailableError
 from app.common.ids import new_id
 from app.config import get_settings
@@ -26,6 +27,11 @@ from app.rag.vector_store import VectorStore
 from tests.conftest import make_context
 
 pytestmark = pytest.mark.unit
+
+
+@pytest.fixture(autouse=True)
+def markdown_transport(monkeypatch):
+    monkeypatch.setattr(get_settings(), "answer_structured_output", False)
 
 
 def evidence(index: int, *, chars: int = 120) -> Evidence:
@@ -79,7 +85,7 @@ class TestContratoDeIntencion:
         policy = ModelPolicy()
         for question in ("¿Quién eres?", "¿Cómo te llamas?", "Identifícate"):
             assert policy.classify_intent(question) is Intent.IDENTITY
-        assert IDENTITY_ANSWER == "Soy Matrix RH."
+        assert IDENTITY_ANSWER == "Soy Matrix."
         assert IDENTITY_ANSWER in SYSTEM_POLICY
         assert IDENTITY_ANSWER in GENERAL_SYSTEM_POLICY
 
@@ -135,6 +141,11 @@ class TestIdentidadSinDependencias:
         class Memory:
             sequence: int = 0
 
+            def get_owned_conversation(self, _db, current, conversation_id):
+                assert conversation_id == conversation.id
+                assert current.user_id == conversation.user_id
+                return conversation
+
             def build_context(self, *_args, **_kwargs):
                 return ConversationContext(conversation_id="c-1")
 
@@ -166,7 +177,7 @@ class TestIdentidadSinDependencias:
         outcome = orchestrator.handle_chat(
             MagicMock(), ctx=ctx, conversation=conversation, message="¿Quién eres?"
         )
-        assert outcome.answer == "Soy Matrix RH."
+        assert outcome.answer == "Soy Matrix."
         assert outcome.intent == "identity"
         assert outcome.model == ""
 
@@ -236,13 +247,12 @@ class TestResumenConEvidencia:
         llm = ScriptedLlm(
             responses=["La politica concede treinta dias.", "Insisto: son treinta dias."]
         )
-        from app.common.errors import AnswerValidationError
-
-        with pytest.raises(AnswerValidationError):
-            KnowledgeAgent(llm=llm, policy=ModelPolicy()).synthesize(
-                question="Cuantos dias de vacaciones tengo?",
-                evidences=(evidence(0),), model_name="gemma4:latest", intent=Intent.DOCUMENTAL,
-            )
+        result = KnowledgeAgent(llm=llm, policy=ModelPolicy()).synthesize(
+            question="Cuantos dias de vacaciones tengo?",
+            evidences=(evidence(0),), model_name="gemma4:latest", intent=Intent.DOCUMENTAL,
+        )
+        assert result.answer.startswith(UNVERIFIED_ANSWER_NOTICE) and safe_nonfactual_text(result.answer)
+        assert not result.cited_source_ids and "treinta" not in result.answer
         assert len(llm.calls) == 2
 
     def test_no_acepta_falsa_insuficiencia_y_entrega_resumen_citable(self):
@@ -292,8 +302,7 @@ class TestResumenConEvidencia:
         assert call["num_ctx"] == get_settings().ollama_fast_num_ctx
         assert call["max_tokens"] == get_settings().ollama_fast_max_tokens
 
-    def test_fallback_determinista_al_otro_modelo_local(self, monkeypatch):
-        # Compatibilidad de un alternativo explicito; no se instala por defecto.
+    def test_modelo_local_ausente_no_activa_otro_generador(self, monkeypatch):
         monkeypatch.setattr(get_settings(), "ollama_deep_model", "synthetic-alternate")
         llm = ScriptedLlm(
             responses=[
@@ -301,17 +310,12 @@ class TestResumenConEvidencia:
                 f"{evidence(0).text} [[__private__/archivo.md#0]].",
             ]
         )
-        result = KnowledgeAgent(llm=llm, policy=ModelPolicy()).synthesize(
-            question="Resume el archivo",
-            evidences=(evidence(0),),
-            model_name="gemma4:latest",
-            intent=Intent.DOCUMENT_SUMMARY,
-        )
-        assert result.model == "synthetic-alternate"
-        assert [call["model"] for call in llm.calls] == [
-            "gemma4:latest",
-            "synthetic-alternate",
-        ]
+        with pytest.raises(OllamaUnavailableError):
+            KnowledgeAgent(llm=llm, policy=ModelPolicy()).synthesize(
+                question="Resume el archivo", evidences=(evidence(0),),
+                model_name="gemma4:latest", intent=Intent.DOCUMENT_SUMMARY,
+            )
+        assert [call["model"] for call in llm.calls] == ["gemma4:latest"]
 
     def test_archivo_largo_usa_map_reduce_y_preserva_citas(self):
         # Cuarenta unidades completas requieren mapas en el perfil rapido, pero

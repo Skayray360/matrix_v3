@@ -116,11 +116,11 @@ def test_elapsed_admission_does_not_mislabel_stage_timeout_as_global(monkeypatch
 
 @pytest.mark.parametrize("failure_source", ("post_body", "inventory_probe", "admission"))
 @pytest.mark.parametrize("global_exhausted", (False, True))
-def test_only_stage_or_probe_timeout_permits_one_gemma_fallback(
+def test_stage_probe_or_global_timeout_never_substitutes_generator(
     monkeypatch, failure_source, global_exhausted,
 ):
-    # Compatibilidad de un despliegue que configura dos modelos diferentes.
-    # La instalacion actual usa un solo Gemma y no aplica este fallback.
+    # Incluso si existen dos nombres configurados, un fallo se informa sobre
+    # el seleccionado; no dispara inferencia silenciosa en el otro modelo.
     overrides = {"llm_request_deadline_seconds": 8 if global_exhausted else 600,
                  "ollama_deep_model": "synthetic-deep-generator"}
     if failure_source == "inventory_probe":
@@ -164,22 +164,15 @@ def test_only_stage_or_probe_timeout_permits_one_gemma_fallback(
     with httpx.Client(transport=httpx.MockTransport(handler)) as http:
         agent = KnowledgeAgent(llm=provider.ModelClient(client=http), policy=ModelPolicy())
         with provider.inference_deadline():
-            if global_exhausted:
-                with pytest.raises(InferenceFailureError) as caught:
-                    agent.synthesize(
-                        question="Analiza en profundidad el requisito.", evidences=(source,),
-                        model_name=settings.ollama_deep_model, choice=ModelChoice.DEEP, intent=Intent.DOCUMENTAL,
-                    )
-                assert caught.value.failure_kind is InferenceFailureKind.DEADLINE
-            else:
-                result = agent.synthesize(
+            with pytest.raises(InferenceFailureError) as caught:
+                agent.synthesize(
                     question="Analiza en profundidad el requisito.", evidences=(source,),
                     model_name=settings.ollama_deep_model, choice=ModelChoice.DEEP, intent=Intent.DOCUMENTAL,
                 )
-                assert result.model == settings.ollama_fast_model
-                assert result.cited_source_ids == (source.source_id,)
-                assert result.answer_basis == "documented"
+            assert caught.value.failure_kind is (
+                InferenceFailureKind.DEADLINE if global_exhausted else InferenceFailureKind.TIMEOUT
+            )
     fast_posts = [record for record in records if record[0] == "POST" and record[1] == settings.ollama_fast_model]
-    assert len(fast_posts) == (0 if global_exhausted else 1)
+    assert fast_posts == []
     assert provider._deadline.get() is None
     assert provider._stage_deadline.get() is None

@@ -1,7 +1,7 @@
 # Creado por Aldo Garcia.
 """Traza opt-in de UN turno autorizado; nunca activa recuperacion o inferencia.
 
-Control local: var/diagnostics/next-answer.json. Requiere usuario, conversacion,
+Control local: knowledge-base/state/diagnostics/next-answer.json. Requiere usuario, conversacion,
 SHA256 de pregunta exacta y caducidad <=15 minutos. Un solo uso por proceso.
 No registra memoria, SQL, adjuntos privados ni sistemas completos. Solo permite
 extractos de source_ids corporativos enumerados expresamente en el control.
@@ -13,7 +13,6 @@ import hashlib
 import json
 import re
 import threading
-from dataclasses import asdict
 from datetime import UTC, datetime
 from functools import wraps
 
@@ -22,7 +21,7 @@ from app.common.redaction import redact_value
 from app.config.settings import PROJECT_ROOT
 
 logger = get_logger(__name__)
-CONTROL = PROJECT_ROOT / "var" / "diagnostics" / "next-answer.json"
+CONTROL = PROJECT_ROOT / "knowledge-base" / "state" / "diagnostics" / "next-answer.json"
 _trace: contextvars.ContextVar[dict | None] = contextvars.ContextVar("answer_diagnostic", default=None)
 _used: set[str] = set()
 _lock = threading.Lock()
@@ -84,7 +83,7 @@ def begin(*, ctx, conversation_id: str, question: str, retrieval_question: str, 
             _used.add(key)
         _trace.set({"key": key, "expires_at": control["expires_at"], "allowed": frozenset(allowed),
                     "events": 0, "corporate": {}, "request_id": ctx.request_id})
-        emit("classified", {"intent": intent, "query": _bounded(retrieval_question, 1600),
+        emit("classified", {"intent": intent, "query": _fingerprint(retrieval_question),
                             "question_sha256": digest(question)})
     except (OSError, ValueError, TypeError, KeyError, AttributeError):
         # Diagnosticar nunca puede impedir una respuesta ni cambiar su ruta.
@@ -96,6 +95,11 @@ def _bounded(value: str, limit: int) -> dict:
             "truncated": len(value) > limit}
 
 
+def _fingerprint(value: str) -> dict:
+    """La consulta reconstruida y el borrador pueden incorporar memoria privada."""
+    return {"sha256": digest(value), "chars": len(value)}
+
+
 @_optional
 def emit(stage: str, fields: dict) -> None:
     state = _trace.get()
@@ -104,14 +108,27 @@ def emit(stage: str, fields: dict) -> None:
     if datetime.fromisoformat(state["expires_at"]) <= datetime.now(UTC):
         return
     state["events"] += 1
+    fields = dict(fields)
+    if isinstance(fields.get("retry_note"), str):
+        fields["retry_note"] = _fingerprint(fields["retry_note"])
     logger.info("diagnostic.answer_trace", extra={"request_id": state["request_id"],
         "diagnostic_stage": stage, "trace_key": state["key"], "diagnostic": redact_value(fields)})
 
 
 def evidence_metadata(evidences) -> list[dict]:
-    return [{"source_id": e.source_id, "page": e.page_or_sheet, "score": e.score,
-             "scope": e.scope, "chunk_id": e.chunk_id, "sha256": digest(e.text), "chars": len(e.text)}
-            for e in evidences[:8]]
+    allowed = (_trace.get() or {}).get("allowed", frozenset())
+    metadata = []
+    for evidence in evidences[:8]:
+        item = {"source_sha256": digest(evidence.source_id), "score": evidence.score,
+                "scope": evidence.scope, **_fingerprint(evidence.text)}
+        # El identificador privado incluye el nombre visible del archivo. Tampoco
+        # se vuelcan localizadores de fuentes corporativas no autorizadas para
+        # esta traza, aunque el usuario pueda consultarlas en la aplicacion.
+        if evidence.scope == "corporate" and evidence.source_id in allowed:
+            item.update(source_id=evidence.source_id, page=evidence.page_or_sheet,
+                        chunk_id=evidence.chunk_id)
+        metadata.append(item)
+    return metadata
 
 
 @_optional
@@ -184,4 +201,18 @@ def payload_ready(payload: dict) -> None:
 @_optional
 def validated(answer: str, report, *, retry: bool) -> None:
     if _trace.get() is not None:
-        emit("validated", {"retry": retry, "answer": _bounded(answer, 2400), "report": asdict(report)})
+        # Ni el borrador, ni las citas inventadas por el modelo, ni el detalle
+        # libre del validador estan cubiertos por la allowlist de documentos.
+        # Mantener solo estados, recuentos y huellas; nunca serializar asdict.
+        summary = {key: bool(getattr(report, key, False)) for key in (
+            "grounded", "declares_insufficiency", "citations_valid",
+            "factual_verified", "extractive_verified",
+        )}
+        summary.update(
+            cited_source_count=len(report.cited_source_ids),
+            invalid_source_count=len(report.invalid_source_ids),
+            reason=_fingerprint(report.reason),
+            validation_detail=_fingerprint(report.validation_detail),
+            claim_index=report.claim_index,
+        )
+        emit("validated", {"retry": retry, "answer": _fingerprint(answer), "report": summary})

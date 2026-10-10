@@ -10,7 +10,7 @@ import pytest
 from app.config.settings import Settings
 from app.rag.document_selection import explicit_document_candidates
 from app.rag.retriever import Retriever, maximal_marginal_relevance
-from app.rag.vector_store import ScoredPayload
+from app.rag.vector_store import AuthorizedDocument, ScoredPayload
 from tests.conftest import make_context
 
 pytestmark = pytest.mark.unit
@@ -86,9 +86,19 @@ def retrieval_setup(monkeypatch, corporate, *, private=(), top_k=1):
 
     def search(**kwargs):
         calls.append(kwargs)
-        return list(corporate if kwargs["collection"] == "corporate" else private)
+        items = list(corporate if kwargs["collection"] == "corporate" else private)
+        for condition in kwargs["query_filter"].must:
+            if condition.key == "document_id":
+                items = [item for item in items if item.payload["document_id"] == condition.match.value]
+        return items
 
-    store = SimpleNamespace(collection_for=lambda scope: scope, search=search)
+    def catalog(**kwargs):
+        items = corporate if kwargs["scope"] == "corporate" else private
+        return [AuthorizedDocument(
+            item.payload["document_id"], item.payload["filename"], "active-generation", 1,
+        ) for item in items]
+
+    store = SimpleNamespace(collection_for=lambda scope: scope, search=search, list_authorized_documents=catalog)
     llm = SimpleNamespace(embed_one=lambda _: [1.0, 0.0])
     return Retriever(store=store, llm=llm), calls, settings
 
@@ -105,8 +115,8 @@ def test_requested_source_survives_where_unanchored_mmr_discards_it(monkeypatch)
     )
     assert [item.filename for item in result.evidences] == [requested.payload["filename"]]
     assert result.best_score == 0.7  # No artificial confidence boost.
-    assert result.fetched == 2 and result.after_dedup == 2
-    assert len(calls) == 1  # No extra embedding, catalog scan or unrestricted query.
+    assert result.fetched == 1 and result.after_dedup == 1
+    assert len(calls) == 1  # Una busqueda, ya restringida al documento autorizado.
     assert calls[0]["score_threshold"] == settings.rag_min_similarity
     serialized = calls[0]["query_filter"].model_dump_json()
     assert "prestaciones" in serialized and "corporate" in serialized and "synthetic-fingerprint" in serialized
@@ -136,10 +146,8 @@ def test_private_named_source_still_uses_owner_and_conversation_filters(monkeypa
         ctx=ctx, question="Segun Plan Privado.pdf?", authorized_categories=frozenset(), conversation_id="thread-a",
     )
     assert len(result.evidences) == 1 and result.used_private_scope
-    assert len(calls) == 2
-    corporate = calls[0]["query_filter"].model_dump_json()
-    private = calls[1]["query_filter"].model_dump_json()
-    assert "__none__" in corporate
+    assert len(calls) == 1
+    private = calls[0]["query_filter"].model_dump_json()
     assert ctx.user_id in private and "owner_user_id" in private and "thread-a" in private
     assert "conversation" in private and "synthetic-fingerprint" in private
 
@@ -150,5 +158,5 @@ def test_unavailable_named_document_does_not_create_or_fetch_evidence(monkeypatc
     result = retriever.retrieve(
         ctx=make_context(), question="Segun Restringido.pdf?", authorized_categories=frozenset({"prestaciones"}),
     )
-    assert len(calls) == 1
-    assert [item.filename for item in result.evidences] == ["Permitido.pdf"]
+    assert not calls
+    assert not result.evidences and result.clarification

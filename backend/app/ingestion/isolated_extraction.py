@@ -9,11 +9,12 @@ import subprocess  # nosec B404
 import sys
 import tempfile
 import time
+from contextlib import suppress
 from pathlib import Path
 
 import psutil
 
-from app.common.errors import ExtractionFailedError
+from app.common.errors import ExtractionFailedError, UnsupportedFileError
 from app.config import get_settings
 from app.config.settings import BACKEND_ROOT
 from app.ingestion.loaders import ExtractedDocument
@@ -50,6 +51,11 @@ def extract_document(data: bytes, *, filename: str) -> ExtractedDocument:
             str(destination),
             Path(filename).name,
             str(settings.extraction_max_chars),
+            json.dumps({
+                "enabled": settings.extraction_ocr_enabled,
+                "language": settings.extraction_ocr_language,
+                "dpi": settings.extraction_ocr_dpi,
+            }),
         ]
         # Los nombres de archivo son argumentos de datos, nunca comandos.
         process = subprocess.Popen(  # noqa: S603  # nosec B603
@@ -62,12 +68,19 @@ def extract_document(data: bytes, *, filename: str) -> ExtractedDocument:
             stderr=subprocess.DEVNULL,
         )
         started = time.monotonic()
+        descendants: dict[int, psutil.Process] = {}
         try:
             while process.poll() is None:
                 if time.monotonic() - started > settings.extraction_timeout_seconds:
                     raise ExtractionFailedError("La extraccion excedio el tiempo permitido.")
                 try:
-                    rss = psutil.Process(process.pid).memory_info().rss
+                    parser = psutil.Process(process.pid)
+                    for child in parser.children(recursive=True):
+                        descendants[child.pid] = child
+                    rss = parser.memory_info().rss
+                    for child in list(descendants.values()):
+                        with suppress(psutil.NoSuchProcess):
+                            rss += child.memory_info().rss
                     if rss > settings.extraction_memory_mb * 1024 * 1024:
                         raise ExtractionFailedError("La extraccion excedio la memoria permitida.")
                 except psutil.NoSuchProcess:
@@ -78,12 +91,24 @@ def extract_document(data: bytes, *, filename: str) -> ExtractedDocument:
             if destination.stat().st_size > settings.extraction_max_chars * 12 + 1_000_000:
                 raise ExtractionFailedError("La salida del parser excedio el limite.")
             result = json.loads(destination.read_text(encoding="utf-8"))
+            if "error" in result:
+                error = result["error"]
+                exception = UnsupportedFileError if error.get("code") == "unsupported_file" else ExtractionFailedError
+                raise exception(str(error.get("message", "El documento no pudo procesarse de forma segura."))[:500])
             return ExtractedDocument(
                 blocks=[TextBlock(**block) for block in result["blocks"]],
                 mime_type=result["mime_type"],
                 warnings=result["warnings"],
             )
         finally:
+            with suppress(psutil.NoSuchProcess):
+                for child in psutil.Process(process.pid).children(recursive=True):
+                    descendants[child.pid] = child
+            for child in descendants.values():
+                with suppress(psutil.NoSuchProcess):
+                    child.kill()
             if process.poll() is None:
                 process.kill()
                 process.wait(timeout=5)
+            if descendants:
+                psutil.wait_procs(list(descendants.values()), timeout=2)

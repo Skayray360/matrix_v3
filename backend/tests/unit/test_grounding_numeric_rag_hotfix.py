@@ -141,6 +141,8 @@ def test_extractive_contract_still_requires_the_original_complete_unit():
 ])
 def test_valid_generation_is_not_replaced_by_insufficient_answer(monkeypatch, source, answer):
     monkeypatch.setattr(get_settings(), "answer_evidence_mode", "cited")
+    # Este doble devuelve Markdown citado; aqui se verifica la equivalencia numerica.
+    monkeypatch.setattr(get_settings(), "answer_structured_output", False)
 
     class Client:
         calls = 0

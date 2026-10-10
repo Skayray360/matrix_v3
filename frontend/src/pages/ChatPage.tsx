@@ -10,6 +10,7 @@
 
 import { useCallback, useEffect, useState, useRef } from "react";
 
+import { ChangePasswordDialog } from "../components/ChangePasswordDialog";
 import { Composer } from "../components/Composer";
 import { Icon } from "../components/Icon";
 import { Mascot } from "../components/Mascot";
@@ -21,6 +22,7 @@ import { TracePanel, type ExecutionTrace } from "../components/TracePanel";
 import {
   api,
   ApiError,
+  type ChatMessage,
   type ChatRequestStatus,
   type ConversationSummary,
   type DocumentStatus,
@@ -31,6 +33,8 @@ import {
 type Props = {
   me: Me;
   onLogout: () => void | Promise<void>;
+  onProfileUpdated?: (profile: Me) => void;
+  onSessionExpired?: () => void;
 };
 
 const CAPACITY_NOTICE =
@@ -41,20 +45,20 @@ function generationFailure(code: ChatRequestStatus["error_code"], requestId: str
     return `No tiene permiso para completar esta solicitud. El borrador se conservó. Revise su sesión y los permisos antes de reintentar. Referencia de la solicitud: ${requestId}`;
   }
   if (code === "answer_unverified") {
-    return `La respuesta generada no pudo validarse con las fuentes autorizadas y no se publicó. El borrador se conservó. Puede precisar el documento o la pregunta antes de reintentar. Referencia de la solicitud: ${requestId}`;
+    return `La respuesta generada no pudo validarse con las fuentes autorizadas y no se publicó. El borrador se conservó. Puede reintentar la consulta. Si se repite, comparta esta referencia con TI. Referencia de la solicitud: ${requestId}`;
   }
   const reason =
     code === "timeout"
-      ? "El modelo agotó el tiempo disponible para generar la respuesta."
+      ? "La solicitud agotó el tiempo disponible."
       : code === "model_incomplete"
         ? "El modelo devolvió una respuesta incompleta."
         : code === "inference_unavailable"
-          ? "No se pudo obtener una respuesta de Ollama."
+          ? "No se pudo obtener una respuesta del modelo local."
           : "No fue posible generar la respuesta.";
   const nextStep =
     code === "model_incomplete"
-      ? "Revise la prueba de modelos y el límite de generación; Ollama puede estar abierto y aun así cortar una respuesta."
-      : "Compruebe que Ollama esté abierto y que el modelo esté disponible antes de reintentar.";
+      ? "Si se repite, TI puede revisar el modelo y el límite de generación con esta referencia."
+      : "Vuelva a intentarlo. Si continúa, comparta esta referencia con TI para revisar el servicio local.";
   return `${reason} El borrador se conservó. ${nextStep} Referencia de la solicitud: ${requestId}`;
 }
 
@@ -88,23 +92,29 @@ function initials(displayName: string): string {
   return `${parts[0][0]}${parts[parts.length - 1][0]}`.toLocaleUpperCase("es");
 }
 
-/** El historial conserva IDs, no metadatos: no inventar categoria o relevancia. */
-function historySource(sourceId: string): SourceRef {
+/** Conserva los metadatos autorizados; un historial antiguo puede tener solo IDs. */
+function historySource(source: ChatMessage["sources"][number]): SourceRef {
+  const sourceId = source.source_id;
   const parts = sourceId.split("/");
-  const filename = parts[parts.length - 1] || sourceId;
+  const filename = source.filename || parts[parts.length - 1] || sourceId;
   return {
     source_id: sourceId,
-    category: "",
+    category: source.category ?? "",
     filename,
-    section: "",
-    page_or_sheet: "",
-    score: 0,
-    label: filename,
-    scope: sourceId.startsWith("__private__/") ? "conversation" : "corporate",
+    section: source.section ?? "",
+    page_or_sheet: source.page_or_sheet ?? "",
+    score: source.score ?? 0,
+    label: source.label || filename,
+    scope: source.scope ?? (sourceId.startsWith("__private__/") ? "conversation" : "corporate"),
   };
 }
 
-export function ChatPage({ me, onLogout }: Props): JSX.Element {
+function mergeAttachments(current: DocumentStatus[], incoming: DocumentStatus[]): DocumentStatus[] {
+  const replacedIds = new Set(incoming.map((item) => item.id));
+  return [...current.filter((item) => !replacedIds.has(item.id)), ...incoming];
+}
+
+export function ChatPage({ me, onLogout, onProfileUpdated, onSessionExpired }: Props): JSX.Element {
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
@@ -118,6 +128,7 @@ export function ChatPage({ me, onLogout }: Props): JSX.Element {
   const [cleanupBusy, setCleanupBusy] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [inspectorOpen, setInspectorOpen] = useState(false);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const [trace, setTrace] = useState<ExecutionTrace | null>(null);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -133,6 +144,10 @@ export function ChatPage({ me, onLogout }: Props): JSX.Element {
   const activeRequest = useRef<string | null>(null);
   const requestController = useRef<AbortController | null>(null);
   const uncertain = useRef(new Map<string, string>());
+  const completedUpload = useRef<{
+    conversationId: string;
+    documents: DocumentStatus[];
+  } | null>(null);
 
   useEffect(() => {
     const uncertainRequests = uncertain.current;
@@ -185,6 +200,7 @@ export function ChatPage({ me, onLogout }: Props): JSX.Element {
   const openConversation = useCallback(
     async (id: string) => {
       const ticket = ++navigation.current;
+      const uploadAtStart = completedUpload.current;
       selected.current = id;
       setActiveId(id);
       setMessages([]);
@@ -200,7 +216,14 @@ export function ChatPage({ me, onLogout }: Props): JSX.Element {
         const detail = await api.getConversation(id, readController.current.signal);
         if (ticket !== navigation.current) return;
         setBeforeSeq(detail.next_before_seq ?? null);
-        setAttachments(detail.attachments);
+        const upload = completedUpload.current;
+        // Una lectura iniciada antes de completar la carga puede conservar
+        // un estado viejo; solo combinar el resultado más reciente de ese chat.
+        setAttachments(
+          upload && upload !== uploadAtStart && upload.conversationId === id
+            ? mergeAttachments(detail.attachments, upload.documents)
+            : detail.attachments,
+        );
         // La traza corresponde exclusivamente a la ultima respuesta recibida
         // en la conversacion activa. No se reutiliza metadata de otra sesion.
         setTrace(null);
@@ -211,9 +234,7 @@ export function ChatPage({ me, onLogout }: Props): JSX.Element {
             content: message.content,
             intent: message.intent,
             answer_basis: message.answer_basis,
-            // El detalle guarda los source_id citados; la etiqueta legible se
-            // reconstruye a partir del propio identificador.
-            sources: message.sources.map((source) => historySource(source.source_id)),
+            sources: message.sources.map(historySource),
           })),
         );
       } catch (caught) {
@@ -404,7 +425,8 @@ export function ChatPage({ me, onLogout }: Props): JSX.Element {
         if (mounted.current && navigation.current === ticket && !controller.signal.aborted) {
           setError(
             caught instanceof TypeError ||
-              (caught instanceof ApiError && caught.code === "request_timeout")
+              (caught instanceof ApiError &&
+                ["request_timeout", "invalid_response"].includes(caught.code))
               ? "No fue posible confirmar el resultado. Conservamos el borrador; vuelve a enviar el mismo mensaje para consultar su estado sin duplicarlo."
               : caught instanceof Error && !(caught instanceof ApiError)
                 ? caught.message
@@ -464,6 +486,14 @@ export function ChatPage({ me, onLogout }: Props): JSX.Element {
         if (!conversationId) {
           const created = await api.createConversation();
           conversationId = created.id;
+          if (!mounted.current) return;
+          // La pregunta pertenece al chat creado para su adjunto aunque el
+          // usuario haya navegado mientras el servidor asignaba el ID.
+          setDrafts((current) => ({
+            ...current,
+            new: "",
+            [created.id]: current.new ?? "",
+          }));
           if (navigation.current === ticket) {
             selected.current = created.id;
             setActiveId(created.id);
@@ -471,15 +501,24 @@ export function ChatPage({ me, onLogout }: Props): JSX.Element {
           }
         }
         const result = await api.uploadAttachments(conversationId, files);
-        if (navigation.current === ticket && selected.current === conversationId) {
-          setAttachments((current) => [
-            ...current.filter((item) => !placeholders.some((p) => p.id === item.id)),
-            ...result.documents,
-          ]);
+        if (!mounted.current) return;
+        completedUpload.current = { conversationId, documents: result.documents };
+        if (selected.current === conversationId) {
+          const placeholderIds = new Set(placeholders.map((item) => item.id));
+          setAttachments((current) =>
+            mergeAttachments(
+              current.filter((item) => !placeholderIds.has(item.id)),
+              result.documents,
+            ),
+          );
         }
-        await refreshConversations();
+        if (mounted.current) await refreshConversations();
       } catch (caught) {
-        if (navigation.current === ticket) {
+        if (
+          mounted.current &&
+          selected.current === conversationId &&
+          (conversationId !== null || navigation.current === ticket)
+        ) {
           setError(describeError(caught));
           setAttachments((current) =>
             current.map((item) =>
@@ -491,7 +530,7 @@ export function ChatPage({ me, onLogout }: Props): JSX.Element {
         }
       } finally {
         uploadingRef.current = false;
-        setUploading(false);
+        if (mounted.current) setUploading(false);
       }
     },
     [describeError, refreshConversations, loading],
@@ -513,7 +552,7 @@ export function ChatPage({ me, onLogout }: Props): JSX.Element {
           content: m.content,
           intent: m.intent,
           answer_basis: m.answer_basis,
-          sources: m.sources.map((source) => historySource(source.source_id)),
+          sources: m.sources.map(historySource),
         })),
         ...current,
       ]);
@@ -606,6 +645,18 @@ export function ChatPage({ me, onLogout }: Props): JSX.Element {
             </span>
           </div>
 
+          {me.auth_source === "local" ? (
+            <button
+              className="icon-button"
+              type="button"
+              aria-label="Cambiar contraseña"
+              title="Cambiar contraseña"
+              onClick={() => setPasswordDialogOpen(true)}
+            >
+              <Icon name="shield" />
+            </button>
+          ) : null}
+
           <button className="secondary-button" type="button" onClick={() => void logout()}>
             Salir
           </button>
@@ -673,7 +724,7 @@ export function ChatPage({ me, onLogout }: Props): JSX.Element {
               requestStatus?.status === "queued"
                 ? "Solicitud aceptada, esperando disponibilidad"
                 : requestStatus?.status === "running"
-                  ? "Consultando fuentes autorizadas"
+                  ? "Procesando su consulta"
                   : "Enviando solicitud"
             }
             displayName={me.display_name}
@@ -702,6 +753,14 @@ export function ChatPage({ me, onLogout }: Props): JSX.Element {
           type="button"
           aria-label="Cerrar conversaciones"
           onClick={() => setSidebarOpen(false)}
+        />
+      ) : null}
+
+      {passwordDialogOpen && me.auth_source === "local" ? (
+        <ChangePasswordDialog
+          onChanged={(profile) => onProfileUpdated?.(profile)}
+          onClose={() => setPasswordDialogOpen(false)}
+          onSessionExpired={onSessionExpired}
         />
       ) : null}
     </div>

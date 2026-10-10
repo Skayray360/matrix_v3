@@ -131,7 +131,7 @@ def get_conversation(
                 intent=m.intent,
                 answer_basis=m.answer_basis,
                 created_at=m.created_at,
-                sources=[{"source_id": s} for s in (m.source_ids or [])],
+                sources=_memory.message_sources(m),
             )
             for m in messages
         ],

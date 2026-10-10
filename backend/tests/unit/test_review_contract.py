@@ -7,8 +7,6 @@ import pytest
 from sqlalchemy import select
 
 from app.common.answers import safe_nonfactual_text
-from app.common.chat_failures import chat_failure_code
-from app.common.errors import AnswerValidationError
 from app.common.timing import timed_stage
 from app.config import get_settings
 from app.database.models import ConversationMessage
@@ -20,6 +18,12 @@ from tests.unit.test_conversation_policy_stage1 import synthetic_evidence
 from tests.unit.test_rh_routing import ControlledLlm, services
 
 sql = test_implementation_v2.sql
+
+
+@pytest.fixture(autouse=True)
+def markdown_transport(monkeypatch):
+    # ControlledLlm y Client de este modulo entregan respuestas Markdown.
+    monkeypatch.setattr(get_settings(), "answer_structured_output", False)
 
 
 @pytest.mark.parametrize("question", ["Explícame sobre la carta de beneficiarios", "Qué es la fotosíntesis"])
@@ -69,7 +73,7 @@ def test_missing_evidence_uses_generated_clarification(sql, generated):
 @pytest.mark.parametrize("draft", [
     "Se otorgan 999 pesos.", "¿Qué documento garantiza un vehículo a todos?", "No tengo información, pero todos reciben un coche.",
 ])
-def test_fabrication_without_sources_is_an_error_not_a_published_answer(sql, draft):
+def test_fabrication_without_sources_is_discarded_for_safe_clarification(sql, draft):
     db, _, _ = sql
     ctx = make_context(categories=frozenset({"prestaciones"}), wildcard=False)
     retriever = MagicMock()
@@ -77,10 +81,13 @@ def test_fabrication_without_sources_is_an_error_not_a_published_answer(sql, dra
     llm = ControlledLlm(draft)
     orchestrator, conversation, _, _ = services(db, ctx, categories=ctx.allowed_categories,
                                                retriever=retriever, llm=llm)
-    with pytest.raises(AnswerValidationError) as failed:
-        orchestrator.handle_chat(db, ctx=ctx, conversation=conversation, message="Qué es el plan flexible")
-    assert chat_failure_code(failed.value) == "answer_unverified"
-    assert not db.scalars(select(ConversationMessage).where(ConversationMessage.role == "assistant")).all()
+    outcome = orchestrator.handle_chat(db, ctx=ctx, conversation=conversation, message="Qué es el plan flexible")
+    assert outcome.answer == "¿Qué documento o apartado deseas consultar?"
+    assert outcome.answer_basis == "insufficient" and outcome.public_sources() == []
+    assert draft not in outcome.answer and safe_nonfactual_text(outcome.answer)
+    saved = db.scalars(select(ConversationMessage).where(ConversationMessage.role == "assistant")).all()
+    assert len(saved) == 1 and saved[0].content == outcome.answer
+    assert len(llm.calls) == 1
 
 
 @pytest.mark.parametrize("text", [
@@ -188,7 +195,7 @@ def test_documented_history_flag_does_not_resurrect_an_older_topic():
 
 
 
-def test_capability_instructions_survive_memory_removal_on_fallback(monkeypatch):
+def test_capabilities_use_current_configuration_without_memory_or_model_fallback(monkeypatch):
     from app.agents.knowledge_agent import KnowledgeAgent
     from app.llm.model_policy import ModelChoice
     from app.memory.service import ConversationContext
@@ -202,7 +209,7 @@ def test_capability_instructions_survive_memory_removal_on_fallback(monkeypatch)
         question="Qué puedes hacer", memory=ConversationContext(conversation_id="synthetic", summary="x" * 100000),
         model_name=policy.deep_model, choice=ModelChoice.DEEP, intent=Intent.CAPABILITIES,
     )
-    assert result.model == policy.fast_model
+    assert result.model == policy.deep_model
     assert len(client.calls) == 1
     system = client.calls[0]["messages"][0]["content"]
     assert "Capacidades comprobadas" in system and "Conocimiento general habilitado: False" in system

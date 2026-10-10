@@ -51,7 +51,7 @@ def _input_room(key: str, output: str, values: dict[str, str]) -> bool:
 
 
 def upgrade_configuration(root: Path) -> dict[str, object]:
-    target = root / ".env"
+    target = root / "backend" / "config" / ".env"
     if not target.is_file() or target.is_symlink():
         raise ValueError("Se requiere un archivo .env local regular.")
     original_bytes = target.read_bytes()
@@ -94,7 +94,7 @@ def upgrade_configuration(root: Path) -> dict[str, object]:
             changed.append(key)
     if not changed:
         return {"changed_keys": [], "backup_created": False}
-    backup_dir = root / "var" / "backups" / "configuration"
+    backup_dir = root / "knowledge-base" / "backups" / "configuration"
     backup_dir.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
     backup = backup_dir / f"env-before-1.3.0-{stamp}.bak"

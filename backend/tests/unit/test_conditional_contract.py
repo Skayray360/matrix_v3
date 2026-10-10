@@ -8,7 +8,7 @@ import pytest
 
 from app.agents.knowledge_agent import KnowledgeAgent
 from app.agents.prompts import build_answer_messages
-from app.common.errors import AnswerValidationError
+from app.common.answers import UNVERIFIED_ANSWER_NOTICE, safe_nonfactual_text
 from app.config import get_settings
 from app.llm.model_policy import ModelPolicy
 from app.llm.ollama_client import ChatResult
@@ -17,6 +17,11 @@ from app.rag.grounding import GroundingReport, verify_grounding
 from app.rag.numeric_grounding import numeric_claim_supported, tenure_tables
 from app.rag.schemas import Evidence
 from tests.response_samples import APPLICATION_LIMIT_ANSWER
+
+
+@pytest.fixture(autouse=True)
+def markdown_transport(monkeypatch):
+    monkeypatch.setattr(get_settings(), "answer_structured_output", False)
 
 TABLE = "Antigüedad %\n0 – 4.99 0\n5 – 5.99 41\n6 – 6.99 63\n7 – 7.99 81\n8 en adelante 92"
 RULE = (
@@ -310,7 +315,7 @@ def test_real_agent_validates_application_and_retry_cause(monkeypatch):
 
 
 @pytest.mark.parametrize("has_table", [True, False])
-def test_failed_generation_is_distinct_from_missing_application_evidence(monkeypatch, has_table):
+def test_failed_generation_is_distinct_from_missing_application_evidence(monkeypatch, has_table, caplog):
     monkeypatch.setattr(get_settings(), "answer_evidence_mode", "cited")
 
     class Client:
@@ -319,14 +324,16 @@ def test_failed_generation_is_distinct_from_missing_application_evidence(monkeyp
                               model=kwargs["model"], latency_ms=1)
 
     policy = ModelPolicy()
-    with pytest.raises(AnswerValidationError) as failed:
-        KnowledgeAgent(llm=Client(), policy=policy).synthesize(
-            question=QUESTION,
-            evidences=(evidence() if has_table else evidence("El documento describe un programa."),),
-            model_name=policy.fast_model,
-        )
+    result = KnowledgeAgent(llm=Client(), policy=policy).synthesize(
+        question=QUESTION,
+        evidences=(evidence() if has_table else evidence("El documento describe un programa."),),
+        model_name=policy.fast_model,
+    )
+    assert result.answer.startswith(UNVERIFIED_ANSWER_NOTICE) and safe_nonfactual_text(result.answer)
+    assert not result.cited_source_ids and "81%" not in result.answer
     expected = "porcentaje no corresponde" if has_table else "tabla o regla incompleta"
-    assert expected in failed.value.detail
+    event = next(record for record in caplog.records if record.message == "agent.answer_validation_failed")
+    assert expected in event.validation_detail
 
 
 

@@ -11,6 +11,7 @@ from app.common.errors import OllamaUnavailableError
 
 
 class InferenceFailureKind(StrEnum):
+    CANCELLED = "cancelled"
     TIMEOUT = "timeout"
     DEADLINE = "deadline"
     HTTP = "http"

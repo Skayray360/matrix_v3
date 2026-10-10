@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "verified_at": "2026-10-09",
+  "platform": "windows-x86_64",
+  "uv": {
+    "version": "0.12.23",
+    "url": "https://github.com/astral-sh/uv/releases/download/0.12.23/uv-x86_64-pc-windows-msvc.zip",
+    "sha256": "75d05de6762778c31ee183398de7dd15093fad0ed90b1f236d8205ea5ec00c90",
+    "size": 18043715,
+    "provenance": "https://api.github.com/repos/astral-sh/uv/releases/tags/0.12.23"
+  },
+  "ollama": {
+    "management": "external_local",
+    "base_url_default": "http://127.0.0.1:11434",
+    "downloads_allowed": false,
+    "models": [
+      "gemma4:latest",
+      "embeddinggemma:latest"
+    ],
+    "revision_policy": "full digests read from installed Ollama and pinned once; no pull, replacement or automatic update",
+    "validation": "local inventory, full digests, generation and embedding smoke tests during install"
+  },
+  "python": {
+    "version": "3.12.15",
+    "build": "20261003",
+    "provisioner": "uv managed Python; checksum verified by pinned uv download registry",
+    "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20261003/cpython-3.12.15%2B20261003-x86_64-pc-windows-msvc-install_only_stripped.tar.gz",
+    "sha256": "6fba7f2ae506facf41d457ea8293c7497910a675c69a4e954875169410a50402",
+    "provenance": "https://raw.githubusercontent.com/astral-sh/uv/0.12.23/crates/uv-python/download-metadata.json"
+  },
+  "mysql": {
+    "version": "8.4.11",
+    "archive_name": "mysql-8.4.11-winx64.zip",
+    "archive_root": "mysql-8.4.11-winx64",
+    "url": "https://cdn.mysql.com/Downloads/MySQL-8.4/mysql-8.4.11-winx64.zip",
+    "sha256": "a492371d687d2bab088b0062581144a0044b8964baefdf4faa579292b423d25c",
+    "size": 281191914,
+    "signature_url": "https://cdn.mysql.com/Downloads/MySQL-8.4/mysql-8.4.11-winx64.zip.asc",
+    "signature_verified_at_build": true,
+    "signing_key_fingerprint": "BCA43417C3B485DD128EC6D4B7B3B788A8D3785C",
+    "provenance": "https://dev.mysql.com/downloads/mysql/8.4.html?os=3",
+    "verification_date": "2026-10-09",
+    "binary_sha256": {
+      "mysqld.exe": "b83561f885785133b79cfe53f225dffbdbdec160ea54b5245cfb30cc7a440fa7",
+      "mysqladmin.exe": "79579f5aee74db46a8a3a1c452f9f9eafa552e425dd55e23bb48db64a9604ce3"
+    },
+    "version_policy": "New installs use the pinned ZIP; installed runtimes are never upgraded or replaced automatically; missing runtime with existing data requires coherent restoration"
+  }
+}

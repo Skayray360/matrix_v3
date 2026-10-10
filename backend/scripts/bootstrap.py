@@ -37,7 +37,7 @@ from scripts.preflight import (
 )
 
 
-def cmd_pin_models(_: argparse.Namespace) -> int:
+def cmd_pin_models(args: argparse.Namespace) -> int:
     """Fija una sola vez los digests vacios de Ollama; nunca acepta drift.
 
     Se ejecuta antes de Settings porque staging/production exige los digests.
@@ -46,9 +46,14 @@ def cmd_pin_models(_: argparse.Namespace) -> int:
     import httpx
     from dotenv import dotenv_values
 
-    env_file = PROJECT_ROOT / ".env"
-    if not env_file.is_file():
-        print("ERROR [CONFIGURATION_ERROR] Falta .env para fijar digests de los modelos locales.")
+    configured_file = getattr(args, "env_file", None)
+    env_file = Path(configured_file) if configured_file else PROJECT_ROOT / "backend" / "config" / ".env"
+    if not env_file.is_absolute():
+        env_file = PROJECT_ROOT / env_file
+    config_root = (PROJECT_ROOT / "backend" / "config").resolve()
+    if (env_file.is_symlink() or env_file.absolute() != env_file.resolve()
+            or not env_file.resolve().is_relative_to(config_root) or not env_file.is_file()):
+        print("ERROR [CONFIGURATION_ERROR] Use un archivo regular dentro de backend/config para fijar digests.")
         return 1
     values = dict(dotenv_values(env_file))
     values.update(os.environ)
@@ -223,6 +228,10 @@ def cmd_status(args: argparse.Namespace) -> int:
 
 def cmd_serve(args: argparse.Namespace) -> int:
     """Arranca el servidor tras un preflight obligatorio."""
+    if (PROJECT_ROOT / "knowledge-base" / "state" / "run" / "configuration-change.lock").exists():
+        print("ERROR [CONFIGURATION_ERROR] Hay un cambio de generador en curso. Espere a que termine; "
+              "si el bloqueo persiste, TI debe verificar el PID registrado antes de retirarlo.")
+        return 1
     from app.config import Settings, get_settings
     from scripts.preflight import check_ports, run_preflight
 
@@ -282,7 +291,7 @@ def cmd_serve(args: argparse.Namespace) -> int:
     with runtime_identity(PROJECT_ROOT) as identity:
         watcher = Thread(
             target=watch_shutdown,
-            args=(server, PROJECT_ROOT / "var" / "matrixrh-backend.stop", finished),
+            args=(server, PROJECT_ROOT / "knowledge-base" / "state" / "run" / "matrixrh-backend.stop", finished),
             kwargs={"process_id": identity["pid"], "created_at": identity["created_at"]},
             name="matrix-shutdown-control", daemon=True,
         )
@@ -310,7 +319,7 @@ def cmd_upgrade_config(_: argparse.Namespace) -> int:
     assert isinstance(changed, list)
     print("Configuracion operativa: " + (", ".join(changed) or "ya actualizada"))
     if result["backup_created"]:
-        print("Respaldo privado de .env creado en var/backups/configuration; no se muestran valores.")
+        print("Respaldo privado de .env creado en knowledge-base/backups/configuration; no se muestran valores.")
     return 0
 
 
@@ -326,14 +335,16 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("upgrade-config", help="actualiza limites operativos con respaldo de .env").set_defaults(
         func=cmd_upgrade_config,
     )
-    sub.add_parser("pin-models", help="fija digests vacios de Ollama sin sustituir revisiones existentes").set_defaults(
-        func=cmd_pin_models,
-    )
+    pin_models = sub.add_parser("pin-models", help="fija digests vacios sin sustituir revisiones existentes")
+    pin_models.add_argument("--env-file", type=Path,
+                            help="archivo dentro de backend/config; predeterminado backend/config/.env")
+    pin_models.set_defaults(func=cmd_pin_models)
     status = sub.add_parser("status", help="estado resumido")
     status.add_argument("--read-only", action="store_true", help="no abre ni crea Qdrant embebido")
     status.set_defaults(func=cmd_status)
 
     ingest = sub.add_parser("ingest", help="reconcilia el knowledge root")
+    ingest.add_argument("--project-root", type=Path, help="identidad explicita de la copia; no cambia la raiz")
     ingest_mode = ingest.add_mutually_exclusive_group()
     ingest_mode.add_argument("--force", action="store_true", help="reindexa aunque el SHA no cambie")
     ingest_mode.add_argument("--new-only", action="store_true",
@@ -346,6 +357,7 @@ def build_parser() -> argparse.ArgumentParser:
     setup.set_defaults(func=cmd_setup)
 
     serve = sub.add_parser("serve", help="arranca el backend")
+    serve.add_argument("--project-root", type=Path, help="identidad explicita de la copia; no cambia la raiz")
     serve.add_argument("--host", default="")
     serve.add_argument("--port", type=int, default=0)
     serve.add_argument("--reload", action="store_true")
@@ -364,6 +376,9 @@ def main(argv: list[str] | None = None) -> int:
     (por ejemplo, "la base pertenece a otra aplicacion") se pierde.
     """
     args = build_parser().parse_args(argv)
+    if getattr(args, "project_root", None) is not None and args.project_root.resolve() != PROJECT_ROOT.resolve():
+        print("ERROR [CONFIGURATION_ERROR] --project-root no corresponde a esta copia de Matrix.")
+        return 1
     integrity = PreflightReport()
     check_integrity(integrity)
     if not integrity.ok:

@@ -8,7 +8,7 @@ informacion. Un trabajo running ambiguo expira: nunca se reproduce al reiniciar.
 
 from __future__ import annotations
 
-from contextlib import ExitStack, suppress
+from contextlib import ExitStack, contextmanager, suppress
 from datetime import timedelta
 from threading import Event, RLock, Thread
 from time import monotonic
@@ -140,6 +140,33 @@ class ChatQueue:
         self._stop = Event()
         self._thread: Thread | None = None
         self._workers: dict[str, Thread] = {}
+        self._cancellations: dict[str, Event] = {}
+
+    @contextmanager
+    def request_control(self, operation_id: str | None):
+        """Un evento por ejecucion; cancelarlo nunca cierra clientes de otros turnos."""
+        event = Event()
+        with self.lock:
+            if self._stop.is_set():
+                event.set()
+            if operation_id:
+                if operation_id in self._cancellations:
+                    raise OllamaUnavailableError("La solicitud ya se esta ejecutando.")
+                self._cancellations[operation_id] = event
+        try:
+            yield event
+        finally:
+            with self.lock:
+                if operation_id and self._cancellations.get(operation_id) is event:
+                    self._cancellations.pop(operation_id, None)
+
+    def cancel(self, operation_id: str) -> None:
+        """Llamar solo despues de autorizar y confirmar el estado SQL cancelado."""
+        with self.lock:
+            event = self._cancellations.get(operation_id)
+            if event is not None:
+                event.set()
+        self._wake.set()
 
     def ensure_owner(self, db: Session) -> None:
         """Falla cerrado si otro proceso atiende IA sobre esta base de datos.
@@ -330,7 +357,8 @@ class ChatQueue:
         # Restaurarlo permite relacionar el fallo del proveedor con la solicitud.
         log_context = bind_request_context(operation_id=operation_id)
         try:
-            with resources, get_sessionmaker()() as db:
+            with resources, self.request_control(operation_id) as cancel_event, get_sessionmaker()() as db:
+                deadline = monotonic() + get_settings().llm_request_deadline_seconds
                 operation = db.get(ChatOperation, operation_id)
                 if operation is None or operation.status != "running" or self._stop.is_set():
                     return
@@ -357,6 +385,7 @@ class ChatQueue:
                     execute_chat(
                         db, ctx=ctx, conversation=conversation, message=message,
                         expected_scope=expected_scope, operation_id=operation_id, reauthorize=reauthorize,
+                        cancel_event=cancel_event, absolute_deadline=deadline,
                     )
         except Exception as exc:
             with suppress(Exception), get_sessionmaker()() as db:
@@ -375,6 +404,9 @@ class ChatQueue:
 
     def stop(self) -> None:
         self._stop.set()
+        with self.lock:
+            for event in self._cancellations.values():
+                event.set()
         self._wake.set()
         if self._thread:
             self._thread.join(timeout=3)

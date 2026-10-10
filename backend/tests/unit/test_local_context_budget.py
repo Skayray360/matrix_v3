@@ -18,7 +18,8 @@ pytestmark = pytest.mark.unit
 
 def configured_agent(monkeypatch, prefix: str):
     settings = Settings(_env_file=None, app_env="test", llm_system_prefix=prefix, answer_evidence_mode="extractive")
-    for module in ("app.llm.provider", "app.llm.ollama_client", "app.llm.model_policy", "app.agents.knowledge_agent"):
+    for module in ("app.llm.provider", "app.llm.ollama_client", "app.llm.model_policy", "app.agents.knowledge_agent",
+                   "app.agents.documentary_output", "app.agents.prompts"):
         monkeypatch.setattr(f"{module}.get_settings", lambda: settings)
     evidence = Evidence(
         source_id="prestaciones/politica.md#0", text="El bono requiere autorizacion escrita.", score=0.9,

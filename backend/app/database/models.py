@@ -249,6 +249,12 @@ class ConversationMessage(Base):
     answer_basis: Mapped[AnswerBasis | None] = mapped_column(String(16), nullable=True)
     authorization_scope: Mapped[str | None] = mapped_column(String(64), nullable=True)
     source_ids: Mapped[Any | None] = mapped_column(JSON, nullable=True)
+    #: Localizadores de las citas publicados por el servidor. NULL conserva el
+    #: contrato de mensajes antiguos, sin inventar paginas retrospectivamente.
+    source_details: Mapped[Any | None] = mapped_column(JSON, nullable=True)
+    #: Consulta efectiva derivada solo de preguntas de usuario autorizadas.
+    #: No es evidencia ni forma parte del contrato publico del historial.
+    context_query: Mapped[str | None] = mapped_column(MEDIUMTEXT, nullable=True)
     #: Categorias autorizadas cuando se produjo el mensaje. Permite reconstruir
     #: el contexto sin reintroducir informacion que el rol ya no puede ver.
     authorized_categories: Mapped[Any | None] = mapped_column(JSON, nullable=True)

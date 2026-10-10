@@ -1,8 +1,8 @@
 # Creado por Aldo Garcia.
-"""Empaquetado del ZIP final de entrega (seccion 39.6).
+"""Empaquetado del ZIP autocontenido de entrega.
 
-Incluye fuente, lockfiles, build del frontend, migraciones, seeds sinteticos,
-documentos de prueba sinteticos, BAT/PowerShell, guias operativas y pruebas.
+Incluye fuente, lockfiles, build del frontend, migraciones, corpus original,
+fixtures sinteticos, cuatro BAT, controlador PowerShell, un README y pruebas.
 
 Excluye, de forma verificable: ``.env`` real, ``.venv``, ``node_modules``, caches,
 logs con datos, tokens, API keys, certificados privados, bases reales y los
@@ -41,11 +41,13 @@ EXCLUDED_DIRS = frozenset(
         ".ruff_cache",
         "htmlcov",
         "var",  # estado runtime: uploads, logs, volumen de Qdrant
+        "reports",  # snapshots e informes historicos; no forman parte de la entrega
         "playwright-report",
         "test-results",
         ".playwright",
         "matrix_rh_backend.egg-info",
         "build",  # artefactos temporales de setuptools, no frontend/dist
+        "runtime", "logs", "secrets", "state", "models", "backups",
         "offline-models",  # pesos importados al runtime; no son fuente del proyecto
         ".ollama",  # blobs sin extension y estado privado del runtime
         ".vscode",
@@ -58,6 +60,8 @@ EXCLUDED_PATTERNS = (
     ".env",
     ".env.*",
     ".env-*",  # escrituras atomicas incompletas: nunca distribuir configuracion real
+    "*.env",  # incluye backend/config/docker.env, generado para el perfil opcional
+    "*.env.*",
     "*.pem",
     "*.pfx",
     "*.key",
@@ -94,14 +98,13 @@ EXCLUDED_PATTERNS = (
     "ggml-model*.bin",
 )
 
-#: Excepciones a los patrones anteriores.
-KEEP_PATTERNS = (".env.example",)
-
-# Solo estas instrucciones de estado viajan en el ZIP; los datos runtime se
-# respaldan por separado y nunca se convierten en fuente distribuible.
-RUNTIME_READMES = frozenset({
-    "var/README.md", "var/logs/README.md", "var/qdrant/README.md", "var/uploads/README.md",
+GENERATED_CONFIGURATION = frozenset({
+    "backend/config/mysql.ini", "backend/config/mysql-initialized.json",
+    "backend/config/apache/matrix-rh.conf",
 })
+
+PACKAGE_ROOT_DIRS = frozenset({"knowledge-base", "backend", "frontend"})
+PACKAGE_ROOT_FILES = OPERATOR_BATCH_FILES | {"README.md", "docker-compose.yml", ".htaccess"}
 
 
 @dataclass
@@ -114,8 +117,6 @@ class PackageStats:
 
 def _is_excluded_file(path: Path) -> bool:
     name = path.name
-    if any(fnmatch.fnmatch(name, keep) for keep in KEEP_PATTERNS):
-        return False
     return any(fnmatch.fnmatch(name.casefold(), pattern.casefold()) for pattern in EXCLUDED_PATTERNS)
 
 
@@ -123,13 +124,11 @@ def iter_package_files(root: Path) -> list[Path]:
     """Selecciona los archivos que entran al paquete."""
     seleccionados: list[Path] = []
     for path in sorted(root.rglob("*")):
-        if not path.is_file() or path.is_symlink():
+        if not path.is_file() or path.is_symlink() or not path.resolve().is_relative_to(root.resolve()):
+            continue
+        if path.relative_to(root).as_posix() in GENERATED_CONFIGURATION:
             continue
         partes = path.relative_to(root).parts
-        relative_name = path.relative_to(root).as_posix()
-        if relative_name in RUNTIME_READMES:
-            seleccionados.append(path)
-            continue
         if any(
             parte in EXCLUDED_DIRS or parte.startswith(".venv.previous-") or parte.endswith(".egg-info")
             for parte in partes
@@ -137,16 +136,24 @@ def iter_package_files(root: Path) -> list[Path]:
             continue
         if _is_excluded_file(path):
             continue
-        # Las guias mantienen los nombres y la organizacion de matrix_v2.
-        # Los informes vigentes viajan con la entrega para que sus resultados
-        # puedan revisarse; salidas temporales y auditorias archivadas no.
-        if partes[0] == "reports" and (
-            path.suffix.lower() != ".md"
-            or any(part.casefold() in {"historico", "history", "archived", "archivo"} for part in partes[1:-1])
-        ):
-            continue
         seleccionados.append(path)
     return seleccionados
+
+
+def verify_release_layout(files: list[Path], root: Path) -> list[str]:
+    """Rechaza estructuras antiguas sin borrar ni ocultar documentos del operador."""
+    errors: list[str] = []
+    for path in files:
+        relative = path.relative_to(root)
+        name = relative.as_posix()
+        if ((len(relative.parts) == 1 and name not in PACKAGE_ROOT_FILES)
+                or (len(relative.parts) > 1 and relative.parts[0] not in PACKAGE_ROOT_DIRS)):
+            errors.append(f"Ruta fuera de la estructura de entrega: {name}")
+        if path.name.casefold().startswith("readme") and name != "README.md":
+            errors.append(f"README adicional: {name}; revise su contenido antes de consolidarlo")
+        if path.suffix.casefold() == ".bat" and name not in OPERATOR_BATCH_FILES:
+            errors.append(f"BAT adicional: {name}")
+    return errors
 
 
 def verify_no_secrets(files: list[Path], root: Path) -> list[str]:
@@ -172,7 +179,7 @@ def build_zip(root: Path, destino: Path, files: list[Path]) -> PackageStats:
     with zipfile.ZipFile(destino, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as archivo:
         for path in files:
             relativa = path.relative_to(root)
-            if relativa.as_posix() == "SHA256SUMS.txt":
+            if relativa.as_posix() == "backend/release/SHA256SUMS.txt":
                 continue  # Se regenera al empaquetar una carpeta previamente extraida.
             contenido = path.read_bytes()
             info = zipfile.ZipInfo.from_file(path, arcname=f"{raiz_interna}/{relativa.as_posix()}")
@@ -181,7 +188,7 @@ def build_zip(root: Path, destino: Path, files: list[Path]) -> PackageStats:
             stats.files += 1
             stats.bytes_uncompressed += len(contenido)
         manifiesto = ("\n".join(checksums) + "\n").encode("utf-8")
-        archivo.writestr(f"{raiz_interna}/SHA256SUMS.txt", manifiesto)
+        archivo.writestr(f"{raiz_interna}/backend/release/SHA256SUMS.txt", manifiesto)
         stats.files += 1
         stats.bytes_uncompressed += len(manifiesto)
     return stats
@@ -212,6 +219,12 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Proyecto: {root}")
     files = [path for path in iter_package_files(root) if path.resolve() != destino.resolve()]
     print(f"Archivos seleccionados: {len(files)}")
+    layout_errors = verify_release_layout(files, root)
+    if layout_errors:
+        print("SE ABORTA EL EMPAQUETADO: la estructura no corresponde a la entrega limpia.")
+        for problem in layout_errors[:20]:
+            print(f"  - {problem}")
+        return 1
 
     if not args.skip_secret_scan:
         print("Verificando que no viaje ningun secreto real...")
@@ -226,48 +239,20 @@ def main(argv: list[str] | None = None) -> int:
     # Comprobaciones de contenido obligatorio.
     relativas = {p.relative_to(root).as_posix() for p in files}
     obligatorios = (
-        "README.md",
-        ".htaccess",
-        ".env.example",
-        "docker-compose.yml",
-        "INSTALAR_MATRIX_RH.bat",
-        "INICIAR_MATRIX_RH.bat",
-        "DETENER_MATRIX_RH.bat",
-        "DIAGNOSTICO_MATRIX_RH.bat",
-        "windows/Upgrade-MatrixRH.ps1",
-        "backend/scripts/release_transfer.py",
-        "backend/scripts/configuration_upgrade.py",
-        "windows/TestModels-MatrixRH.ps1",
-        "backend/scripts/runtime_control.py",
-        "backend/scripts/clean_legacy_layout.py",
-        "backend/migrations/0009_answer_provenance.sql",
-        "config/knowledge-layout.yaml",
-        "docs/INSTALACION.md",
-        f"reports/VALIDACION_{project_version(root)}.md",
-        "backend/pyproject.toml",
-        "backend/Dockerfile",
-        "frontend/package.json",
-        # Lockfile canonico (npm): sin el, la instalacion en destino no es
-        # reproducible. Se exige para no publicar un ZIP sin lockfile.
-        "frontend/package-lock.json",
+        "README.md", ".htaccess", "backend/config/env.example", "docker-compose.yml",
+        "instalar.bat", "iniciar.bat", "detener.bat", "diagnosticar.bat",
+        "backend/scripts/windows/MatrixRH.ps1", "backend/scripts/bootstrap.py",
+        "backend/scripts/windows/launch_process.py", "backend/config/runtime-manifest.json",
+        "backend/config/apache/matrix-rh.conf.template",
+        "backend/scripts/preflight.py", "backend/scripts/runtime_control.py",
+        "backend/scripts/local_identity.py", "backend/config/knowledge-layout.yaml",
+        "backend/pyproject.toml", "backend/uv.lock", "backend/Dockerfile",
+        "backend/LICENSE", "frontend/package.json", "frontend/package-lock.json",
         "frontend/dist/index.html",
-        "backend/uv.lock",
-        "docs/README.md",
-        "docs/ARCHITECTURE.md",
-        "docs/TESTING.md",
-        "docs/RUNBOOK.md",
-        "docs/RAG_DESIGN.md",
-        "docs/SECURITY.md",
-        "docs/AUTHENTICATION_AUTHORIZATION.md",
-        "docs/TROUBLESHOOTING.md",
-        "docs/MODELOS_Y_RENDIMIENTO.md",
-        "docs/assets/estructura-matrix-rh.svg",
-        "backend/scripts/diagnosticar_rag.py",
-        "docs/integrations/README.md",
     )
     faltantes = [nombre for nombre in obligatorios if nombre not in relativas]
     if faltantes:
-        print("SE ABORTA EL EMPAQUETADO: faltan archivos obligatorios en la raiz.")
+        print("SE ABORTA EL EMPAQUETADO: faltan archivos obligatorios de la entrega.")
         for nombre in faltantes:
             print(f"  - {nombre}")
         return 1
@@ -286,10 +271,8 @@ def main(argv: list[str] | None = None) -> int:
             print(f"  - {error}")
         return 1
 
-    prohibidos = [
-        r for r in relativas
-        if r == ".env" or (r.startswith("var/") and r not in RUNTIME_READMES) or "/node_modules/" in r
-    ]
+    prohibidos = [name for name in relativas
+                 if _is_excluded_file(Path(name)) or any(part in EXCLUDED_DIRS for part in Path(name).parts)]
     if prohibidos:
         print("SE ABORTA EL EMPAQUETADO: contenido prohibido seleccionado.")
         for nombre in prohibidos[:10]:
@@ -310,8 +293,7 @@ def main(argv: list[str] | None = None) -> int:
         print("  Obtenga el hash oficial verificado y ejecute el gestor mediante corepack npm.")
         return 1
 
-    # El frontend compilado es obligatorio arriba; -SkipFrontend permite
-    # reutilizarlo en destino cuando no se instala Node/Corepack.
+    # El frontend compilado es obligatorio; la instalacion nativa no necesita Node/Corepack.
 
     stats = build_zip(root, destino, files)
     tamano = destino.stat().st_size
@@ -323,7 +305,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"  tamano sin comprimir: {stats.bytes_uncompressed / (1024 * 1024):.2f} MB")
     print("")
     print("Prepare los prerrequisitos y la configuracion indicados en README.md.")
-    print("Despues extraiga el paquete y ejecute INSTALAR_MATRIX_RH.bat para instalar e iniciar.")
+    print("Despues extraiga el paquete y ejecute instalar.bat para instalar e iniciar.")
     return 0
 
 

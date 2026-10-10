@@ -139,6 +139,12 @@ def verify_grounding(
     raw_sources = [(e.source_id, e.text) for e in evidences]
     raw_sources.extend((e.source_id, e.as_markdown_table()) for e in structured)
     ambiguous = {sid for sid, text in raw_sources if sources[sid] != text}
+    identities: dict[str, tuple[str, ...]] = {}
+    for evidence in evidences:
+        identity = (evidence.document_id, evidence.filename, evidence.page_or_sheet, evidence.scope)
+        previous = identities.setdefault(evidence.source_id, identity)
+        if previous != identity:
+            ambiguous.add(evidence.source_id)
     allowlist = set(sources)
     cited = extract_citations(answer)
     invalid = tuple(sid for sid in cited if sid not in allowlist)

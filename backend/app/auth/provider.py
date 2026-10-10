@@ -90,9 +90,11 @@ def get_identity_provider() -> IdentityProvider:
     devuelve error, **nunca** cae al proveedor local (requisito 5.3).
     """
     from app.auth.entra_provider import EntraIdentityProvider
-    from app.auth.local_provider import LocalTestIdentityProvider
+    from app.auth.local_provider import LocalIdentityProvider, LocalTestIdentityProvider
 
     settings = get_settings()
+    if settings.auth_provider is AuthProvider.LOCAL:
+        return LocalIdentityProvider()
     if settings.auth_provider is AuthProvider.OIDC:
         from app.auth.oidc_provider import OidcIdentityProvider
 

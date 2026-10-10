@@ -3,13 +3,12 @@
 
 * ``GET  /auth/login``       -> inicia Entra ID cuando ``AUTH_PROVIDER=entra``.
 * ``GET  /auth/callback``    -> callback OIDC.
-* ``POST /auth/local/login`` -> **solo** con ``local_test`` en development/test.
+* ``POST /auth/local/login`` -> proveedores locales explicitamente habilitados.
+* ``POST /auth/local/change-password`` -> cambio propio con reautenticacion.
 * ``POST /auth/logout``      -> revoca la sesion de servidor.
 * ``GET  /me``               -> perfil y token CSRF.
 
-La ruta local no existe fuera de development/test: se comprueba en cada peticion
-ademas de en la configuracion. Es defensa en profundidad frente a un despliegue
-mal configurado.
+Las cuentas reales y las sinteticas de prueba pertenecen a proveedores distintos.
 """
 
 from __future__ import annotations
@@ -22,17 +21,30 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy import and_, delete, or_, select
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db, get_user_context, require_csrf
-from app.api.schemas import LocalLoginRequest, MeResponse
+from app.api.deps import get_db, get_user_context, require_csrf, require_permission
+from app.api.schemas import (
+    LocalLoginRequest,
+    LocalPasswordChangeRequest,
+    LocalUserCreateRequest,
+    LocalUserResponse,
+    MeResponse,
+)
 from app.audit.service import AuditRecord, get_audit_service
+from app.auth.local_accounts import create_local_account, replace_local_password, validate_password
 from app.auth.provider import NormalizedIdentity, get_identity_provider
-from app.auth.sessions import cookie_parameters, create_session, resolve_session, revoke_session
-from app.authorization.context import ROLE_HCM_BASE, UserContext
-from app.common.errors import ForbiddenError, RateLimitedError, UnauthorizedError
+from app.auth.sessions import (
+    cookie_parameters,
+    create_session,
+    resolve_session,
+    revoke_session,
+    validate_session_record,
+)
+from app.authorization.context import PERM_USERS_ADMIN, ROLE_HCM_BASE, UserContext
+from app.common.errors import ForbiddenError, RateLimitedError, UnauthorizedError, ValidationFailedError
 from app.common.ids import new_id, sha256_text, utcnow_naive
 from app.common.logging import get_logger
 from app.config import AuthProvider, get_settings
-from app.database.models import EntraGroupRoleMapping, IdentityLink, Role, User, UserRole
+from app.database.models import EntraGroupRoleMapping, IdentityLink, Role, SessionRecord, User, UserRole
 from app.security.rate_limit import get_rate_limiter
 
 logger = get_logger(__name__)
@@ -48,6 +60,22 @@ def _issue_session_cookie(response: Response, token: str) -> None:
     params = dict(cookie_parameters())
     key = str(params.pop("key"))
     response.set_cookie(key=key, value=token, **params)  # type: ignore[arg-type]
+
+
+def _authenticate_local(db: Session, request: Request, *, username: str, password: str) -> NormalizedIdentity:
+    """Frontera de transaccion: confirmar intentos fallidos antes del HTTP 401."""
+    try:
+        return get_identity_provider().authenticate(db, username=username, password=password)
+    except (UnauthorizedError, RateLimitedError):
+        get_audit_service().record(db, AuditRecord(
+            request_id=getattr(request.state, "request_id", ""), event_type="auth.login_failed",
+            authorization_decision="DENY", status="denied",
+        ))
+        # En esta frontera solo existe el intento de autenticacion (y, durante
+        # reautenticacion, last_seen de la propia sesion). Ningun cambio de
+        # contrasena/permisos o nueva sesion se ha ejecutado todavia.
+        db.commit()
+        raise
 
 
 # ---------------------------------------------------------------------------
@@ -122,9 +150,10 @@ def local_login(
     response: Response,
     db: Session = Depends(get_db),
 ) -> MeResponse:
-    """Login del proveedor local. Solo development/test."""
+    """Login local real o proveedor sintetico autorizado por Settings."""
     settings = get_settings()
-    if not settings.is_local_auth_allowed or settings.auth_provider is not AuthProvider.LOCAL_TEST:
+    if (not settings.is_local_auth_allowed
+            or settings.auth_provider not in (AuthProvider.LOCAL, AuthProvider.LOCAL_TEST)):
         logger.warning("auth.local_login_blocked", extra={"app_env": str(settings.app_env)})
         raise ForbiddenError("El inicio de sesion local no esta habilitado en este entorno.")
 
@@ -135,8 +164,7 @@ def local_login(
         if not limiter.check(key, limit=settings.rate_limit_login_per_minute).allowed:
             raise RateLimitedError()
 
-    provider = get_identity_provider()
-    identity = provider.authenticate(db, username=payload.username, password=payload.password)
+    identity = _authenticate_local(db, request, username=payload.username, password=payload.password)
     user = _upsert_user_from_identity(db, identity)
     issued = create_session(db, user=user, auth_source=identity.auth_source)
     _issue_session_cookie(response, issued.session_token)
@@ -158,6 +186,87 @@ def local_login(
         ),
     )
     return _me_payload(ctx, issued.csrf_token)
+
+
+@router.post("/auth/local/change-password", response_model=MeResponse, dependencies=[Depends(require_csrf)])
+def change_local_password(
+    payload: LocalPasswordChangeRequest,
+    request: Request,
+    response: Response,
+    db: Session = Depends(get_db),
+    ctx: UserContext = Depends(get_user_context),
+) -> MeResponse:
+    """Reautentica, cambia el hash y rota todas las credenciales de sesion."""
+    if get_settings().auth_provider is not AuthProvider.LOCAL or ctx.auth_source != "local":
+        raise ForbiddenError("La contrasena de este proveedor no se administra aqui.")
+    validate_password(payload.new_password)
+    if secrets.compare_digest(payload.current_password.encode(), payload.new_password.encode()):
+        raise ValidationFailedError("La nueva contrasena debe ser diferente de la actual.")
+    if not get_rate_limiter().check(
+        "password-change:" + ctx.user_id, limit=get_settings().rate_limit_login_per_minute,
+    ).allowed:
+        raise RateLimitedError()
+    try:
+        identity = _authenticate_local(db, request, username=ctx.username, password=payload.current_password)
+    except UnauthorizedError as exc:
+        # Una credencial actual errada no debe expulsar la sesion valida de la UI.
+        raise ValidationFailedError("La contrasena actual es incorrecta.") from exc
+    if identity.subject_id != ctx.user_id:
+        raise UnauthorizedError()
+    record = db.execute(select(SessionRecord).where(SessionRecord.id == ctx.session_id).with_for_update()
+                        .execution_options(populate_existing=True)).scalar_one_or_none()
+    if record is None:
+        raise UnauthorizedError()
+    _, user = validate_session_record(db, record)
+    if user.id != ctx.user_id:
+        raise UnauthorizedError()
+    replace_local_password(db, user=user, password=payload.new_password)
+    issued = create_session(db, user=user, auth_source="local")
+    get_audit_service().record_from_context(db, ctx, event_type="auth.password_changed", authorization_decision="ALLOW")
+    from app.authorization.policy import get_policy_engine
+
+    updated = get_policy_engine().build_context(
+        db, user=user, session_id=issued.session_id, request_id=ctx.request_id,
+    )
+    _issue_session_cookie(response, issued.session_token)
+    return _me_payload(updated, issued.csrf_token)
+
+
+def _local_user_payload(db: Session, user: User) -> LocalUserResponse:
+    roles = db.execute(select(Role.name).join(UserRole, UserRole.role_id == Role.id).where(
+        UserRole.user_id == user.id,
+    )).scalars().all()
+    return LocalUserResponse(user_id=user.id, username=user.username, display_name=user.display_name,
+                             is_active=user.is_active, roles=sorted(roles))
+
+
+@router.get("/admin/users", response_model=list[LocalUserResponse])
+def list_local_users(
+    offset: int = 0,
+    limit: int = 50,
+    db: Session = Depends(get_db),
+    ctx: UserContext = Depends(require_permission(PERM_USERS_ADMIN)),
+) -> list[LocalUserResponse]:
+    if get_settings().auth_provider is not AuthProvider.LOCAL or ctx.auth_source != "local":
+        raise ForbiddenError()
+    users = db.execute(select(User).where(User.auth_source == "local", User.is_synthetic_test.is_(False))
+                       .order_by(User.username).offset(max(0, offset)).limit(max(1, min(100, limit)))).scalars().all()
+    return [_local_user_payload(db, user) for user in users]
+
+
+@router.post("/admin/users", response_model=LocalUserResponse, status_code=201, dependencies=[Depends(require_csrf)])
+def create_local_user(
+    payload: LocalUserCreateRequest,
+    db: Session = Depends(get_db),
+    ctx: UserContext = Depends(require_permission(PERM_USERS_ADMIN)),
+) -> LocalUserResponse:
+    if get_settings().auth_provider is not AuthProvider.LOCAL or ctx.auth_source != "local":
+        raise ForbiddenError()
+    user = create_local_account(db, username=payload.username, display_name=payload.display_name,
+                                password=payload.password, role_name=payload.role)
+    get_audit_service().record_from_context(db, ctx, event_type="auth.local_user_created",
+                                          resource=user.id, authorization_decision="ALLOW")
+    return _local_user_payload(db, user)
 
 
 # ---------------------------------------------------------------------------
@@ -237,6 +346,10 @@ def _upsert_user_from_identity(db: Session, identity: NormalizedIdentity) -> Use
         user = db.get(User, link.user_id)
         if user is None or not user.is_active:
             raise UnauthorizedError()
+        if identity.auth_source in ("local", "local_test") and (
+            user.auth_source != identity.auth_source or user.id != identity.subject_id
+        ):
+            raise UnauthorizedError()
         if identity.auth_source in ("entra", "oidc"):
             _sync_entra_roles(db, user, identity)
             # Un cambio/revocacion del correo en el IdP debe alcanzar los
@@ -245,6 +358,9 @@ def _upsert_user_from_identity(db: Session, identity: NormalizedIdentity) -> Use
             user.email = identity.email
             db.flush()
         return user
+
+    if identity.auth_source == "local":
+        raise UnauthorizedError("La identidad local requiere vinculacion administrativa.")
 
     user = db.execute(select(User).where(User.username == identity.username)).scalar_one_or_none()
     if user is not None and (not user.is_active or identity.auth_source != "local_test"):

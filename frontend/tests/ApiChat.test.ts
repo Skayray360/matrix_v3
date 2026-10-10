@@ -9,6 +9,22 @@ afterEach(() => {
 });
 
 describe("transporte de solicitudes aceptadas", () => {
+  it("rechaza una página HTML del proxy sin tratarla como respuesta de la API", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response("<!doctype html><html>Proxy</html>", {
+          status: 200,
+          headers: { "X-Request-ID": "synthetic-proxy" },
+        }),
+      ),
+    );
+    await expect(api.chatStatus("request-uncertain")).rejects.toMatchObject({
+      code: "invalid_response",
+      requestId: "synthetic-proxy",
+    });
+  });
+
   it("acepta 202 y envia el identificador, CSRF y AbortSignal al endpoint de cola", async () => {
     const accepted = {
       status: "queued",

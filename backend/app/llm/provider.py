@@ -10,6 +10,7 @@ import time
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import replace
+from threading import Event
 from typing import Any, Literal, Protocol
 from urllib.parse import quote, urlparse
 
@@ -19,11 +20,12 @@ from jsonschema import Draft202012Validator
 from app.common.errors import ConfigurationError, EmbeddingDimensionMismatchError
 from app.common.inference_errors import InferenceFailureError, InferenceFailureKind
 from app.common.logging import get_logger
-from app.config import get_settings
+from app.config import Settings, get_settings
+from app.llm.http_transport import request_json
 from app.llm.ollama_client import ChatResult, ModelInventory, OllamaClient, _metric
+from app.llm.request_control import _deadline, check_inference_control, inference_control
 from app.security.admission import admission
 
-_deadline: ContextVar[float | None] = ContextVar("matrix_inference_deadline", default=None)
 _stage_deadline: ContextVar[float | None] = ContextVar("matrix_generation_stage_deadline", default=None)
 _stage_profile: ContextVar[str | None] = ContextVar("matrix_generation_stage_profile", default=None)
 logger = get_logger(__name__)
@@ -48,14 +50,12 @@ def _transport_failure_kind(exc: Exception) -> InferenceFailureKind:
 
 
 @contextmanager
-def inference_deadline():
-    configured = time.monotonic() + get_settings().llm_request_deadline_seconds
-    existing = _deadline.get()
-    token = _deadline.set(min(configured, existing) if existing is not None else configured)
-    try:
+def inference_deadline(*, cancel_event: Event | None = None, absolute_deadline: float | None = None):
+    with inference_control(
+        get_settings().llm_request_deadline_seconds,
+        cancel_event=cancel_event, absolute_deadline=absolute_deadline,
+    ):
         yield
-    finally:
-        _deadline.reset(token)
 
 
 @contextmanager
@@ -133,23 +133,24 @@ class ModelClient(OllamaClient):
     """Fachada compatible con el cliente previo; modelos y protocolos vienen de .env.
 
     API compatible: /v1/chat/completions y /v1/embeddings (vLLM/llama.cpp).
-    Vertex: /publishers/google/models/{modelo}:generateContent, opt-in cloud.
+    La configuracion cloud legacy se rechaza en este producto, en todo entorno.
     """
 
-    def __init__(self, *, client: httpx.Client | None = None, **kwargs: Any) -> None:
-        self.settings = get_settings()
+    def __init__(self, *, client: httpx.Client | None = None, settings: Settings | None = None, **kwargs: Any) -> None:
+        self._injected_sync_client = client is not None
+        self.settings = settings or get_settings()
         s = self.settings
         providers = (s.llm_provider, s.llm_deep_provider, s.llm_embedding_provider)
+        if not s.llm_local_only or "vertex" in providers:
+            raise ConfigurationError(
+                "Matrix requiere inferencia y embeddings locales en todos los entornos; "
+                "LLM_LOCAL_ONLY=false y el adapter Vertex no estan habilitados en este producto."
+            )
         urls = []
         if "ollama" in providers:
             urls.append(s.ollama_base_url)
         if "openai_compatible" in providers:
             urls.append(s.llm_api_base_url)
-        if "vertex" in providers:
-            if s.llm_local_only:
-                raise ConfigurationError("Vertex requiere LLM_LOCAL_ONLY=false: envia datos a cloud.")
-            if not s.llm_vertex_base_url.startswith("https://"):
-                raise ConfigurationError("LLM_VERTEX_BASE_URL debe ser HTTPS.")
         hosts = {host.strip().casefold() for host in s.llm_local_hosts.split(",")}
         for url in urls:
             parsed = urlparse(url)
@@ -164,7 +165,7 @@ class ModelClient(OllamaClient):
             "cloud" in m.casefold() for m in (s.ollama_fast_model, s.ollama_deep_model, s.ollama_embedding_model)
         ):
             raise ConfigurationError("Los modelos cloud de Ollama estan deshabilitados en modo local.")
-        super().__init__(client=client, **kwargs)
+        super().__init__(client=client, settings=self.settings, **kwargs)
         self._vertex_validated: dict[str, float] = {}
 
     @staticmethod
@@ -172,9 +173,25 @@ class ModelClient(OllamaClient):
         normalized = value.removeprefix("sha256:").lower()
         return normalized if re.fullmatch(r"[0-9a-f]{64}", normalized) else ""
 
+    def _assert_local_request(self, url: str) -> None:
+        s = self.settings
+        if not s.llm_local_only or "vertex" in (s.llm_provider, s.llm_deep_provider, s.llm_embedding_provider):
+            raise ConfigurationError("Matrix requiere inferencia local; el cambio cloud fue rechazado.")
+        parsed = urlparse(url)
+        hosts = {host.strip().casefold() for host in s.llm_local_hosts.split(",")}
+        if (parsed.scheme not in {"http", "https"} or parsed.hostname not in hosts
+                or parsed.username is not None or parsed.password is not None or parsed.query or parsed.fragment):
+            raise ConfigurationError("El endpoint de inferencia no pertenece a los hosts locales aprobados.")
+
     def _inventory_get(self, url: str, *, headers: dict[str, str] | None = None) -> dict[str, Any]:
         """Las sondas de revision consumen el mismo presupuesto que la consulta."""
-        remaining = min(10.0, self.settings.llm_request_deadline_seconds)
+        return self._request_json(
+            "GET", url, payload=None, headers=headers, remaining=self._remaining(10.0), max_bytes=4_194_304,
+        )
+
+    def _remaining(self, maximum: float) -> float:
+        check_inference_control()
+        remaining = min(maximum, self.settings.llm_request_deadline_seconds)
         deadline = _deadline.get()
         if deadline is not None:
             remaining = min(remaining, deadline - time.monotonic())
@@ -183,33 +200,56 @@ class ModelClient(OllamaClient):
             remaining = min(remaining, stage_deadline - time.monotonic())
         if remaining <= 0:
             raise InferenceFailureError(_time_limit_kind(), "La consulta alcanzo su tiempo limite.")
+        return remaining
+
+    def _request_json(
+        self, method: str, url: str, *, payload: dict[str, Any] | None,
+        headers: dict[str, str] | None, remaining: float, max_bytes: int,
+    ) -> dict[str, Any]:
+        self._assert_local_request(url)
         started = time.monotonic()
         try:
+            if not self._injected_sync_client:
+                data = request_json(
+                    method, url, payload=payload, headers=headers, timeout=remaining, max_bytes=max_bytes,
+                )
+                check_inference_control()
+                return data
+            # Seam para clientes/transportes controlados de prueba. Produccion
+            # usa el transporte async cancelable incluso esperando cabeceras.
             with self._client.stream(
-                "GET", url, headers=headers, timeout=httpx.Timeout(remaining, connect=min(10, remaining))
+                method, url, json=payload, headers=headers, timeout=httpx.Timeout(remaining, connect=min(10, remaining))
             ) as response:
-                response.raise_for_status()
+                if response.status_code >= 300:
+                    raise InferenceFailureError(
+                        InferenceFailureKind.BUSY if response.status_code in (429, 503) else InferenceFailureKind.HTTP,
+                        http_status=response.status_code,
+                    )
                 chunks: list[bytes] = []
                 size = 0
                 for chunk in response.iter_bytes():
+                    check_inference_control()
                     size += len(chunk)
                     if time.monotonic() - started > remaining:
                         raise InferenceFailureError(
                             _time_limit_kind(), "La consulta alcanzo su tiempo limite.",
                         )
-                    if size > 4_194_304:
+                    if size > max_bytes:
                         raise InferenceFailureError(InferenceFailureKind.RESPONSE_SIZE)
                     chunks.append(chunk)
-                payload = json.loads(b"".join(chunks))
+                data = json.loads(b"".join(chunks))
+            check_inference_control()
             if time.monotonic() - started > remaining:
                 raise InferenceFailureError(_time_limit_kind(), "La consulta alcanzo su tiempo limite.")
-            if not isinstance(payload, dict):
-                raise ValueError("inventario no valido")
-            return payload
+            if not isinstance(data, dict):
+                raise ValueError("respuesta no es objeto")
+            return data
+        except (TimeoutError, httpx.TimeoutException) as exc:
+            raise InferenceFailureError(_time_limit_kind(), "La consulta alcanzo su tiempo limite.") from exc
         except (httpx.HTTPError, ValueError) as exc:
             raise InferenceFailureError(
                 _transport_failure_kind(exc),
-                "No fue posible verificar el inventario local.",
+                "Respuesta del servicio local no valida.",
             ) from exc
 
     def _get(self, path: str) -> dict[str, Any]:
@@ -247,16 +287,9 @@ class ModelClient(OllamaClient):
 
     def _post(self, path: str, payload: dict[str, Any]) -> dict[str, Any]:
         # Un intento por llamada: HTTP ambiguo no se reenvia automaticamente.
-        deadline = _deadline.get()
-        remaining = min(self.timeout, self.settings.llm_request_deadline_seconds)
-        if deadline is not None:
-            remaining = min(remaining, deadline - time.monotonic())
-        stage_deadline = _stage_deadline.get()
-        if stage_deadline is not None:
-            remaining = min(remaining, stage_deadline - time.monotonic())
-        if remaining <= 0:
-            raise InferenceFailureError(_time_limit_kind(), "La consulta alcanzo su tiempo limite.")
+        call_deadline = time.monotonic() + self._remaining(self.timeout)
         url = path if path.startswith("http") else f"{self.base_url}{path}"
+        self._assert_local_request(url)
         headers = {}
         if url.startswith(self.settings.llm_api_base_url.rstrip("/") + "/"):
             secret = self.settings.llm_api_key.get_secret_value()
@@ -272,70 +305,23 @@ class ModelClient(OllamaClient):
             headers["Authorization"] = f"Bearer {credentials.token}"
         with admission("inference", self.settings.inference_max_inflight):
             # La espera de un worker consume el mismo presupuesto de la consulta.
-            if deadline is not None:
-                remaining = min(remaining, deadline - time.monotonic())
-            if stage_deadline is not None:
-                remaining = min(remaining, stage_deadline - time.monotonic())
-            if remaining <= 0:
-                raise InferenceFailureError(_time_limit_kind(), "La consulta alcanzo su tiempo limite.")
-            started = time.monotonic()
+            remaining = self._remaining(call_deadline - time.monotonic())
             try:
-                with self._client.stream(
-                    "POST",
-                    url, json=payload, headers=headers, timeout=httpx.Timeout(remaining, connect=min(10, remaining))
-                ) as response:
-                    if response.status_code >= 400:
-                        # No lee ni registra el cuerpo de error del proveedor.
-                        logger.warning(
-                            "llm.request_failed",
-                            extra={
-                                "failure_kind": "busy" if response.status_code in (429, 503) else "http",
-                                "http_status": response.status_code,
-                                "selected_model": payload.get("model"),
-                                "execution_profile": _stage_profile.get(),
-                            },
-                        )
-                        raise InferenceFailureError(
-                            InferenceFailureKind.BUSY if response.status_code in (429, 503)
-                            else InferenceFailureKind.HTTP,
-                            http_status=response.status_code,
-                        )
-                    chunks: list[bytes] = []
-                    size = 0
-                    # HTTPX limita inactividad por fase. Comprobar cada bloque
-                    # evita retener el cupo por un cuerpo que llega a goteo.
-                    for chunk in response.iter_bytes():
-                        if time.monotonic() - started > remaining:
-                            raise InferenceFailureError(
-                                _time_limit_kind(), "La consulta alcanzo su tiempo limite.",
-                            )
-                        size += len(chunk)
-                        if size > 8_388_608:
-                            raise InferenceFailureError(InferenceFailureKind.RESPONSE_SIZE)
-                        chunks.append(chunk)
-                    data = json.loads(b"".join(chunks))
-                if time.monotonic() - started > remaining:
-                    raise InferenceFailureError(
-                        _time_limit_kind(), "La consulta alcanzo su tiempo limite.",
-                    )
-                if not isinstance(data, dict):
-                    raise ValueError("respuesta no es objeto")
-                return data
-            except (httpx.HTTPError, ValueError) as exc:
+                return self._request_json(
+                    "POST", url, payload=payload, headers=headers, remaining=remaining, max_bytes=8_388_608,
+                )
+            except InferenceFailureError as exc:
                 logger.warning(
                     "llm.request_failed",
                     extra={
-                        "failure_kind": str(_transport_failure_kind(exc)),
-                        "error_type": type(exc).__name__,
+                        "failure_kind": str(exc.failure_kind),
+                        "http_status": exc.http_status,
                         "selected_model": payload.get("model"),
                         "execution_profile": _stage_profile.get(),
                         "stage_budget_seconds": round(remaining, 3),
                     },
                 )
-                raise InferenceFailureError(
-                    _transport_failure_kind(exc),
-                    "Respuesta de inferencia no valida.",
-                ) from exc
+                raise
 
     def chat(
         self,
@@ -354,6 +340,8 @@ class ModelClient(OllamaClient):
         s = self.settings
         if execution_profile not in (None, "fast", "deep"):
             raise ConfigurationError("Perfil de inferencia no valido.")
+        if "cloud" in model.casefold():
+            raise ConfigurationError("Los modelos cloud no estan habilitados en este producto.")
         deep = execution_profile == "deep" if execution_profile else (
             model == s.ollama_deep_model and model != s.ollama_fast_model
         )

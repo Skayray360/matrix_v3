@@ -110,6 +110,15 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
       );
     }
 
+    if (payload === null) {
+      throw new ApiError(
+        "invalid_response",
+        "El servidor no devolvió una respuesta válida de Matrix RH. Compruebe la conexión e inténtelo nuevamente.",
+        response.status,
+        requestId,
+      );
+    }
+
     return payload as T;
   } catch (caught) {
     if (timedOut && !options.signal?.aborted) {
@@ -197,7 +206,9 @@ export type ChatMessage = {
   content: string;
   model: string | null;
   created_at: string;
-  sources: { source_id: string }[];
+  // Entregas anteriores guardaban solo el ID. Los metadatos adicionales
+  // provienen del backend tras comprobar el acceso actual a cada fuente.
+  sources: (Pick<SourceRef, "source_id"> & Partial<Omit<SourceRef, "source_id">>)[];
   intent?: string | null;
   answer_basis?: AnswerBasis | null;
 };
@@ -235,6 +246,15 @@ export const api = {
     const profile = await request<Me>("/auth/local/login", {
       method: "POST",
       body: { username, password },
+    });
+    setCsrfToken(profile.csrf_token);
+    return profile;
+  },
+
+  async changePassword(currentPassword: string, newPassword: string): Promise<Me> {
+    const profile = await request<Me>("/auth/local/change-password", {
+      method: "POST",
+      body: { current_password: currentPassword, new_password: newPassword },
     });
     setCsrfToken(profile.csrf_token);
     return profile;

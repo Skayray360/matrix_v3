@@ -29,7 +29,7 @@ from app.agents.prompts import (
     build_summary_reduce_messages,
 )
 from app.authorization.context import UserContext
-from app.common.errors import ForbiddenError
+from app.common.errors import ForbiddenError, NotFoundError
 from app.config import Settings
 from app.database.models import Base, ConversationMessage
 from app.llm.model_policy import Intent, ModelChoice, ModelPolicy
@@ -65,10 +65,12 @@ class IsolatedCase(unittest.TestCase):
     def setUp(self):
         # Si un cambio intenta conectar por accidente, falla antes de abrir red.
         self.start_patch("socket.socket.connect", side_effect=AssertionError("Red prohibida en estas pruebas"))
-        self.settings = Settings(_env_file=None, app_secret_key="synthetic-stage1-secret-0000000000")
+        # OfflineLlm devuelve Markdown; el contrato JSON se prueba por separado.
+        self.settings = Settings(_env_file=None, app_secret_key="synthetic-stage1-secret-0000000000",
+                                 answer_structured_output=False)
         for module in (
             "app.llm.model_policy", "app.agents.orchestrator", "app.agents.prompts",
-            "app.agents.knowledge_agent", "app.rag.retriever",
+            "app.agents.knowledge_agent", "app.agents.documentary_output", "app.rag.retriever",
         ):
             self.start_patch(f"{module}.get_settings", return_value=self.settings)
         self.policy = ModelPolicy()
@@ -391,7 +393,8 @@ class OrchestrationTests(IsolatedCase):
     def test_other_user_conversation_is_rejected_before_any_output(self):
         other = replace(self.ctx, user_id="other-user")
         for question in ("Qué puedes hacer", "Quién eres", "Qué es el plan libre", "Qué es Python"):
-            with self.subTest(question=question), self.assertRaises(ForbiddenError):
+            expected = NotFoundError if question == "Quién eres" else ForbiddenError
+            with self.subTest(question=question), self.assertRaises(expected):
                 self.chat(question, ctx=other)
         self.assertEqual(self.memory.list_messages(self.db, self.conversation.id), [])
         self.retriever.retrieve.assert_not_called()
@@ -427,7 +430,12 @@ class PromptContractTests(IsolatedCase):
 
     def test_summary_reduction_inherits_applicability_rules(self):
         messages = build_summary_reduce_messages(question="Resume los planes", partial_summaries=("Parte sintética",))
-        self.assertIn(DOCUMENT_SCOPE_POLICY, messages[0]["content"])
+        from app.agents.documentary_output import SUMMARY_CONTENT_POLICY
+
+        self.assertIn(SUMMARY_CONTENT_POLICY, messages[0]["content"])
+        self.assertIn("No certifiques vigencia actual", messages[0]["content"])
+        self.assertIn("elegibilidad personal", messages[0]["content"])
+        self.assertIn("Conserva condiciones, excepciones", messages[0]["content"])
 
     def test_general_prompt_distinguishes_current_evidence_from_system_capability(self):
         messages = build_general_messages(question="Explica un concepto")

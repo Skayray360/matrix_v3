@@ -25,17 +25,17 @@ def test_packaging_keeps_installation_folder_when_internal_revision_differs(tmp_
     build_zip(root, archive, [metadata])
     with ZipFile(archive) as package:
         assert set(package.namelist()) == {
-            "matrix-rh-1.3.0/backend/pyproject.toml", "matrix-rh-1.3.0/SHA256SUMS.txt",
+            "matrix-rh-1.3.0/backend/pyproject.toml", "matrix-rh-1.3.0/backend/release/SHA256SUMS.txt",
         }
 
 
 def test_corporate_alias_document_is_not_relabelled_as_project_authorship(tmp_path):
-    corpus = tmp_path / "data/ACR/analisis-1.md"
+    corpus = tmp_path / "knowledge-base/documents/analisis-1.md"
     corpus.parent.mkdir(parents=True)
     corpus.write_text("Documento corporativo con su autoria original.", encoding="utf-8")
-    guide = tmp_path / "data/ACR/README.md"
+    guide = tmp_path / "README.md"
     guide.write_text("Guia del proyecto sin encabezado.", encoding="utf-8")
     original = corpus.read_bytes()
     missing, total = check(tmp_path)
-    assert missing == ["data/ACR/README.md"] and total == 1
+    assert missing == ["README.md"] and total == 1
     assert corpus.read_bytes() == original

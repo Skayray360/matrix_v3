@@ -147,33 +147,17 @@ def test_schema_violation_never_enters_business(monkeypatch, tmp_path, content):
         client.chat(model="model-test", messages=[], response_schema=SCHEMA)
 
 
-def test_vertex_response_schema_and_parse(monkeypatch, tmp_path):
+def test_explicit_cloud_opt_in_is_rejected_before_any_client_or_credentials(monkeypatch, tmp_path):
     path = tmp_path / "models.env"
     path.write_text(
         "LLM_LOCAL_ONLY=false\nLLM_DEEP_PROVIDER=vertex\nOLLAMA_DEEP_MODEL=gemini-test\n"
         "LLM_VERTEX_BASE_URL=https://vertex.example.test/models\n"
     )
     configure(monkeypatch, path)
-    client = ModelClient()
-    captured = {}
-
-    # Intercept HTTP below adapter mapping; no credencial cloud ni llamada externa.
-    def post(url, payload):
-        captured.update(payload)
-        assert url == "https://vertex.example.test/models/gemini-test:generateContent"
-        return {
-            "candidates": [{"finishReason": "STOP", "content": {"parts": [{"text": '{"answer":"ok","count":12}'}]}}]
-        }
-
-    monkeypatch.setattr(client, "_post", post)
-    reply = client.chat(
-        model="gemini-test",
-        messages=[{"role": "system", "content": "reglas"}, {"role": "user", "content": "test"}],
-        response_schema=SCHEMA,
-    )
-    assert captured["generationConfig"]["responseSchema"]["properties"]["count"]["type"] == "INTEGER"
-    assert captured["generationConfig"]["responseMimeType"] == "application/json"
-    assert reply.content == '{"answer":"ok","count":12}'
+    monkeypatch.setattr(httpx, "Client", lambda *args, **kwargs: pytest.fail("No crear cliente cloud"))
+    monkeypatch.setattr(httpx, "AsyncClient", lambda *args, **kwargs: pytest.fail("No crear cliente cloud"))
+    with pytest.raises(ConfigurationError, match="todos los entornos"):
+        ModelClient()
 
 
 def test_embedding_runtime_shape_validation(monkeypatch, tmp_path):

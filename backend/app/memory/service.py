@@ -24,7 +24,8 @@ from sqlalchemy import delete, func, null, select, update
 from sqlalchemy.orm import Session
 
 from app.authorization.context import UserContext
-from app.common.errors import ForbiddenError, NotFoundError
+from app.common.errors import ForbiddenError, NotFoundError, ValidationFailedError
+from app.common.identity import is_identity_question
 from app.common.ids import new_id, utcnow_naive
 from app.common.logging import get_logger
 from app.database.models import (
@@ -36,6 +37,7 @@ from app.database.models import (
     StructuredSourcePermission,
     UserRole,
 )
+from app.memory.citations import citation_metadata
 
 logger = get_logger(__name__)
 
@@ -45,6 +47,9 @@ DEFAULT_RECENT_TURNS = 6
 SUMMARY_THRESHOLD = 12
 #: Longitud maxima del texto de un mensaje que se reenvia al prompt.
 MAX_MESSAGE_CHARS_IN_CONTEXT = 1200
+# Una consulta actual de hasta 8000 caracteres mas el antecedente autorizado
+# cabe sin truncar. Rechazar un exceso evita acumular cadenas ilimitadas.
+MAX_CONTEXT_QUERY_CHARS = 16000
 
 # Antes de v1.2.4 la huella conocia row_filter pero SQL no lo aplicaba. Esas
 # respuestas no pueden conservar una huella valida despues de activar el fix.
@@ -56,6 +61,7 @@ class ConversationTurn:
     role: str
     content: str
     documented: bool = False
+    context_query: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -234,12 +240,19 @@ class MemoryService:
         answer_basis: str | None = None,
         source_ids: tuple[str, ...] = (),
         authorized_categories: tuple[str, ...] = (),
+        context_query: str | None = None,
     ) -> ConversationMessage:
         """Persiste un turno.
 
         ``authorized_categories`` deja constancia del alcance con el que se produjo
         el mensaje: es lo que permite descartarlo despues si los permisos cambian.
         """
+        scope = db.info.get("authorization_scope")
+        if context_query is not None and (
+            role != "user" or not isinstance(scope, str) or not scope
+            or not isinstance(context_query, str) or not 0 < len(context_query) <= MAX_CONTEXT_QUERY_CHARS
+        ):
+            raise ValidationFailedError("La consulta contextual no cumple el contrato de memoria autorizada.")
         conversation = self._lock_conversation(db, conversation.id)
         message = ConversationMessage(
             id=new_id(),
@@ -250,8 +263,9 @@ class MemoryService:
             model=model,
             intent=intent,
             answer_basis=answer_basis,
-            authorization_scope=db.info.get("authorization_scope"),
+            authorization_scope=scope,
             source_ids=list(source_ids) or None,
+            context_query=context_query,
             authorized_categories=list(authorized_categories) or None,
             created_at=utcnow_naive(),
         )
@@ -274,17 +288,44 @@ class MemoryService:
             query = query.where(ConversationMessage.seq < before_seq)
         return list(reversed(db.execute(query.order_by(ConversationMessage.seq.desc()).limit(limit)).scalars().all()))
 
+    def set_source_details(
+        self, db: Session, *, ctx: UserContext, message_id: str,
+        sources: list[dict[str, object]],
+    ) -> None:
+        """Completa citas del turno tras la reautorizacion y antes del commit.
+
+        Solo admite metadata de IDs ya citados por ese mensaje. No es una ruta
+        HTTP y el llamador entrega ``ChatOutcome.public_sources()``, nunca un
+        payload del cliente ni un catalogo reconstruido desde nombres.
+        """
+        message = db.get(ConversationMessage, message_id)
+        if message is None or message.user_id != ctx.user_id or message.role != "assistant":
+            raise NotFoundError("Mensaje no encontrado.")
+        self.get_owned_conversation(db, ctx, message.conversation_id)
+        message.source_details = citation_metadata(message.source_ids, sources) or None
+        db.flush()
+
+    @staticmethod
+    def message_sources(message: ConversationMessage) -> list[dict[str, object]]:
+        """Llamar unicamente para mensajes que pasaron ``message_visible``."""
+        return citation_metadata(message.source_ids, message.source_details)
+
     @staticmethod
     def message_visible(message: ConversationMessage, categories: frozenset[str], scope: str) -> bool:
-        # La identidad fija no usa modelos, fuentes ni permisos. Su respuesta
-        # exacta sigue siendo publica incluso en conversaciones anteriores al
-        # registro de procedencia; una etiqueta "identity" sola no basta.
+        # La identidad fija no usa modelos, fuentes ni permisos. El par conserva
+        # visibilidad aunque cambie el alcance documental, siempre DESPUES del
+        # ownership del hilo. Intent solo no basta: pregunta completa reconocida
+        # o respuesta publica exacta y ninguna metadata derivada de documentos.
         if (
-            message.role == "assistant"
-            and message.intent == "identity"
-            and message.content == "Soy Matrix RH."
+            message.intent == "identity"
             and not message.source_ids
             and not message.authorized_categories
+            and not getattr(message, "source_details", None)
+            and not getattr(message, "context_query", None)
+            and (
+                (message.role == "assistant" and message.content in {"Soy Matrix.", "Soy Matrix RH."})
+                or (message.role == "user" and is_identity_question(message.content))
+            )
         ):
             return True
         if not set(message.authorized_categories or []).issubset(categories):
@@ -336,6 +377,15 @@ class MemoryService:
                     content=message.content[:MAX_MESSAGE_CHARS_IN_CONTEXT],
                     documented=(message.role == "assistant" and bool(message.source_ids)
                                 and message.answer_basis in {"documented", "mixed"}),
+                    # Un usuario historico sin procedencia puede verse, pero su
+                    # consulta derivada nunca se hereda sin la misma huella.
+                    context_query=(
+                        message.context_query
+                        if message.role == "user" and message.authorization_scope == scope
+                        and isinstance(message.context_query, str)
+                        and 0 < len(message.context_query) <= MAX_CONTEXT_QUERY_CHARS
+                        else None
+                    ),
                 )
             )
 

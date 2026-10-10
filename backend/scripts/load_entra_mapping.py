@@ -1,7 +1,7 @@
 # Creado por Aldo Garcia.
 """Carga el mapeo grupo/app-role de Entra ID a roles internos.
 
-Lee ``config/authorization/entra-role-mapping.yaml`` (datos, validados por
+Lee ``backend/config/authorization/entra-role-mapping.yaml`` (datos, validados por
 esquema, nunca codigo) y sincroniza la tabla ``entra_group_role_mappings``.
 
 Es idempotente: reejecutarlo no duplica filas. Con ``--prune`` elimina los mapeos
@@ -364,7 +364,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     if stats["skipped"]:
         print(
-            "Sustituya los object id de ejemplo en config/authorization/entra-role-mapping.yaml "
+            "Sustituya los object id de ejemplo en backend/config/authorization/entra-role-mapping.yaml "
             "por los reales del tenant."
         )
     return 0

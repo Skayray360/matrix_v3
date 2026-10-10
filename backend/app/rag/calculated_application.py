@@ -1,5 +1,5 @@
 # Creado por Aldo Garcia.
-"""Salida calculada para un contrato de pregunta completo y deliberadamente estrecho.
+"""Aplicaciones calculadas a partir de entradas, reglas y filas verificables.
 
 No recibe borradores ni memoria. El llamador decide si dos generaciones fallidas
 justifican usarla. Toda salida vuelve a pasar por el verificador documental normal.
@@ -11,18 +11,10 @@ import re
 from decimal import Decimal, localcontext
 from fractions import Fraction
 
-from app.rag.claim_context import _DATE, _DURATION, _date_span, _metadata_claim, _subject, _subjects, claim_context
+from app.rag.claim_context import _DATE, _date_span, _metadata_claim, _subject, _subjects, claim_context
 from app.rag.grounding import GroundingReport, verify_grounding
 from app.rag.numeric_grounding import _NUMBER, _plain, tenure_tables
 from app.rag.schemas import Evidence
-
-_QUESTION = re.compile(
-    r"segun\s+(?P<document>[^?\n]{1,250}?),\s*si\s+"
-    r"ingrese (?:en|el)\s+(?P<entry>" + _DATE.pattern + r")\s+y\s+"
-    r"me retiro con\s+(?P<tenure>" + _DURATION.pattern + r")\s+"
-    r"de antiguedad antes de jubilarme,\s*¿?que porcentaje me corresponde de\s+"
-    r"(?P<subjects>[^?\n]{1,300})\?\s*indica documento y pagina\.?"
-)
 
 _BEFORE_RULE = re.compile(
     r"(?:los empleados que ingresaron antes del?\s+|"
@@ -37,7 +29,7 @@ _AFTER_RULE = re.compile(
 )
 
 
-def _complete_portability_rules(evidence: Evidence, subjects: tuple[str, ...]) -> bool:
+def _complete_table_rules(evidence: Evidence, subjects: tuple[str, ...]) -> bool:
     """Contrato de fuente completo; no basta encontrar una clausula interna.
 
     Solo admite titulo corto y las dos cohortes conocidas, sin requisitos de
@@ -47,17 +39,18 @@ def _complete_portability_rules(evidence: Evidence, subjects: tuple[str, ...]) -
     if len(tables) != 1 or tables[0].suffix.strip():
         return False
     raw_lines = evidence.text.strip().splitlines()
-    if not raw_lines or not re.fullmatch(
-        r"Portabilidad del (?:Plan|Programa)(?: [^\W\d_]+){0,2}", raw_lines[0].strip(),
-    ):
+    if not raw_lines:
         return False
-    title_names = raw_lines[0].strip().split()[3:]
-    if any(not word[0].isupper() for word in title_names):
+    # El nombre del plan no forma parte de su regla aritmetica. Admitir un
+    # titulo corto independiente del producto sin absorber notas de alcance.
+    heading = raw_lines[0].strip().lstrip("# ")
+    if not re.fullmatch(r"[^\W\d_]+(?: [^\W\d_]+){1,11}", heading):
         return False
     # Un modificador de alcance tampoco puede ocultarse como nombre propio.
     if re.search(
-        r"\b(?:exclusiv[oa]s?|solo|unicamente|personal|empleados?|planta|temporales?|sindicalizad[oa]s?)\b",
-        _plain(raw_lines[0]),
+        r"\b(?:exclusiv[oa]s?|solo|unicamente|personal|empleados?|planta|temporales?|sindicalizad[oa]s?|"
+        r"no|excepto|salvo|mayores?|menores?|directivos?|ejecutivos?)\b",
+        _plain(heading),
     ):
         return False
     prefix_lines = tables[0].prefix.strip().splitlines()
@@ -110,6 +103,65 @@ def _requested_subjects(text: str, subjects: tuple[str, ...]) -> tuple[str, ...]
     return tuple(resolved) if set(resolved) == set(subjects) else None
 
 
+def _percentage_request(question: str, subjects: tuple[str, ...]) -> tuple[str, ...] | None:
+    """Reconoce campos de una consulta; no la frase de un caso de prueba.
+
+    Este calculador no resuelve solicitudes mixtas. Las entradas y conceptos
+    deben ser completos, pero su orden respecto de la fecha o documento puede
+    variar y no se exige una orden literal para agregar citas.
+    """
+    text = _plain(question)
+    if not re.search(r"\bporcentajes?\b|%", text) or text.count("?") != 1:
+        return None
+    # Una explicacion del intervalo o la conversion pertenece al mismo
+    # calculo. El vocabulario cerrado impide absorber una segunda tarea,
+    # importes, comparaciones u otras condiciones tras la interrogacion.
+    tail = text.split('?', 1)[1].strip().rstrip('.')
+    if tail:
+        presentation = re.fullmatch(
+            r"(?:indica|incluye|muestra|cita|agrega|senala)(?: el)? (?:documento|fuente)"
+            r" y (?:la )?pagina", tail,
+        )
+        explanation_words = {
+            "explica", "indica", "muestra", "detalla", "como", "por", "que", "y", "cita",
+            "ubicas", "ubica", "ubican", "se", "mi", "la", "el", "los", "las", "en", "de",
+            "antiguedad", "tabla", "fila", "intervalo", "rango", "calculo", "conversion",
+            "anos", "meses", "pagina", "documento", "fuente", "utilizada", "utilizado",
+        }
+        explanation = (
+            re.match(r"^(?:explica|indica|muestra|detalla)\b", tail)
+            and set(re.findall(r"\w+", tail)).issubset(explanation_words)
+            and re.search(r"\b(?:antiguedad|tabla|fila|intervalo|rango|calculo|conversion)\b", tail)
+            and not re.search(r"[^a-z\s,.;]", tail)
+        )
+        if not presentation and not explanation:
+            return None
+    if re.search(
+        r"\b(?:importes?|montos?|dinero|compara\w*|diferencias?|ademas|tambien|"
+        r"requisitos?|elegibilidad|otras? prestaciones|otros? beneficios)\b", text,
+    ):
+        return None
+    candidates = re.finditer(r"(?=\b(?:de|para|por|sobre)\s+([^?!.;:\n]{1,300}))", text)
+    matches = []
+    for candidate in candidates:
+        requested = _requested_subjects(candidate[1].strip(), subjects)
+        if requested:
+            matches.append(requested)
+    if matches:
+        return matches[0] if len(matches) == 1 else None
+    # El caso y la evidencia ya identificaron una unica regla completa. Si
+    # la pregunta no enumera conceptos, devolver todos los que ESA regla
+    # contiene evita requerir que el usuario repita sus etiquetas literales.
+    # Una lista parcial o un concepto nuevo no satisface esta gramatica.
+    inquiry = text.split('?', 1)[0].rsplit('¿', 1)[-1].strip()
+    if re.fullmatch(
+        r"(?:que porcentaje(?:s)?|cual(?:es)? (?:es|son) (?:el|los) porcentaje(?:s)?) "
+        r"(?:(?:me )?corresponde[n]?|aplica[n]?)(?: ahora)?(?: y por que)?", inquiry,
+    ):
+        return subjects
+    return None
+
+
 def _display_subject(subject: str, source: str) -> str:
     """Conserva mayusculas y acentos de la etiqueta presente en la fuente."""
     words = list(re.finditer(r"\w+", source))
@@ -134,12 +186,9 @@ def calculated_application_answer(
 ) -> tuple[str, GroundingReport] | None:
     """Devuelve solo una aplicacion completa solicitada, o ninguna alternativa.
 
-    El fullmatch evita contestar parcialmente comparaciones, varias consultas,
-    otros beneficios o peticiones de importes/condiciones adicionales.
+    Solo se calculan campos completos de una unica consulta de porcentajes.
+    No se emplean constantes del beneficio ni respuestas esperadas precargadas.
     """
-    request = _QUESTION.fullmatch(_plain(question).strip())
-    if request is None:
-        return None
     context = claim_context(question, evidences)
     if (context.case.entry is None or context.case.tenure is None or not context.case.before_retirement
             or not context.application_requested):
@@ -155,8 +204,8 @@ def calculated_application_answer(
         by_id[evidence.source_id] = evidence
     requested_sources = []
     for evidence in evidences:
-        identified, error = _metadata_claim(request["document"], (evidence,))
-        if not error and re.fullmatch(r"(?:(?:el|la) )?documento identificado", identified.strip()):
+        identified, error = _metadata_claim(_plain(question), (evidence,))
+        if not error and "documento identificado" in identified:
             requested_sources.append(evidence)
     documents = {item.document_id or item.filename for item in requested_sources}
     if len(documents) != 1:
@@ -183,25 +232,38 @@ def calculated_application_answer(
     values = (*application.rule.fixed, *((subject, application.percent) for subject in application.rule.table_subjects))
     if not application.rule.table_subjects or not values:
         return None
-    if not all(_complete_portability_rules(item, tuple(subject for subject, _ in values))
+    if not all(_complete_table_rules(item, tuple(subject for subject, _ in values))
                for item in document_sources):
         return None
-    subjects = _requested_subjects(request["subjects"], tuple(subject for subject, _ in values))
+    subjects = _percentage_request(question, tuple(subject for subject, _ in values))
     page = re.fullmatch(r"pagina ([1-9]\d*)", _plain(evidence.page_or_sheet).strip())
     if subjects is None or page is None:
         return None
 
     citation = f"[[{evidence.source_id}]]"
     tenure = re.sub(r"\b(?:anos|anios)\b", "años", context.case.tenure_quote)
+    entry = _DATE.search(context.case.entry_quote)
+    if entry is None:
+        return None
     interval = (
         f"{_decimal(application.low)} en adelante" if application.high is None
         else f"{_decimal(application.low)} – {_decimal(application.high)} años"
     )
+    denominator = application.tenure.denominator
+    for factor in (2, 5):
+        while denominator % factor == 0:
+            denominator //= factor
+    # Solo mostrar una equivalencia decimal exacta. Un tercio no se convierte
+    # en un decimal redondeado que el propio verificador tendria que rechazar.
+    conversion = (
+        f"la antigüedad declarada equivale a {_decimal(application.tenure)} años y "
+        if denominator == 1 else ""
+    )
     lines = [
-        f"Datos declarados: ingreso en {request['entry']}; antigüedad de {tenure}.",
+        f"Datos declarados: ingreso en {entry.group()}; antigüedad de {tenure}.",
         "",
         "Si los datos declarados son correctos y el retiro ocurre antes de jubilarse, "
-        "la aplicación condicional de la regla "
+        + conversion + "la aplicación condicional de la regla "
         f"y la fila {interval} da estos porcentajes:",
     ]
     for subject in subjects:

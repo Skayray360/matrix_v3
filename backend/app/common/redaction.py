@@ -41,6 +41,13 @@ SENSITIVE_KEYS: frozenset[str] = frozenset(
         "qdrant_api_key",
         "entra_client_secret",
         "password_hash",
+        "password_hash_argon2id",
+        "matrix_seed_password",
+        "seed_password",
+        "llm_api_key",
+        "oidc_client_secret",
+        "old_password",
+        "new_password",
     }
 )
 
@@ -60,8 +67,9 @@ _PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
     # Asignaciones tipo clave=valor con nombre sensible
     (
         re.compile(
-            r"(?i)\b(password|passwd|secret|client_secret|api[_-]?key|token)\b\s*[=:]\s*"
-            r"[\"']?([^\s\"',;}]{3,})"
+            r"(?i)\b(" + "|".join(re.escape(key) for key in sorted(SENSITIVE_KEYS, key=len, reverse=True))
+            + r"|api-key)\b[\"']?\s*[=:]\s*"
+            r'''(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[^\s"',;}]+)'''
         ),
         r"\1=" + REDACTED,
     ),

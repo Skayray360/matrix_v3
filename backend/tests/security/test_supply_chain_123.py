@@ -176,14 +176,13 @@ def test_quality_gate_never_executes_node_tools_after_security_failure(tmp_path,
     assert next(r for r in results if r.name == failure).blocking
 
 
-@pytest.mark.parametrize("path", ["backend/Dockerfile", ".github/workflows/implementation-v2.yml", "scripts/matrixrh.sh", "windows/Install-MatrixRH.ps1"])
-def test_all_installers_gate_before_download_and_build(path):
-    content = (ROOT / path).read_text()
+def test_docker_build_gates_frontend_before_download_and_build():
+    content = (ROOT / "backend/Dockerfile").read_text()
     # Ignore prose comments; require actual commands in the right order.
     command_lines = "\n".join(line for line in content.splitlines() if not line.lstrip().startswith("#"))
     before = command_lines.index("--lock-only")
     audit = command_lines.index("audit --audit-level=low")
-    ci = command_lines.index('npmArgs = @("ci"') if path.endswith(".ps1") else command_lines.index("npm ci --ignore-scripts")
-    post = command_lines.index("scripts.verify_supply_chain", ci) if not path.endswith("Dockerfile") else command_lines.index("verify_supply_chain.py --frontend /build/frontend", ci)
+    ci = command_lines.index("npm ci --ignore-scripts")
+    post = command_lines.index("verify_supply_chain.py --frontend /build/frontend", ci)
     build = command_lines.index("npm run build", post)
     assert before < audit < ci < post < build
